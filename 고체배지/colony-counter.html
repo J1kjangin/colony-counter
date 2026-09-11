@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ColonyCount — Agar Plate Colony Counter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF2EF;
+  --panel:#FFFFFF;
+  --ink:#122421;
+  --ink-soft:#4B615C;
+  --ink-faint:#8A9C97;
+  --line:#CBD6D1;
+  --line-strong:#9FB0AA;
+  --accent:#A6333F;      /* agar-red, VRBA nod */
+  --accent-soft:#F1DEDF;
+  --amber:#C98A2C;
+  --amber-soft:#F3E5CB;
+  --good:#2E7D5B;
+  --good-soft:#DCEEE3;
+  --warn:#C98A2C;
+  --warn-soft:#F6E8CC;
+  --bad:#A6333F;
+  --bad-soft:#F3DEDF;
+  --grid-line:#DCE4E0;
+  --radius:3px;
+  --readout:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/28px 28px,
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/28px 28px,
+    var(--bg);
+  color:var(--ink);
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  min-height:100vh;
+}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;letter-spacing:-0.01em;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+::selection{background:var(--accent-soft);}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  background:var(--ink);
+  color:#EAF1EE;
+  padding:14px 22px;
+  display:flex;
+  align-items:baseline;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.topbar .logo{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;
+  font-size:19px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.logo .dot{
+  width:9px;height:9px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 0 3px rgba(166,51,63,0.35);
+  display:inline-block;
+}
+.topbar .sub{color:#AFC3BD;font-size:12.5px;}
+.topbar .spacer{flex:1;}
+.topbar .exp-field{
+  display:flex;flex-direction:column;gap:2px;
+}
+.topbar .exp-field label{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#8FA69F;}
+.topbar .exp-field input{
+  background:transparent;border:none;border-bottom:1px solid #3A5750;
+  color:#EAF1EE;font-size:13px;padding:2px 0;width:150px;
+}
+.topbar .exp-field input:focus{outline:none;border-bottom-color:var(--accent);}
+.btn-history{
+  background:transparent;border:1px solid #3A5750;color:#EAF1EE;
+  padding:7px 14px;border-radius:var(--radius);font-size:12.5px;
+}
+.btn-history:hover{border-color:#EAF1EE;}
+
+/* ---------- Layout ---------- */
+.app{max-width:1400px;margin:0 auto;padding:22px;}
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* ---------- Setup screen ---------- */
+.setup-wrap{
+  max-width:640px;margin:60px auto;background:var(--panel);
+  border:1px solid var(--line);padding:40px 44px;
+}
+.setup-wrap h1{font-size:26px;margin-bottom:4px;}
+.setup-wrap .tag{color:var(--ink-soft);font-size:13.5px;margin-bottom:30px;}
+.field-block{margin-bottom:22px;}
+.field-block label{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:0.07em;color:var(--ink-soft);margin-bottom:8px;}
+.agar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.agar-opt{
+  border:1px solid var(--line-strong);padding:12px 6px;text-align:center;
+  background:#fff;transition:all .12s;
+}
+.agar-opt strong{display:block;font-size:15px;font-family:'Space Grotesk',sans-serif;}
+.agar-opt span{display:block;font-size:10px;color:var(--ink-faint);margin-top:3px;}
+.agar-opt:hover{border-color:var(--accent);}
+.agar-opt.selected{border-color:var(--accent);background:var(--accent-soft);}
+.agar-opt.selected strong{color:var(--accent);}
+.custom-fields{margin-top:14px;display:none;}
+.custom-fields.show{display:block;}
+.custom-fields input[type=text]{
+  width:100%;padding:9px 10px;border:1px solid var(--line-strong);border-radius:var(--radius);
+}
+.sens-row{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:12.5px;color:var(--ink-soft);}
+.sens-row input[type=range]{flex:1;}
+.drop-zone{
+  border:1.5px dashed var(--line-strong);padding:34px 20px;text-align:center;
+  cursor:pointer;background:#FAFCFB;
+}
+.drop-zone:hover{border-color:var(--accent);}
+.drop-zone.dragover{border-color:var(--accent);background:var(--accent-soft);}
+.drop-zone .icon{font-size:30px;margin-bottom:8px;}
+.drop-zone .hint{color:var(--ink-faint);font-size:12px;margin-top:4px;}
+.demo-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.demo-btn{
+  flex:1;min-width:110px;padding:9px 8px;border:1px solid var(--line-strong);
+  background:#fff;border-radius:var(--radius);font-size:12px;color:var(--ink-soft);
+}
+.demo-btn:hover{border-color:var(--amber);color:var(--ink);}
+#fileInput{display:none;}
+
+/* ---------- Analysis screen layout ---------- */
+.workspace{display:grid;grid-template-columns:250px 1fr 320px;gap:16px;align-items:start;}
+@media (max-width:1100px){.workspace{grid-template-columns:1fr;}}
+
+.panel{background:var(--panel);border:1px solid var(--line);padding:16px;}
+.panel + .panel{margin-top:14px;}
+.panel h3{font-size:12px;text-transform:uppercase;letter-spacing:0.07em;color:var(--ink-soft);margin-bottom:12px;}
+
+/* plate list */
+.plate-list-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:9px 10px;border:1px solid var(--line);margin-bottom:6px;cursor:pointer;font-size:12.5px;
+}
+.plate-list-item.active{border-color:var(--accent);background:var(--accent-soft);}
+.plate-list-item .cnt{font-family:var(--readout);font-weight:600;}
+.plate-list-item .tntc{color:var(--accent);font-weight:600;font-family:var(--readout);}
+.add-plate-btn{
+  width:100%;padding:8px;border:1px dashed var(--line-strong);background:none;
+  font-size:12px;color:var(--ink-soft);margin-top:4px;
+}
+.add-plate-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* quality rows */
+.qrow{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--grid-line);}
+.qrow:last-child{border-bottom:none;}
+.qtag{font-weight:600;font-size:11px;padding:1px 7px;border-radius:10px;}
+.qtag.good{background:var(--good-soft);color:var(--good);}
+.qtag.fair{background:var(--warn-soft);color:var(--warn);}
+.qtag.poor{background:var(--bad-soft);color:var(--bad);}
+
+/* center viewer */
+.viewer-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.mode-tabs{display:flex;border:1px solid var(--line-strong);border-radius:var(--radius);overflow:hidden;}
+.mode-tabs button{
+  padding:6px 13px;border:none;background:#fff;font-size:12px;color:var(--ink-soft);border-right:1px solid var(--line);
+}
+.mode-tabs button:last-child{border-right:none;}
+.mode-tabs button.on{background:var(--ink);color:#fff;}
+.tb-spacer{flex:1;}
+.tool-btn{
+  border:1px solid var(--line-strong);background:#fff;padding:6px 12px;border-radius:var(--radius);font-size:12px;color:var(--ink-soft);
+}
+.tool-btn:hover{border-color:var(--accent);color:var(--accent);}
+.tool-btn.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+.zoom-group{display:flex;align-items:center;gap:2px;border:1px solid var(--line-strong);border-radius:var(--radius);overflow:hidden;}
+.zoom-group button{border:none;background:#fff;padding:6px 10px;font-size:13px;border-right:1px solid var(--line);}
+.zoom-group button:last-child{border-right:none;}
+.zoom-group .zlabel{padding:0 8px;font-family:var(--readout);font-size:11.5px;color:var(--ink-soft);}
+
+.stage{
+  position:relative;overflow:hidden;background:#1B1E1C;
+  height:560px;border:1px solid var(--line);cursor:grab;
+}
+.stage.panning{cursor:grabbing;}
+.stage.adding{cursor:crosshair;}
+.stage-inner{position:absolute;top:0;left:0;transform-origin:0 0;}
+.stage-inner canvas{display:block;position:absolute;top:0;left:0;}
+.badge-demo{
+  position:absolute;top:10px;left:10px;background:var(--amber);color:#fff;
+  padding:4px 10px;font-size:11px;font-weight:600;letter-spacing:0.04em;z-index:5;border-radius:2px;
+}
+.badge-plate{
+  position:absolute;top:10px;right:10px;background:rgba(18,36,33,0.82);color:#EAF1EE;
+  padding:5px 10px;font-size:11px;z-index:5;border-radius:2px;font-family:var(--readout);
+}
+.empty-stage{
+  color:#6E837D;height:100%;display:flex;align-items:center;justify-content:center;font-size:13px;
+}
+
+.stats-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);margin-top:12px;border:1px solid var(--line);}
+.stat-cell{background:var(--panel);padding:12px 14px;}
+.stat-cell .n{font-family:var(--readout);font-size:22px;font-weight:600;}
+.stat-cell .l{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
+.stat-cell.high .n{color:var(--good);}
+.stat-cell.review .n{color:var(--warn);}
+.stat-cell.conf .n{color:var(--ink);}
+
+.filter-row{display:flex;gap:6px;margin-top:12px;}
+.filter-row button{flex:1;padding:7px;border:1px solid var(--line-strong);background:#fff;font-size:11.5px;color:var(--ink-soft);}
+.filter-row button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+.warn-banner{
+  margin-top:12px;padding:9px 12px;font-size:12.5px;border-left:3px solid var(--warn);background:var(--warn-soft);color:#6B4E17;
+  display:none;
+}
+.warn-banner.show{display:block;}
+.warn-banner.bad{border-left-color:var(--bad);background:var(--bad-soft);color:#7A2833;}
+
+/* right panel: colony list + detail + CFU */
+.colony-list{max-height:220px;overflow-y:auto;border:1px solid var(--grid-line);}
+.colony-row{
+  display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:12px;
+  border-bottom:1px solid var(--grid-line);cursor:pointer;
+}
+.colony-row:hover{background:var(--bg);}
+.colony-row:last-child{border-bottom:none;}
+.dot-conf{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px;}
+.dot-high{background:var(--good);} .dot-med{background:var(--warn);} .dot-low{background:var(--bad);}
+.colony-empty{padding:18px;text-align:center;color:var(--ink-faint);font-size:12px;}
+
+.detail-card{border:1px solid var(--line);padding:12px;margin-top:10px;display:none;}
+.detail-card.show{display:block;}
+.detail-card .dc-title{font-family:var(--readout);font-weight:600;font-size:13px;margin-bottom:8px;}
+.dc-row{display:flex;justify-content:space-between;font-size:12px;padding:2.5px 0;}
+.dc-row b{font-family:var(--readout);font-weight:600;}
+.dc-actions{display:flex;gap:6px;margin-top:10px;}
+.dc-actions button{flex:1;padding:6px;font-size:11.5px;border:1px solid var(--line-strong);background:#fff;}
+.dc-actions button.danger{color:var(--accent);border-color:var(--accent);}
+
+.cfu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.cfu-field label{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:4px;}
+.cfu-field input,.cfu-field select{width:100%;padding:7px 8px;border:1px solid var(--line-strong);border-radius:var(--radius);font-size:13px;}
+.cfu-readout{
+  background:var(--ink);color:#EAF1EE;padding:16px;text-align:center;margin:10px 0;
+}
+.cfu-readout .val{font-family:var(--readout);font-size:30px;font-weight:600;letter-spacing:0.01em;}
+.cfu-readout .val.dim{color:#8FA69F;font-size:20px;}
+.cfu-readout .unit{font-size:11px;color:#8FA69F;text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;}
+.tntc-row{display:flex;gap:8px;margin-bottom:8px;}
+.tntc-row button{flex:1;padding:8px;border:1px solid var(--line-strong);background:#fff;font-size:12px;}
+.tntc-row button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.export-row{display:flex;gap:8px;margin-top:10px;}
+.export-row button{flex:1;padding:9px;border:1px solid var(--ink);background:var(--ink);color:#fff;font-size:12.5px;}
+.export-row button.ghost{background:#fff;color:var(--ink);}
+.notes-area{width:100%;border:1px solid var(--line-strong);border-radius:var(--radius);padding:8px;font-size:12.5px;resize:vertical;min-height:52px;}
+
+/* history modal */
+.modal-back{
+  position:fixed;inset:0;background:rgba(18,36,33,0.55);display:none;align-items:center;justify-content:center;z-index:50;
+}
+.modal-back.show{display:flex;}
+.modal{background:#fff;width:640px;max-width:92vw;max-height:80vh;overflow-y:auto;padding:24px;}
+.modal h2{margin-bottom:14px;}
+.hist-item{border-bottom:1px solid var(--grid-line);padding:11px 0;font-size:12.5px;}
+.hist-item .hd{display:flex;justify-content:space-between;color:var(--ink-soft);font-family:var(--readout);font-size:11px;}
+.hist-item .plates{margin-top:5px;display:flex;flex-wrap:wrap;gap:6px;}
+.hist-item .p-chip{border:1px solid var(--line);padding:2px 8px;font-size:11.5px;}
+.modal-close{float:right;border:none;background:none;font-size:18px;cursor:pointer;color:var(--ink-soft);}
+.hist-empty{color:var(--ink-faint);text-align:center;padding:30px 0;font-size:13px;}
+
+.disclaimer{font-size:11px;color:var(--ink-faint);margin-top:16px;line-height:1.5;border-top:1px solid var(--grid-line);padding-top:10px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="dot"></span>ColonyCount</div>
+  <div class="sub">Agar Plate Colony Counter — prototype</div>
+  <div class="spacer"></div>
+  <div class="exp-field"><label>Experiment</label><input id="expName" placeholder="Experiment #001"></div>
+  <div class="exp-field"><label>Sample</label><input id="sampleName" placeholder="Sample A"></div>
+  <div class="exp-field"><label>Date</label><input id="expDate" type="date"></div>
+  <button class="btn-history" id="openHistory">History</button>
+</div>
+
+<div class="app">
+
+  <!-- ===================== SETUP SCREEN ===================== -->
+  <div class="screen active" id="screen-setup">
+    <div class="setup-wrap">
+      <h1>🧫 ColonyCount</h1>
+      <div class="tag">Agar Plate Colony Counter — image-based counting assistant, not species identification.</div>
+
+      <div class="field-block">
+        <label>Agar Type</label>
+        <div class="agar-grid" id="agarGrid"></div>
+        <div class="custom-fields" id="customFields">
+          <input type="text" id="customName" placeholder="Custom agar name">
+          <div class="sens-row">Detection sensitivity
+            <input type="range" id="customSens" min="0" max="100" value="50">
+            <span id="customSensVal">50</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-block">
+        <label>Plate Image</label>
+        <div class="drop-zone" id="dropZone">
+          <div class="icon">📥</div>
+          <div>Click to upload or drag &amp; drop a plate photo</div>
+          <div class="hint">JPG / PNG — analyzed entirely in your browser</div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="demo-row">
+          <button class="demo-btn" data-demo="PCA">▶ PCA Demo</button>
+          <button class="demo-btn" data-demo="TSA">▶ TSA Demo</button>
+          <button class="demo-btn" data-demo="VRBA">▶ VRBA Demo</button>
+          <button class="demo-btn" data-demo="NA">▶ NA Demo</button>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        V1 detection confidence is a <b>heuristic score</b> derived from image quality, contrast, shape and detection stability — not a calibrated ML confidence, and not a microbial identification. Colony color/size/shape profiles are used only to improve detection and counting.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== ANALYSIS SCREEN ===================== -->
+  <div class="screen" id="screen-analysis">
+    <div class="workspace">
+
+      <!-- LEFT: agar switcher / plates / quality -->
+      <div class="left-col">
+        <div class="panel">
+          <h3>Plates in this experiment</h3>
+          <div id="plateList"></div>
+          <button class="add-plate-btn" id="addPlateBtn">+ Add Plate</button>
+        </div>
+        <div class="panel">
+          <h3>Image Quality</h3>
+          <div id="qualityBox"><div class="colony-empty">No image yet</div></div>
+        </div>
+        <div class="panel">
+          <h3>Plate Detection</h3>
+          <div id="plateDetectBox"><div class="colony-empty">—</div></div>
+        </div>
+        <div class="panel">
+          <h3>Notes</h3>
+          <textarea class="notes-area" id="plateNotes" placeholder="Plate notes..."></textarea>
+        </div>
+      </div>
+
+      <!-- CENTER: viewer -->
+      <div class="center-col">
+        <div class="panel" style="padding:12px 12px 16px;">
+          <div class="viewer-toolbar">
+            <div class="mode-tabs">
+              <button data-view="original" class="on">Original</button>
+              <button data-view="detection">Detection</button>
+              <button data-view="overlay">Overlay</button>
+            </div>
+            <button class="tool-btn" id="modeAdd">+ Add</button>
+            <button class="tool-btn" id="modeDelete">🗑 Delete</button>
+            <button class="tool-btn" id="modeMerge">⇄ Merge</button>
+            <button class="tool-btn" id="modeSplit">⑃ Split</button>
+            <button class="tool-btn" id="undoBtn">↺ Undo</button>
+            <button class="tool-btn" id="reanalyzeBtn">⟳ Re-run</button>
+            <div class="tb-spacer"></div>
+            <div class="zoom-group">
+              <button id="zoomOut">−</button>
+              <span class="zlabel" id="zoomLabel">100%</span>
+              <button id="zoomIn">+</button>
+              <button id="zoomFit">Fit</button>
+            </div>
+          </div>
+          <div class="stage" id="stage">
+            <div class="empty-stage" id="emptyStage">Upload or select a plate to begin analysis</div>
+            <div class="stage-inner" id="stageInner" style="display:none;">
+              <canvas id="canvasBase"></canvas>
+              <canvas id="canvasOverlay"></canvas>
+            </div>
+            <div class="badge-demo" id="demoBadge" style="display:none;">DEMO — Synthetic Example</div>
+            <div class="badge-plate" id="plateBadge" style="display:none;"></div>
+          </div>
+          <div class="stats-strip">
+            <div class="stat-cell"><div class="n" id="statTotal">0</div><div class="l">Colonies detected</div></div>
+            <div class="stat-cell high"><div class="n" id="statHigh">0</div><div class="l">High confidence</div></div>
+            <div class="stat-cell review"><div class="n" id="statReview">0</div><div class="l">Needs review</div></div>
+            <div class="stat-cell conf"><div class="n" id="statConf">—</div><div class="l">Detection confidence</div></div>
+          </div>
+          <div class="filter-row">
+            <button class="on" data-filter="all">Show all</button>
+            <button data-filter="high">High confidence only</button>
+            <button data-filter="review">Needs review</button>
+          </div>
+          <div class="warn-banner" id="warnBanner"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: list / detail / CFU -->
+      <div class="right-col">
+        <div class="panel">
+          <h3>Colonies</h3>
+          <div class="colony-list" id="colonyList"><div class="colony-empty">No colonies yet</div></div>
+          <div class="detail-card" id="detailCard"></div>
+        </div>
+
+        <div class="panel">
+          <h3>CFU Calculator</h3>
+          <div class="cfu-grid">
+            <div class="cfu-field">
+              <label>Colony Count</label>
+              <input type="number" id="cfuCount" readonly>
+            </div>
+            <div class="cfu-field">
+              <label>Dilution (10⁻ⁿ)</label>
+              <select id="dilutionExp">
+                <option value="0">10⁰ (undiluted)</option>
+                <option value="1" selected>10⁻¹</option>
+                <option value="2">10⁻²</option>
+                <option value="3">10⁻³</option>
+                <option value="4">10⁻⁴</option>
+                <option value="5">10⁻⁵</option>
+                <option value="6">10⁻⁶</option>
+                <option value="7">10⁻⁷</option>
+              </select>
+            </div>
+            <div class="cfu-field">
+              <label>Plated Volume (mL)</label>
+              <input type="number" id="platedVolume" value="0.1" step="0.01" min="0.001">
+            </div>
+            <div class="cfu-field">
+              <label>Agar Type</label>
+              <input type="text" id="plateAgarLabel" readonly>
+            </div>
+          </div>
+          <div class="tntc-row">
+            <button id="tntcBtn">Mark as TNTC</button>
+          </div>
+          <div class="cfu-readout">
+            <div class="val" id="cfuValue">—</div>
+            <div class="unit">CFU / mL</div>
+          </div>
+          <div class="export-row">
+            <button id="saveBtn">Save</button>
+            <button class="ghost" id="exportBtn">Export CSV</button>
+          </div>
+          <div class="disclaimer">Detected colony count and calculated CFU/mL are distinct values — CFU/mL is derived from the count via dilution and volume.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="historyModal">
+  <div class="modal">
+    <button class="modal-close" id="closeHistory">✕</button>
+    <h2>History</h2>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =========================================================================
+   ColonyCount — Agar Plate Colony Counter
+   Client-side computer-vision pipeline (no server, no external CV library).
+   Pipeline: detectPlate -> preprocessImage -> detectColonies(agarType)
+             -> calculateColonyScore -> calculateConfidence -> calculateCFU
+   Detection layer is separated (heuristicDetector now; aiDetector / hybrid
+   are stubbed for future YOLO / U-Net / ONNX-Runtime-Web swap-in).
+   ========================================================================= */
+
+/* ---------------------------------------------------------------------
+   1. AGAR PROFILES  (weights are intentionally editable in one place)
+   --------------------------------------------------------------------- */
+const agarProfiles = {
+  PCA:  { name:'PCA',  fullName:'Plate Count Agar',
+    detectionMode:'contrast-shape',
+    weights:{ contrast:0.30, size:0.18, shape:0.24, color:0.08, texture:0.12, halo:0.08 },
+    hueGate:null, agarTint:[214,196,163] },
+  TSA:  { name:'TSA',  fullName:'Tryptic Soy Agar',
+    detectionMode:'contrast-shape',
+    weights:{ contrast:0.28, size:0.16, shape:0.20, color:0.14, texture:0.14, halo:0.08 },
+    hueGate:null, agarTint:[221,203,170] },
+  VRBA: { name:'VRBA', fullName:'Violet Red Bile Agar',
+    detectionMode:'color-halo',
+    weights:{ contrast:0.18, size:0.12, shape:0.10, color:0.34, texture:0.06, halo:0.20 },
+    hueGate:[280,20], agarTint:[150,66,96] },
+  NA:   { name:'NA',   fullName:'Nutrient Agar',
+    detectionMode:'contrast-shape-soft',
+    weights:{ contrast:0.26, size:0.16, shape:0.14, color:0.14, texture:0.20, halo:0.10 },
+    hueGate:null, agarTint:[224,209,176] },
+  Custom:{ name:'Custom', fullName:'Custom Agar', detectionMode:'adaptive',
+    weights:{ contrast:0.24, size:0.16, shape:0.18, color:0.16, texture:0.16, halo:0.10 },
+    hueGate:null, agarTint:[210,200,180] }
+};
+
+/* ---------------------------------------------------------------------
+   2. STATE
+   --------------------------------------------------------------------- */
+const state = {
+  agarType:'PCA',
+  customAgar:{ name:'', sensitivity:50 },
+  experimentId:'exp_'+Date.now(),
+  plates:[],           // {id, agarType, image, w,h, plateDetect, quality, colonies, dilutionExp, volume, tntc, notes, isDemo, viewCanvasReady}
+  activePlateId:null,
+  view:'original',
+  editMode:'none',      // none|add|delete|merge|split
+  mergeSelect:[],
+  filter:'all',
+  zoom:1,
+  pan:{x:0,y:0},
+  activeColonyId:null,
+  history:[]
+};
+
+let ANALYSIS_MAX_DIM = 640;
+
+/* ---------------------------------------------------------------------
+   3. COLOR / MATH UTILS
+   --------------------------------------------------------------------- */
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function lerp(a,b,t){ return a+(b-a)*t; }
+
+function rgb2hsv(r,g,b){
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+  let h=0;
+  if(d!==0){
+    if(max===r) h=60*(((g-b)/d)%6);
+    else if(max===g) h=60*((b-r)/d+2);
+    else h=60*((r-g)/d+4);
+  }
+  if(h<0) h+=360;
+  const s = max===0?0:d/max;
+  return [h,s,max];
+}
+function rgb2xyz(r,g,b){
+  r/=255; g/=255; b/=255;
+  r = r>0.04045? Math.pow((r+0.055)/1.055,2.4): r/12.92;
+  g = g>0.04045? Math.pow((g+0.055)/1.055,2.4): g/12.92;
+  b = b>0.04045? Math.pow((b+0.055)/1.055,2.4): b/12.92;
+  r*=100; g*=100; b*=100;
+  return [ r*0.4124+g*0.3576+b*0.1805, r*0.2126+g*0.7152+b*0.0722, r*0.0193+g*0.1192+b*0.9505 ];
+}
+function rgb2lab(r,g,b){
+  let [x,y,z]=rgb2xyz(r,g,b);
+  x/=95.047; y/=100.0; z/=108.883;
+  const f=v=> v>0.008856? Math.cbrt(v) : (7.787*v+16/116);
+  x=f(x); y=f(y); z=f(z);
+  return [ (116*y)-16, 500*(x-y), 200*(y-z) ];
+}
+function hueGateScore(h, gate){
+  if(!gate) return 0.5;
+  const [lo,hi]=gate; // wraps through 0 (e.g. 280..20 covers purple->red->pink)
+  let inRange;
+  if(lo>hi) inRange = (h>=lo || h<=hi);
+  else inRange = (h>=lo && h<=hi);
+  if(inRange) return 1;
+  const dLo = Math.min(Math.abs(h-lo), 360-Math.abs(h-lo));
+  const dHi = Math.min(Math.abs(h-hi), 360-Math.abs(h-hi));
+  const d = Math.min(dLo,dHi);
+  return clamp(1-d/60,0,0.4);
+}
+
+/* ---------------------------------------------------------------------
+   4. IMAGE PROCESSING PRIMITIVES
+   --------------------------------------------------------------------- */
+function toGray(imgData){
+  const {data,width:w,height:h}=imgData;
+  const out=new Float32Array(w*h);
+  for(let i=0,p=0;i<data.length;i+=4,p++){
+    out[p]=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];
+  }
+  return out;
+}
+// summed-area-table box blur / mean filter — O(1) per pixel regardless of radius
+function boxBlur(src,w,h,radius){
+  if(radius<=0) return src.slice();
+  const integral=new Float64Array((w+1)*(h+1));
+  for(let y=0;y<h;y++){
+    let rowSum=0;
+    for(let x=0;x<w;x++){
+      rowSum+=src[y*w+x];
+      integral[(y+1)*(w+1)+(x+1)]=integral[y*(w+1)+(x+1)]+rowSum;
+    }
+  }
+  const out=new Float32Array(w*h);
+  for(let y=0;y<h;y++){
+    const y0=Math.max(0,y-radius), y1=Math.min(h-1,y+radius);
+    for(let x=0;x<w;x++){
+      const x0=Math.max(0,x-radius), x1=Math.min(w-1,x+radius);
+      const A=integral[y0*(w+1)+x0], B=integral[y0*(w+1)+(x1+1)];
+      const C=integral[(y1+1)*(w+1)+x0], D=integral[(y1+1)*(w+1)+(x1+1)];
+      const count=(x1-x0+1)*(y1-y0+1);
+      out[y*w+x]=(D-B-C+A)/count;
+    }
+  }
+  return out;
+}
+function localVariance(src,w,h,radius){
+  const mean=boxBlur(src,w,h,radius);
+  const sq=new Float32Array(w*h);
+  for(let i=0;i<src.length;i++) sq[i]=src[i]*src[i];
+  const meanSq=boxBlur(sq,w,h,radius);
+  const out=new Float32Array(w*h);
+  for(let i=0;i<src.length;i++) out[i]=Math.max(0,meanSq[i]-mean[i]*mean[i]);
+  return out;
+}
+function sobel(gray,w,h){
+  const gx=new Float32Array(w*h), gy=new Float32Array(w*h), mag=new Float32Array(w*h);
+  for(let y=1;y<h-1;y++){
+    for(let x=1;x<w-1;x++){
+      const i=y*w+x;
+      const a=gray[i-w-1],b=gray[i-w],c=gray[i-w+1];
+      const d=gray[i-1],f=gray[i+1];
+      const g=gray[i+w-1],hh=gray[i+w],k=gray[i+w+1];
+      const sx=(c+2*f+k)-(a+2*d+g);
+      const sy=(g+2*hh+k)-(a+2*b+c);
+      gx[i]=sx; gy[i]=sy; mag[i]=Math.sqrt(sx*sx+sy*sy);
+    }
+  }
+  return {gx,gy,mag};
+}
+function laplacianVariance(gray,w,h){
+  let sum=0,sumSq=0,n=0;
+  for(let y=1;y<h-1;y++){
+    for(let x=1;x<w-1;x++){
+      const i=y*w+x;
+      const lap = 4*gray[i]-gray[i-1]-gray[i+1]-gray[i-w]-gray[i+w];
+      sum+=lap; sumSq+=lap*lap; n++;
+    }
+  }
+  const mean=sum/n;
+  return sumSq/n-mean*mean;
+}
+
+/* ---------------------------------------------------------------------
+   5. PLATE DETECTION  — detectPlate(imageData)
+      simplified Hough-circle transform on Sobel edge points
+   --------------------------------------------------------------------- */
+function detectPlate(imgData){
+  const w0=imgData.width, h0=imgData.height;
+  const scale = 190/Math.max(w0,h0);
+  const w=Math.max(20,Math.round(w0*scale)), h=Math.max(20,Math.round(h0*scale));
+  const tmp=document.createElement('canvas'); tmp.width=w; tmp.height=h;
+  const tctx=tmp.getContext('2d');
+  tctx.drawImage(imgData.__srcCanvas,0,0,w,h);
+  const small=tctx.getImageData(0,0,w,h);
+  let gray=toGray(small);
+  gray=boxBlur(gray,w,h,1);
+  const {mag}=sobel(gray,w,h);
+
+  // pick top-percentile edge points, cap count for perf
+  const sorted=Array.from(mag).sort((a,b)=>b-a);
+  const thresh = sorted[Math.min(sorted.length-1, Math.floor(sorted.length*0.06))] || 1;
+  let edgePts=[];
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    if(mag[y*w+x]>=thresh && mag[y*w+x]>8) edgePts.push([x,y]);
+  }
+  if(edgePts.length>500){
+    const step=Math.ceil(edgePts.length/500);
+    edgePts=edgePts.filter((_,i)=>i%step===0);
+  }
+
+  let best={cx:w/2,cy:h/2,r:Math.min(w,h)*0.42,votes:0};
+  if(edgePts.length>20){
+    const minR=Math.round(Math.min(w,h)*0.28), maxR=Math.round(Math.min(w,h)*0.50);
+    const thetaSteps=24;
+    const acc=new Float32Array(w*h);
+    for(let r=minR;r<=maxR;r+=2){
+      acc.fill(0);
+      for(const [ex,ey] of edgePts){
+        for(let t=0;t<thetaSteps;t++){
+          const th=(t/thetaSteps)*Math.PI*2;
+          const cx=Math.round(ex-r*Math.cos(th));
+          const cy=Math.round(ey-r*Math.sin(th));
+          if(cx>=0&&cx<w&&cy>=0&&cy<h) acc[cy*w+cx]+=1;
+        }
+      }
+      let mi=0,mv=-1;
+      for(let i=0;i<acc.length;i++) if(acc[i]>mv){mv=acc[i]; mi=i;}
+      if(mv>best.votes){ best={cx:mi%w, cy:Math.floor(mi/w), r, votes:mv}; }
+    }
+  }
+  const confidence = clamp(best.votes/(edgePts.length*0.35+1),0.15,0.99);
+  return {
+    x: best.cx/scale, y: best.cy/scale, r: best.r/scale,
+    confidence: Math.round(confidence*100),
+    fallback: edgePts.length<=20
+  };
+}
+
+/* ---------------------------------------------------------------------
+   6. IMAGE QUALITY CHECK
+   --------------------------------------------------------------------- */
+function checkImageQuality(imgData, plateDetect){
+  const {width:w,height:h}=imgData;
+  const gray=toGray(imgData);
+  let sum=0; for(const v of gray) sum+=v;
+  const mean=sum/gray.length;
+  let variance=0; for(const v of gray) variance+=(v-mean)*(v-mean);
+  variance/=gray.length;
+  const stdev=Math.sqrt(variance);
+
+  const smallW=Math.min(w,300), smallH=Math.round(h*(smallW/w));
+  const sc=document.createElement('canvas'); sc.width=smallW; sc.height=smallH;
+  sc.getContext('2d').drawImage(imgData.__srcCanvas,0,0,smallW,smallH);
+  const sImg=sc.getContext('2d').getImageData(0,0,smallW,smallH);
+  const sGray=toGray(sImg);
+  const lapVar=laplacianVariance(sGray,smallW,smallH);
+
+  let brightPixels=0;
+  const {data}=imgData;
+  for(let i=0;i<data.length;i+=4){
+    if(data[i]>245 && data[i+1]>245 && data[i+2]>245) brightPixels++;
+  }
+  const reflectRatio = brightPixels/(data.length/4);
+
+  const resScore = Math.min(w,h)>=700?'good':(Math.min(w,h)>=350?'fair':'poor');
+  const brightScore = (mean>60&&mean<205)?'good':((mean>35&&mean<235)?'fair':'poor');
+  const contrastScore = stdev>28?'good':(stdev>14?'fair':'poor');
+  const focusScore = lapVar>60?'good':(lapVar>20?'fair':'poor');
+  const reflectScore = reflectRatio<0.01?'good':(reflectRatio<0.04?'fair':'poor');
+  const plateScore = plateDetect.confidence>=70?'good':(plateDetect.confidence>=40?'fair':'poor');
+
+  return { resolution:resScore, brightness:brightScore, contrast:contrastScore,
+           focus:focusScore, reflection:reflectScore, plateVisibility:plateScore,
+           meanBrightness:mean, stdev, lapVar };
+}
+
+/* ---------------------------------------------------------------------
+   7. PREPROCESS — background estimate + illumination correction
+   --------------------------------------------------------------------- */
+function circleMask(w,h,cx,cy,r){
+  const mask=new Uint8Array(w*h);
+  const r2=r*r;
+  const y0=Math.max(0,Math.floor(cy-r)), y1=Math.min(h-1,Math.ceil(cy+r));
+  const x0=Math.max(0,Math.floor(cx-r)), x1=Math.min(w-1,Math.ceil(cx+r));
+  for(let y=y0;y<=y1;y++){
+    for(let x=x0;x<=x1;x++){
+      const dx=x-cx, dy=y-cy;
+      if(dx*dx+dy*dy<=r2) mask[y*w+x]=1;
+    }
+  }
+  return mask;
+}
+function computeBackgroundStats(imgData, mask){
+  const {data,width:w,height:h}=imgData;
+  let n=0,rs=0,gs=0,bs=0;
+  const grayVals=[];
+  for(let p=0;p<w*h;p++){
+    if(!mask[p]) continue;
+    const i=p*4;
+    rs+=data[i]; gs+=data[i+1]; bs+=data[i+2]; n++;
+  }
+  if(n===0) n=1;
+  const meanR=rs/n, meanG=gs/n, meanB=bs/n;
+  const [h_,s_,v_]=rgb2hsv(meanR,meanG,meanB);
+  const [L,A,B]=rgb2lab(meanR,meanG,meanB);
+  return { meanRGB:[meanR,meanG,meanB], hue:h_, sat:s_, val:v_, L, A, B,
+           brightness:0.299*meanR+0.587*meanG+0.114*meanB };
+}
+function preprocessImage(imgData, mask){
+  const {width:w,height:h}=imgData;
+  let gray=toGray(imgData);
+  const illum=boxBlur(gray,w,h,Math.round(Math.max(w,h)*0.06)+6);
+  let globalSum=0,cnt=0;
+  for(let p=0;p<w*h;p++){ if(mask[p]){ globalSum+=gray[p]; cnt++; } }
+  const globalMean = cnt? globalSum/cnt : 128;
+  const normalized=new Float32Array(w*h);
+  for(let p=0;p<w*h;p++) normalized[p]=clamp(gray[p]-illum[p]+globalMean,0,255);
+  return { normalized, illum };
+}
+
+/* ---------------------------------------------------------------------
+   8. CONNECTED COMPONENTS
+   --------------------------------------------------------------------- */
+function labelComponents(mask,w,h){
+  const labels=new Int32Array(w*h);
+  const blobs=[];
+  const stack=new Int32Array(w*h);
+  let label=0;
+  for(let start=0;start<w*h;start++){
+    if(!mask[start] || labels[start]) continue;
+    label++;
+    let sp=0; stack[sp++]=start; labels[start]=label;
+    const pixels=[];
+    let minX=w,maxX=0,minY=h,maxY=0;
+    while(sp>0){
+      const p=stack[--sp];
+      const x=p%w, y=(p/w)|0;
+      pixels.push(p);
+      if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y;
+      if(x>0 && mask[p-1] && !labels[p-1]){labels[p-1]=label; stack[sp++]=p-1;}
+      if(x<w-1 && mask[p+1] && !labels[p+1]){labels[p+1]=label; stack[sp++]=p+1;}
+      if(y>0 && mask[p-w] && !labels[p-w]){labels[p-w]=label; stack[sp++]=p-w;}
+      if(y<h-1 && mask[p+w] && !labels[p+w]){labels[p+w]=label; stack[sp++]=p+w;}
+    }
+    blobs.push({pixels,minX,maxX,minY,maxY});
+  }
+  return blobs;
+}
+function blobBoundaryCount(pixels,mask,w,h){
+  let n=0;
+  const set=new Set(pixels);
+  for(const p of pixels){
+    const x=p%w, y=(p/w)|0;
+    let boundary=false;
+    if(x===0||x===w-1||y===0||y===h-1) boundary=true;
+    else if(!mask[p-1]||!mask[p+1]||!mask[p-w]||!mask[p+w]) boundary=true;
+    if(boundary) n++;
+  }
+  return n;
+}
+
+/* simplified split of an oversized (likely merged) blob via 2D k-means */
+function splitBlob(pixels,w,k){
+  const pts=pixels.map(p=>[p%w,(p/w)|0]);
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  for(const [x,y] of pts){ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; }
+  let centers=[];
+  for(let i=0;i<k;i++){
+    centers.push([ lerp(minX,maxX,(i+0.5)/k), lerp(minY,maxY,(i+0.5)/k) ]);
+  }
+  let assign=new Int32Array(pts.length);
+  for(let iter=0;iter<6;iter++){
+    for(let pi=0;pi<pts.length;pi++){
+      let bi=0,bd=Infinity;
+      for(let ci=0;ci<k;ci++){
+        const dx=pts[pi][0]-centers[ci][0], dy=pts[pi][1]-centers[ci][1];
+        const d=dx*dx+dy*dy;
+        if(d<bd){bd=d;bi=ci;}
+      }
+      assign[pi]=bi;
+    }
+    const sums=Array.from({length:k},()=>[0,0,0]);
+    for(let pi=0;pi<pts.length;pi++){
+      const c=sums[assign[pi]]; c[0]+=pts[pi][0]; c[1]+=pts[pi][1]; c[2]++;
+    }
+    for(let ci=0;ci<k;ci++){ if(sums[ci][2]>0) centers[ci]=[sums[ci][0]/sums[ci][2], sums[ci][1]/sums[ci][2]]; }
+  }
+  const groups=Array.from({length:k},()=>[]);
+  for(let pi=0;pi<pts.length;pi++) groups[assign[pi]].push(pixels[pi]);
+  return groups.filter(g=>g.length>0);
+}
+
+/* ---------------------------------------------------------------------
+   9. COLONY DETECTION — per agar-type candidate mask + multi-feature score
+   --------------------------------------------------------------------- */
+function buildCandidateMask(agarType, normalized, imgData, plateMask, bgStats, w, h, sensitivity){
+  const profile=agarProfiles[agarType]||agarProfiles.Custom;
+  const localMean=boxBlur(normalized,w,h,5);
+  const localVar=localVariance(normalized,w,h,5);
+  const {data}=imgData;
+  const candidate=new Uint8Array(w*h);
+  const baseThresh = 10 + (100-sensitivity)*0.18; // lower sensitivity -> higher threshold
+
+  for(let p=0;p<w*h;p++){
+    if(!plateMask[p]) continue;
+    const diff=Math.abs(normalized[p]-localMean[p]);
+    const contrastPix = diff/45;
+    let score = contrastPix*0.6 + Math.min(localVar[p]/300,1)*0.2;
+
+    if(profile.detectionMode==='color-halo'){
+      const i=p*4;
+      const [hue,sat]=rgb2hsv(data[i],data[i+1],data[i+2]);
+      const hueScore=hueGateScore(hue,profile.hueGate);
+      const satBoost = sat>0.28?1:0.5;
+      score = score*0.35 + hueScore*satBoost*0.65;
+    } else if(profile.detectionMode==='contrast-shape-soft'){
+      score = score*0.85 + Math.min(localVar[p]/220,1)*0.15;
+    }
+    if(score*100 > baseThresh) candidate[p]=1;
+  }
+  return candidate;
+}
+
+function ringMeanColor(centerPixels, radius, imgData, w, h, plateMask){
+  const {data}=imgData;
+  const pxSet=new Set(centerPixels);
+  const cxs=centerPixels.map(p=>p%w), cys=centerPixels.map(p=>(p/w)|0);
+  const minX=Math.max(0,Math.min(...cxs)-radius), maxX=Math.min(w-1,Math.max(...cxs)+radius);
+  const minY=Math.max(0,Math.min(...cys)-radius), maxY=Math.min(h-1,Math.max(...cys)+radius);
+  // approximate ring: pixels within radius of bbox center-ish shape but not in blob
+  let n=0,rs=0,gs=0,bs=0;
+  const cx=(Math.min(...cxs)+Math.max(...cxs))/2, cy=(Math.min(...cys)+Math.max(...cys))/2;
+  const inner=Math.max(...cxs.map((x,i)=>Math.hypot(x-cx,cys[i]-cy)))+1;
+  for(let y=minY;y<=maxY;y++){
+    for(let x=minX;x<=maxX;x++){
+      const p=y*w+x;
+      if(!plateMask[p] || pxSet.has(p)) continue;
+      const d=Math.hypot(x-cx,y-cy);
+      if(d>=inner && d<=inner+radius){
+        const i=p*4; rs+=data[i]; gs+=data[i+1]; bs+=data[i+2]; n++;
+      }
+    }
+  }
+  if(n===0) return null;
+  return [rs/n,gs/n,bs/n];
+}
+
+function computeBlobFeatures(pixels, imgData, mask, w, h, bgStats, mmPerPx, gradMag){
+  const {data}=imgData;
+  const n=pixels.length;
+  let rs=0,gs=0,bs=0, sumGray=0, sumGraySq=0;
+  let minX=w,maxX=0,minY=h,maxY=0;
+  const grayArr=[];
+  for(const p of pixels){
+    const i=p*4;
+    rs+=data[i]; gs+=data[i+1]; bs+=data[i+2];
+    const g=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];
+    sumGray+=g; sumGraySq+=g*g; grayArr.push(g);
+    const x=p%w, y=(p/w)|0;
+    if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y;
+  }
+  const meanR=rs/n, meanG=gs/n, meanB=bs/n;
+  const [hue,sat,val]=rgb2hsv(meanR,meanG,meanB);
+  const [L,A,B]=rgb2lab(meanR,meanG,meanB);
+  const meanGray=sumGray/n;
+  const varGray=Math.max(0,sumGraySq/n-meanGray*meanGray);
+  const area=n;
+  const diameterPx=2*Math.sqrt(area/Math.PI);
+  const bboxW=maxX-minX+1, bboxH=maxY-minY+1;
+  const aspectRatio=Math.max(bboxW,bboxH)/Math.max(1,Math.min(bboxW,bboxH));
+  const perimeter=Math.max(4,blobBoundaryCount(pixels,mask,w,h));
+  let circularity=clamp((4*Math.PI*area)/(perimeter*perimeter),0,1);
+
+  let edgeSum=0,edgeN=0;
+  for(const p of pixels){
+    const x=p%w,y=(p/w)|0;
+    if(x===0||x===w-1||y===0||y===h-1) continue;
+    if(!mask[p-1]||!mask[p+1]||!mask[p-w]||!mask[p+w]){ edgeSum+=gradMag[p]; edgeN++; }
+  }
+  const edgeStrength=edgeN? edgeSum/edgeN : 0;
+  const contrast=Math.abs(meanGray-bgStats.brightness);
+
+  const ring=ringMeanColor(pixels, Math.max(3,Math.round(diameterPx*0.35)), imgData, w, h, mask);
+  let haloScore=0;
+  if(ring){
+    const ringBright=0.299*ring[0]+0.587*ring[1]+0.114*ring[2];
+    const brightDiff=Math.abs(ringBright-bgStats.brightness)/40;
+    const [ringHue,ringSat]=rgb2hsv(ring[0],ring[1],ring[2]);
+    const satDrop=clamp((bgStats.sat-ringSat)*1.4,0,1);
+    haloScore=clamp(brightDiff*0.6+satDrop*0.4,0,1);
+  }
+
+  return {
+    x:(minX+maxX)/2, y:(minY+maxY)/2,
+    area, diameter:diameterPx, areaMm2: area*mmPerPx*mmPerPx,
+    diameterMm: diameterPx*mmPerPx,
+    circularity, aspectRatio, perimeter,
+    meanRGB:[meanR,meanG,meanB], hue, sat, val, L, A, B,
+    contrast, textureScore:Math.sqrt(varGray), edgeStrength, haloScore
+  };
+}
+
+function scoreCandidateBlob(feat, profile, sizeStats){
+  const contrastScore=clamp(feat.contrast/55,0,1);
+  const sizeRatio=feat.area/(sizeStats.median||feat.area);
+  const sizeScore = sizeRatio<0.15?0.05 : clamp(1-Math.abs(Math.log(sizeRatio))/1.6,0,1);
+  const shapeScore = clamp(feat.circularity*0.75 + clamp(1/feat.aspectRatio,0,1)*0.25,0,1);
+  const colorScore = profile.hueGate? hueGateScore(feat.hue,profile.hueGate)*clamp(feat.sat*1.6,0,1) : clamp(feat.sat*0.5+0.3,0,1);
+  const textureScore = clamp(feat.textureScore/26,0,1);
+  const haloScore = feat.haloScore;
+  const w=profile.weights;
+  const score = contrastScore*w.contrast + sizeScore*w.size + shapeScore*w.shape +
+                colorScore*w.color + textureScore*w.texture + haloScore*w.halo;
+  return { score:clamp(score,0,1), parts:{contrastScore,sizeScore,shapeScore,colorScore,textureScore,haloScore} };
+}
+
+function classifyConfidence(score){
+  if(score>=0.72) return 'high';
+  if(score>=0.50) return 'medium';
+  if(score>=0.30) return 'low';
+  return 'noise';
+}
+
+/* main orchestration */
+function detectColonies(imgData, agarType, customSensitivity){
+  const w=imgData.width, h=imgData.height;
+  const plateDetect=detectPlate(imgData);
+  const pd={ x:plateDetect.x*(w/imgData.__origW), y:plateDetect.y*(h/imgData.__origH), r:plateDetect.r*(w/imgData.__origW) };
+  const mask=circleMask(w,h,pd.x,pd.y,pd.r*0.97);
+  const bgStats=computeBackgroundStats(imgData,mask);
+  const {normalized}=preprocessImage(imgData,mask);
+  const gray=toGray(imgData);
+  const {mag}=sobel(boxBlur(gray,w,h,1),w,h);
+
+  const profile=agarProfiles[agarType]||agarProfiles.Custom;
+  const sensitivity = agarType==='Custom'? customSensitivity : 55;
+  const candidate=buildCandidateMask(agarType,normalized,imgData,mask,bgStats,w,h,sensitivity);
+
+  let blobs=labelComponents(candidate,w,h);
+  const plateAreaPx=Math.PI*pd.r*pd.r;
+  blobs=blobs.filter(b=>b.pixels.length>=3 && b.pixels.length < plateAreaPx*0.2);
+
+  // rough size stats for splitting + relative size scoring
+  const areas=blobs.map(b=>b.pixels.length).sort((a,b2)=>a-b2);
+  const median = areas.length? areas[Math.floor(areas.length/2)] : 20;
+
+  const mmPerPx = 90/(pd.r*2); // assume standard 90mm petri dish for physical scale
+
+  let finalPixGroups=[];
+  for(const b of blobs){
+    if(b.pixels.length > median*2.2 && median>0){
+      const k=Math.min(6,Math.max(2,Math.round(b.pixels.length/median)));
+      finalPixGroups.push(...splitBlob(b.pixels,w,k).filter(g=>g.length>=3));
+    } else {
+      finalPixGroups.push(b.pixels);
+    }
+  }
+
+  const colonies=[];
+  let id=1;
+  for(const pixels of finalPixGroups){
+    const feat=computeBlobFeatures(pixels,imgData,mask,w,h,bgStats,mmPerPx,mag);
+    const {score,parts}=scoreCandidateBlob(feat,profile,{median});
+    const confidence=classifyConfidence(score);
+    if(confidence==='noise') continue;
+    colonies.push(Object.assign({ id:id++, confidence, score, manuallyAdded:false }, feat, {parts}));
+  }
+  return { colonies, plateDetect:{ x:plateDetect.x, y:plateDetect.y, r:plateDetect.r, confidence:plateDetect.confidence },
+           bgStats, candidateMaskPreview:candidate, analysisW:w, analysisH:h, mmPerPx };
+}
+
+/* future extension points (not implemented in V1) */
+function detectColoniesAI(){ /* TODO: TF.js / ONNX-Runtime-Web model inference */ return null; }
+function detectColoniesHybrid(imgData,agarType){
+  return detectColonies(imgData,agarType, state.customAgar.sensitivity); // currently == heuristic
+}
+
+/* ---------------------------------------------------------------------
+   10. CFU
+   --------------------------------------------------------------------- */
+function calculateCFU(count, dilutionExp, volumeMl){
+  if(volumeMl<=0) return 0;
+  const factor=Math.pow(10,dilutionExp);
+  return count*factor/volumeMl;
+}
+function calculateConfidence(plate){
+  const active=activeColoniesOf(plate);
+  if(active.length===0) return plate.plateDetect? plate.plateDetect.confidence : 0;
+  const avg=active.reduce((s,c)=>s+c.score,0)/active.length;
+  const qualityFactor = plate.quality? ({good:1,fair:0.85,poor:0.65}[plate.quality.focus]||0.85) : 0.85;
+  return Math.round(clamp(avg*qualityFactor*100 + (plate.plateDetect.confidence-70)*0.15,10,99));
+}
+
+/* =========================================================================
+   UI LAYER
+   ========================================================================= */
+function activeColoniesOf(plate){
+  return plate.colonies.filter(c=>!c.manuallyDeleted);
+}
+function activePlate(){ return state.plates.find(p=>p.id===state.activePlateId); }
+
+function uid(prefix){ return prefix+'_'+Math.random().toString(36).slice(2,9); }
+
+/* ---- Setup screen ---- */
+const agarGrid=document.getElementById('agarGrid');
+function renderAgarGrid(){
+  agarGrid.innerHTML='';
+  Object.values(agarProfiles).forEach(p=>{
+    const el=document.createElement('div');
+    el.className='agar-opt'+(state.agarType===p.name?' selected':'');
+    el.innerHTML=`<strong>${p.name}</strong><span>${p.fullName}</span>`;
+    el.onclick=()=>{ state.agarType=p.name; renderAgarGrid();
+      document.getElementById('customFields').classList.toggle('show', p.name==='Custom'); };
+    agarGrid.appendChild(el);
+  });
+}
+renderAgarGrid();
+document.getElementById('customSens').oninput=e=>{
+  state.customAgar.sensitivity=+e.target.value;
+  document.getElementById('customSensVal').textContent=e.target.value;
+};
+document.getElementById('customName').oninput=e=> state.customAgar.name=e.target.value;
+
+const dropZone=document.getElementById('dropZone');
+const fileInput=document.getElementById('fileInput');
+dropZone.onclick=()=>fileInput.click();
+dropZone.ondragover=e=>{ e.preventDefault(); dropZone.classList.add('dragover'); };
+dropZone.ondragleave=()=> dropZone.classList.remove('dragover');
+dropZone.ondrop=e=>{
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+};
+fileInput.onchange=e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); };
+
+document.querySelectorAll('.demo-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    state.agarType=btn.dataset.demo;
+    renderAgarGrid();
+    const dataUrl=generateSyntheticPlate(btn.dataset.demo);
+    loadImageFromDataUrl(dataUrl, true);
+  };
+});
+
+function handleFile(file){
+  const reader=new FileReader();
+  reader.onload=e=> loadImageFromDataUrl(e.target.result,false);
+  reader.readAsDataURL(file);
+}
+
+function loadImageFromDataUrl(dataUrl, isDemo){
+  const img=new Image();
+  img.onload=()=>{
+    const plate={
+      id:uid('plate'), agarType:state.agarType,
+      customAgar: state.agarType==='Custom'? {...state.customAgar} : null,
+      imgEl:img, w:img.naturalWidth, h:img.naturalHeight,
+      colonies:[], plateDetect:null, quality:null,
+      dilutionExp:1, volume:0.1, tntc:false, notes:'', isDemo:!!isDemo,
+      view:'original', undoStack:[]
+    };
+    state.plates.push(plate);
+    state.activePlateId=plate.id;
+    switchScreen('analysis');
+    runAnalysis(plate);
+    renderAll();
+  };
+  img.src=dataUrl;
+}
+
+/* ---- screen switching ---- */
+function switchScreen(name){
+  document.getElementById('screen-setup').classList.toggle('active', name==='setup');
+  document.getElementById('screen-analysis').classList.toggle('active', name==='analysis');
+}
+
+/* ---- run full pipeline on a plate ---- */
+function runAnalysis(plate){
+  const cnv=document.createElement('canvas');
+  cnv.width=plate.w; cnv.height=plate.h;
+  const ctx=cnv.getContext('2d');
+  ctx.drawImage(plate.imgEl,0,0);
+
+  // downscale for analysis
+  const scale=Math.min(1, ANALYSIS_MAX_DIM/Math.max(plate.w,plate.h));
+  const aw=Math.max(1,Math.round(plate.w*scale)), ah=Math.max(1,Math.round(plate.h*scale));
+  const acnv=document.createElement('canvas'); acnv.width=aw; acnv.height=ah;
+  const actx=acnv.getContext('2d');
+  actx.drawImage(plate.imgEl,0,0,aw,ah);
+  const aImgData=actx.getImageData(0,0,aw,ah);
+  aImgData.__srcCanvas=acnv; aImgData.__origW=plate.w; aImgData.__origH=plate.h;
+
+  const fullImgDataForQuality=ctx.getImageData(0,0,plate.w,plate.h);
+  fullImgDataForQuality.__srcCanvas=cnv;
+
+  const sensitivity= plate.agarType==='Custom' && plate.customAgar? plate.customAgar.sensitivity : 55;
+  const result=detectColonies(aImgData, plate.agarType, sensitivity);
+
+  plate.quality=checkImageQuality(fullImgDataForQuality, result.plateDetect);
+  plate.plateDetect={
+    x:result.plateDetect.x/scale, y:result.plateDetect.y/scale, r:result.plateDetect.r/scale,
+    confidence:result.plateDetect.confidence
+  };
+  plate.colonies=result.colonies.map(c=>({
+    ...c,
+    x:c.x/scale, y:c.y/scale, diameter:c.diameter/scale
+  }));
+  plate.analysisScale=scale;
+  plate.mmPerPx=result.mmPerPx/scale;
+  plate.bgStats=result.bgStats;
+  plate.candidateMaskPreview=result.candidateMaskPreview;
+  plate.candidateW=result.analysisW; plate.candidateH=result.analysisH;
+  plate.detectConfidence=calculateConfidence(plate);
+  plate.baseCanvas=cnv;
+}
+
+/* ---- Rendering: left column ---- */
+function renderPlateList(){
+  const list=document.getElementById('plateList');
+  list.innerHTML='';
+  if(state.plates.length===0){ list.innerHTML='<div class="colony-empty">No plates yet</div>'; return; }
+  state.plates.forEach((p,idx)=>{
+    const active=activeColoniesOf(p);
+    const el=document.createElement('div');
+    el.className='plate-list-item'+(p.id===state.activePlateId?' active':'');
+    el.innerHTML=`<span>Plate ${idx+1} · ${p.agarType}</span><span class="${p.tntc?'tntc':'cnt'}">${p.tntc?'TNTC':active.length}</span>`;
+    el.onclick=()=>{ state.activePlateId=p.id; state.activeColonyId=null; renderAll(); };
+    list.appendChild(el);
+  });
+}
+document.getElementById('addPlateBtn').onclick=()=> switchScreen('setup');
+
+function renderQuality(){
+  const box=document.getElementById('qualityBox');
+  const dbox=document.getElementById('plateDetectBox');
+  const p=activePlate();
+  if(!p || !p.quality){ box.innerHTML='<div class="colony-empty">No image yet</div>'; dbox.innerHTML='<div class="colony-empty">—</div>'; return; }
+  const rows=[['Resolution','resolution'],['Brightness','brightness'],['Contrast','contrast'],['Focus','focus'],['Reflection','reflection'],['Plate detection','plateVisibility']];
+  box.innerHTML=rows.map(([label,key])=>{
+    const v=p.quality[key];
+    return `<div class="qrow"><span>${label}</span><span class="qtag ${v}">${v==='good'?'Good':v==='fair'?'Fair':'Poor'}</span></div>`;
+  }).join('');
+  dbox.innerHTML=`<div class="qrow"><span>Confidence</span><b style="font-family:var(--readout)">${p.plateDetect.confidence}%</b></div>
+    <div class="qrow"><span>Radius (px)</span><span>${Math.round(p.plateDetect.r)}</span></div>
+    <div class="qrow"><span>Assumed size</span><span>⌀ 90 mm</span></div>
+    ${p.plateDetect.confidence<40?'<div style="color:var(--warn);font-size:11.5px;margin-top:6px;">Low-confidence plate outline — verify crop manually.</div>':''}`;
+}
+
+/* ---- Canvas / stage rendering ---- */
+const stage=document.getElementById('stage');
+const stageInner=document.getElementById('stageInner');
+const canvasBase=document.getElementById('canvasBase');
+const canvasOverlay=document.getElementById('canvasOverlay');
+
+function drawStage(){
+  const p=activePlate();
+  const emptyEl=document.getElementById('emptyStage');
+  if(!p){ emptyEl.style.display='flex'; stageInner.style.display='none'; document.getElementById('demoBadge').style.display='none'; document.getElementById('plateBadge').style.display='none'; return; }
+  emptyEl.style.display='none';
+  stageInner.style.display='block';
+  document.getElementById('demoBadge').style.display=p.isDemo?'block':'none';
+  document.getElementById('plateBadge').style.display='block';
+  document.getElementById('plateBadge').textContent=`${p.agarType} · ${activeColoniesOf(p).length} colonies`;
+
+  canvasBase.width=p.w; canvasBase.height=p.h;
+  canvasOverlay.width=p.w; canvasOverlay.height=p.h;
+  const bctx=canvasBase.getContext('2d');
+
+  if(state.view==='original'){
+    bctx.drawImage(p.baseCanvas,0,0);
+  } else if(state.view==='detection'){
+    bctx.fillStyle='#111'; bctx.fillRect(0,0,p.w,p.h);
+    bctx.drawImage(p.baseCanvas,0,0);
+    bctx.globalAlpha=0.55; bctx.fillStyle='#000'; bctx.fillRect(0,0,p.w,p.h); bctx.globalAlpha=1;
+    // overlay candidate mask (scaled up) in cyan
+    const cw=p.candidateW, ch=p.candidateH, scale=p.analysisScale;
+    const maskCanvas=document.createElement('canvas'); maskCanvas.width=cw; maskCanvas.height=ch;
+    const mctx=maskCanvas.getContext('2d');
+    const mImg=mctx.createImageData(cw,ch);
+    for(let i=0;i<p.candidateMaskPreview.length;i++){
+      if(p.candidateMaskPreview[i]){ mImg.data[i*4]=90; mImg.data[i*4+1]=230; mImg.data[i*4+2]=210; mImg.data[i*4+3]=200; }
+    }
+    mctx.putImageData(mImg,0,0);
+    bctx.imageSmoothingEnabled=false;
+    bctx.drawImage(maskCanvas,0,0,cw/scale,ch/scale);
+    // plate circle
+    bctx.strokeStyle='rgba(255,255,255,0.5)'; bctx.lineWidth=2;
+    bctx.beginPath(); bctx.arc(p.plateDetect.x,p.plateDetect.y,p.plateDetect.r,0,Math.PI*2); bctx.stroke();
+  } else {
+    bctx.drawImage(p.baseCanvas,0,0);
+  }
+
+  const octx=canvasOverlay.getContext('2d');
+  octx.clearRect(0,0,p.w,p.h);
+  if(state.view!=='original'){
+    octx.strokeStyle='rgba(233,232,222,0.55)'; octx.lineWidth=Math.max(1,p.w*0.0018);
+    octx.setLineDash([6,5]);
+    octx.beginPath(); octx.arc(p.plateDetect.x,p.plateDetect.y,p.plateDetect.r,0,Math.PI*2); octx.stroke();
+    octx.setLineDash([]);
+  }
+  if(state.view!=='detection' || state.view==='overlay'){
+    let list=activeColoniesOf(p);
+    if(state.filter==='high') list=list.filter(c=>c.confidence==='high');
+    if(state.filter==='review') list=list.filter(c=>c.confidence==='medium'||c.confidence==='low');
+    const rScale=Math.max(1,p.w/900);
+    list.forEach((c,idx)=>{
+      const color = c.confidence==='high'?'#2E7D5B': c.confidence==='medium'?'#C98A2C':'#A6333F';
+      octx.beginPath();
+      octx.arc(c.x,c.y,Math.max(4*rScale,c.diameter/2),0,Math.PI*2);
+      octx.strokeStyle=color; octx.lineWidth=Math.max(1.4,2*rScale);
+      if(c.id===state.activeColonyId){ octx.lineWidth=Math.max(2.5,3.4*rScale); octx.strokeStyle='#EAF1EE'; }
+      octx.stroke();
+      if(c.manuallyAdded){ octx.setLineDash([3,2]); octx.stroke(); octx.setLineDash([]); }
+    });
+  }
+}
+
+function applyTransform(){
+  stageInner.style.transform=`translate(${state.pan.x}px,${state.pan.y}px) scale(${state.zoom})`;
+  document.getElementById('zoomLabel').textContent=Math.round(state.zoom*100)+'%';
+}
+function fitZoom(){
+  const p=activePlate(); if(!p) return;
+  const rect=stage.getBoundingClientRect();
+  state.zoom=Math.min(rect.width/p.w, rect.height/p.h)*0.97;
+  state.pan={x:(rect.width-p.w*state.zoom)/2, y:(rect.height-p.h*state.zoom)/2};
+  applyTransform();
+}
+document.getElementById('zoomIn').onclick=()=>{ state.zoom=clamp(state.zoom*1.25,0.1,6); applyTransform(); };
+document.getElementById('zoomOut').onclick=()=>{ state.zoom=clamp(state.zoom/1.25,0.1,6); applyTransform(); };
+document.getElementById('zoomFit').onclick=fitZoom;
+stage.addEventListener('wheel',e=>{
+  if(!activePlate()) return;
+  e.preventDefault();
+  const delta=e.deltaY<0?1.08:0.92;
+  state.zoom=clamp(state.zoom*delta,0.1,6);
+  applyTransform();
+},{passive:false});
+
+let panning=false, panStart=null;
+stage.addEventListener('mousedown',e=>{
+  if(!activePlate()) return;
+  if(state.editMode==='add'){ handleAddClick(e); return; }
+  if(state.editMode==='delete' || state.editMode==='merge' || state.editMode==='split'){ handleColonyClick(e); return; }
+  panning=true; stage.classList.add('panning');
+  panStart={x:e.clientX-state.pan.x, y:e.clientY-state.pan.y};
+});
+window.addEventListener('mousemove',e=>{
+  if(!panning) return;
+  state.pan={x:e.clientX-panStart.x, y:e.clientY-panStart.y};
+  applyTransform();
+});
+window.addEventListener('mouseup',()=>{ panning=false; stage.classList.remove('panning'); });
+
+function stageToImageCoords(e){
+  const p=activePlate();
+  const rect=stage.getBoundingClientRect();
+  const sx=(e.clientX-rect.left-state.pan.x)/state.zoom;
+  const sy=(e.clientY-rect.top-state.pan.y)/state.zoom;
+  return {x:sx,y:sy};
+}
+function handleAddClick(e){
+  const p=activePlate(); if(!p) return;
+  const {x,y}=stageToImageCoords(e);
+  const active=activeColoniesOf(p);
+  const medArea = active.length? active.map(c=>c.area).sort((a,b)=>a-b)[Math.floor(active.length/2)] : Math.PI*(p.mmPerPx?9:9);
+  const diameter = active.length? active.reduce((s,c)=>s+c.diameter,0)/active.length : 14;
+  pushUndo(p);
+  p.colonies.push({
+    id: Math.max(0,...p.colonies.map(c=>c.id))+1, x, y, area:medArea, diameter,
+    diameterMm: diameter*(p.mmPerPx||0.14), areaMm2: medArea*(p.mmPerPx||0.14)*(p.mmPerPx||0.14),
+    circularity:1, aspectRatio:1, perimeter:Math.PI*diameter,
+    meanRGB:[200,200,200], hue:0, sat:0, val:0.8, L:80,A:0,B:0,
+    contrast:40, textureScore:5, edgeStrength:30, haloScore:0,
+    confidence:'high', score:1, manuallyAdded:true, parts:{}
+  });
+  refreshCountsAndRender();
+}
+function handleColonyClick(e){
+  const p=activePlate(); if(!p) return;
+  const {x,y}=stageToImageCoords(e);
+  const list=activeColoniesOf(p);
+  let closest=null, bestD=Infinity;
+  for(const c of list){
+    const d=Math.hypot(c.x-x,c.y-y);
+    if(d<bestD){bestD=d; closest=c;}
+  }
+  if(!closest || bestD>Math.max(30,closest.diameter)) return;
+
+  if(state.editMode==='delete'){
+    pushUndo(p);
+    closest.manuallyDeleted=true;
+    refreshCountsAndRender();
+  } else if(state.editMode==='merge'){
+    state.mergeSelect.push(closest.id);
+    if(state.mergeSelect.length===2){
+      pushUndo(p);
+      const [a,b]=state.mergeSelect.map(id=>p.colonies.find(c=>c.id===id));
+      if(a && b){
+        a.x=(a.x+b.x)/2; a.y=(a.y+b.y)/2;
+        a.area=a.area+b.area; a.diameter=2*Math.sqrt(a.area/Math.PI);
+        a.diameterMm=a.diameter*(p.mmPerPx||0.14);
+        b.manuallyDeleted=true;
+      }
+      state.mergeSelect=[];
+      refreshCountsAndRender();
+    }
+  } else if(state.editMode==='split'){
+    pushUndo(p);
+    const newArea=closest.area/2, newDiam=2*Math.sqrt(newArea/Math.PI);
+    closest.area=newArea; closest.diameter=newDiam; closest.diameterMm=newDiam*(p.mmPerPx||0.14);
+    const offset=newDiam*0.55;
+    closest.x-=offset/2;
+    p.colonies.push({...closest, id:Math.max(0,...p.colonies.map(c=>c.id))+1, x:closest.x+offset, manuallyAdded:true, manuallyDeleted:false});
+    refreshCountsAndRender();
+  }
+}
+function pushUndo(p){
+  p.undoStack=p.undoStack||[];
+  p.undoStack.push(JSON.parse(JSON.stringify(p.colonies)));
+  if(p.undoStack.length>15) p.undoStack.shift();
+}
+document.getElementById('undoBtn').onclick=()=>{
+  const p=activePlate(); if(!p || !p.undoStack || !p.undoStack.length) return;
+  p.colonies=p.undoStack.pop();
+  refreshCountsAndRender();
+};
+document.getElementById('reanalyzeBtn').onclick=()=>{
+  const p=activePlate(); if(!p) return;
+  runAnalysis(p);
+  renderAll();
+};
+
+['modeAdd','modeDelete','modeMerge','modeSplit'].forEach(id=>{
+  document.getElementById(id).onclick=()=>{
+    const map={modeAdd:'add',modeDelete:'delete',modeMerge:'merge',modeSplit:'split'};
+    const mode=map[id];
+    state.editMode = state.editMode===mode? 'none' : mode;
+    state.mergeSelect=[];
+    ['modeAdd','modeDelete','modeMerge','modeSplit'].forEach(i=>document.getElementById(i).classList.toggle('on', i===id && state.editMode!=='none'));
+    stage.classList.toggle('adding', state.editMode==='add');
+  };
+});
+
+document.querySelectorAll('.mode-tabs button').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.mode-tabs button').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    state.view=btn.dataset.view;
+    drawStage();
+  };
+});
+document.querySelectorAll('.filter-row button').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.filter-row button').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    state.filter=btn.dataset.filter;
+    renderColonyList(); drawStage();
+  };
+});
+
+/* ---- stats / colony list / detail ---- */
+function refreshCountsAndRender(){
+  const p=activePlate();
+  if(p) p.detectConfidence=calculateConfidence(p);
+  renderAll();
+}
+function renderStats(){
+  const p=activePlate();
+  const total=p? activeColoniesOf(p).length : 0;
+  const high=p? activeColoniesOf(p).filter(c=>c.confidence==='high').length : 0;
+  const review=p? activeColoniesOf(p).filter(c=>c.confidence==='medium'||c.confidence==='low').length : 0;
+  document.getElementById('statTotal').textContent=p&&p.tntc?'TNTC':total;
+  document.getElementById('statHigh').textContent=high;
+  document.getElementById('statReview').textContent=review;
+  document.getElementById('statConf').textContent=p? p.detectConfidence+'%':'—';
+
+  const warn=document.getElementById('warnBanner');
+  warn.classList.remove('show','bad');
+  if(p && !p.tntc){
+    if(total>0 && total<25){
+      warn.textContent='Very Low Count — colonies below typical countable range. Consider reviewing the dilution selected.';
+      warn.classList.add('show');
+    } else if(total>=250 && total<400){
+      warn.textContent='High Colony Density — some colonies may overlap. Manual review recommended.';
+      warn.classList.add('show');
+    } else if(total>=400){
+      warn.textContent='Possible TNTC — individual colonies may not be reliably separable at this density.';
+      warn.classList.add('show'); warn.classList.add('bad');
+    }
+  }
+}
+function renderColonyList(){
+  const p=activePlate();
+  const listEl=document.getElementById('colonyList');
+  if(!p || activeColoniesOf(p).length===0){ listEl.innerHTML='<div class="colony-empty">No colonies yet</div>'; return; }
+  let list=activeColoniesOf(p);
+  if(state.filter==='high') list=list.filter(c=>c.confidence==='high');
+  if(state.filter==='review') list=list.filter(c=>c.confidence==='medium'||c.confidence==='low');
+  listEl.innerHTML='';
+  list.sort((a,b)=>a.id-b.id).forEach(c=>{
+    const row=document.createElement('div');
+    row.className='colony-row';
+    const dotClass=c.confidence==='high'?'dot-high':c.confidence==='medium'?'dot-med':'dot-low';
+    row.innerHTML=`<span><span class="dot-conf ${dotClass}"></span>Colony #${c.id}</span><span>${Math.round(c.score*100)||100}%</span>`;
+    row.onclick=()=>{ state.activeColonyId=c.id; renderDetail(); drawStage(); };
+    listEl.appendChild(row);
+  });
+}
+function renderDetail(){
+  const p=activePlate();
+  const card=document.getElementById('detailCard');
+  if(!p || state.activeColonyId==null){ card.classList.remove('show'); return; }
+  const c=p.colonies.find(x=>x.id===state.activeColonyId && !x.manuallyDeleted);
+  if(!c){ card.classList.remove('show'); return; }
+  card.classList.add('show');
+  card.innerHTML=`
+    <div class="dc-title">Colony #${c.id}</div>
+    <div class="dc-row"><span>Area</span><b>${c.areaMm2? c.areaMm2.toFixed(2):'—'} mm²</b></div>
+    <div class="dc-row"><span>Diameter</span><b>${c.diameterMm? c.diameterMm.toFixed(2):'—'} mm</b></div>
+    <div class="dc-row"><span>Circularity</span><b>${c.circularity.toFixed(2)}</b></div>
+    <div class="dc-row"><span>Color score</span><b>${c.parts&&c.parts.colorScore!=null? c.parts.colorScore.toFixed(2):'—'}</b></div>
+    <div class="dc-row"><span>Contrast score</span><b>${c.parts&&c.parts.contrastScore!=null? c.parts.contrastScore.toFixed(2):'—'}</b></div>
+    <div class="dc-row"><span>Halo score</span><b>${c.haloScore!=null? c.haloScore.toFixed(2):'—'}</b></div>
+    <div class="dc-row"><span>Confidence</span><b style="text-transform:capitalize">${c.confidence} · ${Math.round((c.score||1)*100)}%</b></div>
+    ${c.manuallyAdded?'<div class="dc-row"><span>Source</span><b>Manually added</b></div>':''}
+    <div class="dc-actions">
+      <button class="danger" id="detailDelete">Delete</button>
+      <button id="detailClose">Close</button>
+    </div>`;
+  document.getElementById('detailDelete').onclick=()=>{
+    pushUndo(p); c.manuallyDeleted=true; state.activeColonyId=null; refreshCountsAndRender();
+  };
+  document.getElementById('detailClose').onclick=()=>{ state.activeColonyId=null; renderDetail(); drawStage(); };
+}
+
+/* ---- CFU panel ---- */
+function renderCFU(){
+  const p=activePlate();
+  const cfuCount=document.getElementById('cfuCount');
+  const dilutionExp=document.getElementById('dilutionExp');
+  const volume=document.getElementById('platedVolume');
+  const agarLabel=document.getElementById('plateAgarLabel');
+  const cfuVal=document.getElementById('cfuValue');
+  const tntcBtn=document.getElementById('tntcBtn');
+
+  if(!p){ cfuCount.value=''; cfuVal.textContent='—'; return; }
+  cfuCount.value=p.tntc?'TNTC':activeColoniesOf(p).length;
+  dilutionExp.value=p.dilutionExp;
+  volume.value=p.volume;
+  agarLabel.value=p.agarType + (p.customAgar&&p.customAgar.name? (' — '+p.customAgar.name):'');
+  tntcBtn.classList.toggle('active',p.tntc);
+  document.getElementById('plateNotes').value=p.notes||'';
+
+  if(p.tntc){
+    cfuVal.textContent='Not calculated'; cfuVal.classList.add('dim');
+  } else {
+    const cfu=calculateCFU(activeColoniesOf(p).length, p.dilutionExp, p.volume);
+    cfuVal.textContent = cfu>=1000? Math.round(cfu).toLocaleString() : cfu.toFixed(1);
+    cfuVal.classList.remove('dim');
+    p.cfuPerMl=cfu;
+  }
+}
+document.getElementById('dilutionExp').onchange=e=>{ const p=activePlate(); if(p){ p.dilutionExp=+e.target.value; renderCFU(); } };
+document.getElementById('platedVolume').oninput=e=>{ const p=activePlate(); if(p){ p.volume=Math.max(0.001,+e.target.value||0.1); renderCFU(); } };
+document.getElementById('plateNotes').oninput=e=>{ const p=activePlate(); if(p) p.notes=e.target.value; };
+document.getElementById('tntcBtn').onclick=()=>{ const p=activePlate(); if(p){ p.tntc=!p.tntc; renderAll(); } };
+
+/* ---- top bar experiment fields ---- */
+document.getElementById('expName').oninput=e=> state.experimentName=e.target.value;
+document.getElementById('sampleName').oninput=e=> state.sampleName=e.target.value;
+const expDateInput=document.getElementById('expDate');
+expDateInput.value=new Date().toISOString().slice(0,10);
+expDateInput.onchange=e=> state.experimentDate=e.target.value;
+
+/* ---- master render ---- */
+function renderAll(){
+  renderPlateList();
+  renderQuality();
+  drawStage();
+  fitZoom();
+  renderStats();
+  renderColonyList();
+  renderDetail();
+  renderCFU();
+}
+window.addEventListener('resize',()=>{ if(activePlate()) fitZoom(); });
+
+/* =========================================================================
+   DEMO SYNTHETIC PLATE GENERATOR
+   ========================================================================= */
+function generateSyntheticPlate(agarType){
+  const size=620;
+  const cnv=document.createElement('canvas'); cnv.width=size; cnv.height=size;
+  const ctx=cnv.getContext('2d');
+  // table background
+  ctx.fillStyle='#B9BDB6'; ctx.fillRect(0,0,size,size);
+  for(let i=0;i<400;i++){
+    ctx.fillStyle=`rgba(0,0,0,${Math.random()*0.03})`;
+    ctx.fillRect(Math.random()*size,Math.random()*size,2,2);
+  }
+  const cx=size/2, cy=size/2, r=size*0.40;
+  const tint = (agarProfiles[agarType]||agarProfiles.Custom).agarTint;
+  // agar base with radial illumination gradient
+  const grad=ctx.createRadialGradient(cx-r*0.25,cy-r*0.3,r*0.1,cx,cy,r*1.05);
+  grad.addColorStop(0, `rgba(${Math.min(255,tint[0]+25)},${Math.min(255,tint[1]+25)},${Math.min(255,tint[2]+25)},1)`);
+  grad.addColorStop(0.7, `rgb(${tint[0]},${tint[1]},${tint[2]})`);
+  grad.addColorStop(1, `rgb(${tint[0]*0.85|0},${tint[1]*0.85|0},${tint[2]*0.85|0})`);
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip();
+  ctx.fillStyle=grad; ctx.fillRect(cx-r,cy-r,r*2,r*2);
+
+  // colonies
+  const n = 30+Math.floor(Math.random()*70);
+  for(let i=0;i<n;i++){
+    const ang=Math.random()*Math.PI*2, rad=Math.random()*r*0.92;
+    const x=cx+Math.cos(ang)*rad, y=cy+Math.sin(ang)*rad;
+    const rr=2.5+Math.random()*5.5;
+    let col, halo=false;
+    if(agarType==='VRBA'){
+      const hues=[350,340,320,300,5,10];
+      const hu=hues[Math.floor(Math.random()*hues.length)];
+      col=`hsl(${hu},${55+Math.random()*30}%,${28+Math.random()*18}%)`;
+      halo=Math.random()<0.75;
+    } else if(agarType==='TSA'){
+      const opts=['#EFE7D6','#E8DFC8','#D8B23A','#C9A227','#DCD3BC'];
+      col=opts[Math.floor(Math.random()*opts.length)];
+    } else if(agarType==='NA'){
+      const opts=['#E7E1CF','#D8B23A','#CFC7AE','#E3DCC6'];
+      col=opts[Math.floor(Math.random()*opts.length)];
+    } else {
+      const opts=['#F1ECDD','#E6E0CC','#D9D2B8','#EFE9D8'];
+      col=opts[Math.floor(Math.random()*opts.length)];
+    }
+    if(halo){
+      const hg=ctx.createRadialGradient(x,y,rr*0.9,x,y,rr*2.6);
+      hg.addColorStop(0,'rgba(230,200,210,0.55)');
+      hg.addColorStop(1,'rgba(230,200,210,0)');
+      ctx.fillStyle=hg;
+      ctx.beginPath(); ctx.arc(x,y,rr*2.6,0,Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle=col;
+    ctx.beginPath();
+    if(agarType==='NA' && Math.random()<0.15){
+      // irregular colony
+      ctx.moveTo(x+rr,y);
+      for(let a=0;a<Math.PI*2;a+=0.6){ const rv=rr*(0.7+Math.random()*0.6); ctx.lineTo(x+Math.cos(a)*rv,y+Math.sin(a)*rv); }
+      ctx.closePath();
+    } else {
+      ctx.arc(x,y,rr,0,Math.PI*2);
+    }
+    ctx.fill();
+  }
+  // a few noise specks
+  for(let i=0;i<10;i++){
+    ctx.fillStyle='rgba(40,40,40,0.5)';
+    ctx.beginPath(); ctx.arc(cx+(Math.random()-0.5)*r*1.6, cy+(Math.random()-0.5)*r*1.6, 0.6+Math.random(), 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+  // rim highlight
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=3; ctx.stroke();
+  ctx.strokeStyle='rgba(0,0,0,0.15)'; ctx.lineWidth=1; ctx.stroke();
+  return cnv.toDataURL('image/png');
+}
+
+/* =========================================================================
+   EXPORT / HISTORY / SAVE
+   ========================================================================= */
+function buildExperimentSnapshot(){
+  return {
+    experimentId: state.experimentId,
+    experimentName: document.getElementById('expName').value || 'Experiment',
+    sampleName: document.getElementById('sampleName').value || '',
+    date: document.getElementById('expDate').value || new Date().toISOString().slice(0,10),
+    savedAt: Date.now(),
+    plates: state.plates.map(p=>({
+      id:p.id, agarType:p.agarType,
+      colonyCount: p.tntc? 'TNTC': activeColoniesOf(p).length,
+      highCount: activeColoniesOf(p).filter(c=>c.confidence==='high').length,
+      reviewCount: activeColoniesOf(p).filter(c=>c.confidence==='medium'||c.confidence==='low').length,
+      dilutionExp:p.dilutionExp, volume:p.volume,
+      cfuPerMl: p.tntc? null : calculateCFU(activeColoniesOf(p).length,p.dilutionExp,p.volume),
+      detectConfidence: p.detectConfidence, tntc:p.tntc, notes:p.notes||''
+    }))
+  };
+}
+document.getElementById('saveBtn').onclick=()=>{
+  const snap=buildExperimentSnapshot();
+  let hist=[];
+  try{ hist=JSON.parse(localStorage.getItem('colonyCounterHistory')||'[]'); }catch(e){ hist=[]; }
+  hist.unshift(snap);
+  if(hist.length>50) hist=hist.slice(0,50);
+  try{ localStorage.setItem('colonyCounterHistory', JSON.stringify(hist)); }catch(e){}
+  const btn=document.getElementById('saveBtn');
+  const old=btn.textContent; btn.textContent='Saved ✓'; setTimeout(()=>btn.textContent=old,1200);
+};
+
+document.getElementById('exportBtn').onclick=()=>{
+  const snap=buildExperimentSnapshot();
+  const headers=['Experiment','Sample','Date','Agar Type','Plate','Colony Count','High Confidence Count','Review Count','Dilution','Plated Volume','CFU/mL','Detection Confidence','TNTC'];
+  const rows=[headers.join(',')];
+  snap.plates.forEach((p,idx)=>{
+    rows.push([
+      csvEsc(snap.experimentName), csvEsc(snap.sampleName), snap.date, p.agarType, 'Plate '+(idx+1),
+      p.colonyCount, p.highCount, p.reviewCount, '10^-'+p.dilutionExp, p.volume,
+      p.cfuPerMl==null? 'N/A' : Math.round(p.cfuPerMl), p.detectConfidence+'%', p.tntc?'Yes':'No'
+    ].join(','));
+  });
+  const blob=new Blob([rows.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=(snap.experimentName||'experiment').replace(/\s+/g,'_')+'_colonycount.csv';
+  a.click();
+};
+function csvEsc(s){ s=String(s||''); return /[,"\n]/.test(s)? '"'+s.replace(/"/g,'""')+'"' : s; }
+
+const historyModal=document.getElementById('historyModal');
+document.getElementById('openHistory').onclick=()=>{
+  renderHistory(); historyModal.classList.add('show');
+};
+document.getElementById('closeHistory').onclick=()=> historyModal.classList.remove('show');
+historyModal.onclick=e=>{ if(e.target===historyModal) historyModal.classList.remove('show'); };
+function renderHistory(){
+  let hist=[];
+  try{ hist=JSON.parse(localStorage.getItem('colonyCounterHistory')||'[]'); }catch(e){ hist=[]; }
+  const el=document.getElementById('historyList');
+  if(hist.length===0){ el.innerHTML='<div class="hist-empty">No saved experiments yet.</div>'; return; }
+  el.innerHTML=hist.map(h=>`
+    <div class="hist-item">
+      <div class="hd"><span>${h.date}</span><span>${new Date(h.savedAt).toLocaleTimeString()}</span></div>
+      <div style="font-weight:600;margin-top:3px;">${escapeHtml(h.experimentName)} ${h.sampleName?('· '+escapeHtml(h.sampleName)):''}</div>
+      <div class="plates">
+        ${h.plates.map(p=>`<span class="p-chip">${p.agarType} — ${p.tntc?'TNTC':p.colonyCount+' colonies'}${p.cfuPerMl!=null?(' · '+Math.round(p.cfuPerMl).toLocaleString()+' CFU/mL'):''}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+/* initial state */
+switchScreen('setup');
+</script>
+</body>
+</html>

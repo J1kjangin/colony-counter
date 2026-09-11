@@ -1,0 +1,1986 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ColonyCount — Segmentation-Ready Colony Counter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF2EF; --panel:#FFFFFF; --ink:#122421; --ink-soft:#4B615C; --ink-faint:#8A9C97;
+  --line:#CBD6D1; --line-strong:#9FB0AA; --accent:#A6333F; --accent-soft:#F1DEDF;
+  --good:#2E7D5B; --good-soft:#DCEEE3; --warn:#C98A2C; --warn-soft:#F6E8CC;
+  --bad:#A6333F; --bad-soft:#F3DEDF; --grid-line:#DCE4E0; --radius:3px;
+  --readout:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:linear-gradient(var(--grid-line) 1px,transparent 1px) 0 0/28px 28px,
+             linear-gradient(90deg,var(--grid-line) 1px,transparent 1px) 0 0/28px 28px,var(--bg);
+  color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px;line-height:1.5;min-height:100vh;
+}
+h1,h2,h3{font-family:'Space Grotesk',sans-serif;margin:0;letter-spacing:-0.01em;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+::selection{background:var(--accent-soft);}
+
+.topbar{background:var(--ink);color:#EAF1EE;padding:12px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.topbar .logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;display:flex;align-items:center;gap:8px;}
+.logo .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(166,51,63,.35);display:inline-block;}
+.topbar .sub{color:#AFC3BD;font-size:12.5px;}
+.topbar .spacer{flex:1;}
+.topbar .exp-field{display:flex;flex-direction:column;gap:2px;}
+.topbar .exp-field label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#8FA69F;}
+.topbar .exp-field input{background:transparent;border:none;border-bottom:1px solid #3A5750;color:#EAF1EE;font-size:13px;padding:2px 0;width:140px;}
+.topbar .exp-field input:focus{outline:none;border-bottom-color:var(--accent);}
+.btn-history{background:transparent;border:1px solid #3A5750;color:#EAF1EE;padding:7px 14px;border-radius:var(--radius);font-size:12.5px;}
+.btn-history:hover{border-color:#EAF1EE;}
+
+/* engine status strip */
+.engine-strip{background:#0C1917;color:#C6D6D1;padding:8px 22px;display:flex;align-items:center;gap:14px;font-size:12px;flex-wrap:wrap;border-top:1px solid #24403A;}
+.engine-pill{display:inline-flex;align-items:center;gap:7px;background:#16302B;border:1px solid #2E4F48;padding:4px 11px;border-radius:12px;font-family:var(--readout);font-size:11.5px;}
+.engine-pill .led{width:7px;height:7px;border-radius:50%;background:var(--good);}
+.engine-pill .led.off{background:#6F8781;}
+.engine-select{background:#16302B;color:#EAF1EE;border:1px solid #2E4F48;padding:4px 8px;border-radius:var(--radius);font-size:12px;}
+.engine-note{color:#8FA69F;}
+.engine-note b{color:#E0B15C;font-weight:600;}
+
+.app{max-width:1460px;margin:0 auto;padding:20px 22px;}
+.screen{display:none;} .screen.active{display:block;}
+
+.setup-wrap{max-width:640px;margin:50px auto;background:var(--panel);border:1px solid var(--line);padding:38px 42px;}
+.setup-wrap h1{font-size:26px;margin-bottom:4px;}
+.setup-wrap .tag{color:var(--ink-soft);font-size:13.5px;margin-bottom:28px;}
+.field-block{margin-bottom:22px;}
+.field-block label{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);margin-bottom:8px;}
+.agar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.agar-opt{border:1px solid var(--line-strong);padding:12px 6px;text-align:center;background:#fff;transition:all .12s;}
+.agar-opt strong{display:block;font-size:15px;font-family:'Space Grotesk',sans-serif;}
+.agar-opt span{display:block;font-size:10px;color:var(--ink-faint);margin-top:3px;}
+.agar-opt:hover{border-color:var(--accent);}
+.agar-opt.selected{border-color:var(--accent);background:var(--accent-soft);}
+.agar-opt.selected strong{color:var(--accent);}
+.custom-fields{margin-top:14px;display:none;} .custom-fields.show{display:block;}
+.custom-fields input[type=text]{width:100%;padding:9px 10px;border:1px solid var(--line-strong);border-radius:var(--radius);}
+.sens-row{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:12.5px;color:var(--ink-soft);}
+.sens-row input[type=range]{flex:1;}
+.drop-zone{border:1.5px dashed var(--line-strong);padding:32px 20px;text-align:center;cursor:pointer;background:#FAFCFB;}
+.drop-zone:hover{border-color:var(--accent);}
+.drop-zone.dragover{border-color:var(--accent);background:var(--accent-soft);}
+.drop-zone .icon{font-size:30px;margin-bottom:8px;}
+.drop-zone .hint{color:var(--ink-faint);font-size:12px;margin-top:4px;}
+.demo-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.demo-btn{flex:1;min-width:110px;padding:9px 8px;border:1px solid var(--line-strong);background:#fff;border-radius:var(--radius);font-size:12px;color:var(--ink-soft);}
+.demo-btn:hover{border-color:var(--warn);color:var(--ink);}
+#fileInput{display:none;}
+
+.workspace{display:grid;grid-template-columns:250px 1fr 330px;gap:16px;align-items:start;}
+@media (max-width:1150px){.workspace{grid-template-columns:1fr;}}
+.panel{background:var(--panel);border:1px solid var(--line);padding:16px;}
+.panel + .panel{margin-top:14px;}
+.panel h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-soft);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+.panel h3 .h3note{text-transform:none;letter-spacing:0;font-size:10.5px;color:var(--ink-faint);}
+
+.plate-list-item{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border:1px solid var(--line);margin-bottom:6px;cursor:pointer;font-size:12.5px;}
+.plate-list-item.active{border-color:var(--accent);background:var(--accent-soft);}
+.plate-list-item .cnt{font-family:var(--readout);font-weight:600;}
+.plate-list-item .tntc{color:var(--accent);font-weight:600;font-family:var(--readout);}
+.add-plate-btn{width:100%;padding:8px;border:1px dashed var(--line-strong);background:none;font-size:12px;color:var(--ink-soft);margin-top:4px;}
+.add-plate-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+.qrow{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--grid-line);}
+.qrow:last-child{border-bottom:none;}
+.qtag{font-weight:600;font-size:11px;padding:1px 7px;border-radius:10px;}
+.qtag.good{background:var(--good-soft);color:var(--good);}
+.qtag.fair{background:var(--warn-soft);color:var(--warn);}
+.qtag.poor{background:var(--bad-soft);color:var(--bad);}
+
+.viewer-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.mode-tabs{display:flex;border:1px solid var(--line-strong);border-radius:var(--radius);overflow:hidden;}
+.mode-tabs button{padding:6px 12px;border:none;background:#fff;font-size:12px;color:var(--ink-soft);border-right:1px solid var(--line);}
+.mode-tabs button:last-child{border-right:none;}
+.mode-tabs button.on{background:var(--ink);color:#fff;}
+.tb-spacer{flex:1;}
+.tool-btn{border:1px solid var(--line-strong);background:#fff;padding:6px 11px;border-radius:var(--radius);font-size:12px;color:var(--ink-soft);}
+.tool-btn:hover{border-color:var(--accent);color:var(--accent);}
+.tool-btn.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+.reject-select{border:1px solid var(--line-strong);border-radius:var(--radius);padding:6px;font-size:11.5px;color:var(--ink-soft);}
+.zoom-group{display:flex;align-items:center;gap:2px;border:1px solid var(--line-strong);border-radius:var(--radius);overflow:hidden;}
+.zoom-group button{border:none;background:#fff;padding:6px 10px;font-size:13px;border-right:1px solid var(--line);}
+.zoom-group button:last-child{border-right:none;}
+.zoom-group .zlabel{padding:0 8px;font-family:var(--readout);font-size:11.5px;color:var(--ink-soft);}
+
+.stage{position:relative;overflow:hidden;background:#1B1E1C;height:540px;border:1px solid var(--line);cursor:grab;}
+.stage.panning{cursor:grabbing;} .stage.adding{cursor:crosshair;}
+.stage-inner{position:absolute;top:0;left:0;transform-origin:0 0;}
+.stage-inner canvas{display:block;position:absolute;top:0;left:0;}
+.badge-demo{position:absolute;top:10px;left:10px;background:var(--warn);color:#fff;padding:4px 10px;font-size:11px;font-weight:600;z-index:5;border-radius:2px;}
+.badge-plate{position:absolute;top:10px;right:10px;background:rgba(18,36,33,.82);color:#EAF1EE;padding:5px 10px;font-size:11px;z-index:5;border-radius:2px;font-family:var(--readout);}
+.empty-stage{color:#6E837D;height:100%;display:flex;align-items:center;justify-content:center;font-size:13px;}
+
+.stats-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);margin-top:12px;border:1px solid var(--line);}
+.stat-cell{background:var(--panel);padding:11px 13px;}
+.stat-cell .n{font-family:var(--readout);font-size:21px;font-weight:600;}
+.stat-cell .l{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+.stat-cell.high .n{color:var(--good);} .stat-cell.review .n{color:var(--warn);}
+
+.filter-row{display:flex;gap:6px;margin-top:12px;}
+.filter-row button{flex:1;padding:7px;border:1px solid var(--line-strong);background:#fff;font-size:11.5px;color:var(--ink-soft);}
+.filter-row button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+.warn-banner{margin-top:12px;padding:9px 12px;font-size:12.5px;border-left:3px solid var(--warn);background:var(--warn-soft);color:#6B4E17;display:none;}
+.warn-banner.show{display:block;}
+.warn-banner.bad{border-left-color:var(--bad);background:var(--bad-soft);color:#7A2833;}
+
+.conf-break{border:1px solid var(--grid-line);}
+.conf-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--grid-line);font-size:12px;}
+.conf-row:last-child{border-bottom:none;}
+.conf-row .cl{width:118px;color:var(--ink-soft);}
+.conf-bar{flex:1;height:6px;background:var(--grid-line);border-radius:3px;overflow:hidden;}
+.conf-bar i{display:block;height:100%;background:var(--good);}
+.conf-bar i.mid{background:var(--warn);} .conf-bar i.low{background:var(--bad);}
+.conf-row .cv{width:44px;text-align:right;font-family:var(--readout);font-weight:600;font-size:12px;}
+.conf-row.na .cv{color:var(--ink-faint);font-weight:500;}
+.conf-row.total{background:#F5F8F6;font-weight:600;}
+
+.colony-list{max-height:200px;overflow-y:auto;border:1px solid var(--grid-line);}
+.colony-row{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;font-size:12px;border-bottom:1px solid var(--grid-line);cursor:pointer;}
+.colony-row:hover{background:var(--bg);} .colony-row:last-child{border-bottom:none;}
+.dot-conf{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px;}
+.dot-high{background:var(--good);} .dot-med{background:var(--warn);} .dot-low{background:var(--bad);}
+.colony-empty{padding:16px;text-align:center;color:var(--ink-faint);font-size:12px;}
+
+.detail-card{border:1px solid var(--line);padding:12px;margin-top:10px;display:none;}
+.detail-card.show{display:block;}
+.detail-card .dc-title{font-family:var(--readout);font-weight:600;font-size:13px;margin-bottom:8px;display:flex;justify-content:space-between;}
+.dc-sec{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin:9px 0 3px;border-top:1px solid var(--grid-line);padding-top:6px;}
+.dc-row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;}
+.dc-row b{font-family:var(--readout);font-weight:600;}
+.dc-actions{display:flex;gap:6px;margin-top:10px;}
+.dc-actions button{flex:1;padding:6px;font-size:11.5px;border:1px solid var(--line-strong);background:#fff;}
+.dc-actions button.danger{color:var(--accent);border-color:var(--accent);}
+
+.cfu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.cfu-field label{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;}
+.cfu-field input,.cfu-field select{width:100%;padding:7px 8px;border:1px solid var(--line-strong);border-radius:var(--radius);font-size:13px;}
+.cfu-readout{background:var(--ink);color:#EAF1EE;padding:15px;text-align:center;margin:10px 0;}
+.cfu-readout .val{font-family:var(--readout);font-size:28px;font-weight:600;}
+.cfu-readout .val.dim{color:#8FA69F;font-size:19px;}
+.cfu-readout .unit{font-size:11px;color:#8FA69F;text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+.tntc-row{display:flex;gap:8px;margin-bottom:8px;}
+.tntc-row button{flex:1;padding:8px;border:1px solid var(--line-strong);background:#fff;font-size:12px;}
+.tntc-row button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.export-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.export-row button{flex:1;min-width:90px;padding:9px 6px;border:1px solid var(--ink);background:var(--ink);color:#fff;font-size:12px;}
+.export-row button.ghost{background:#fff;color:var(--ink);}
+.notes-area{width:100%;border:1px solid var(--line-strong);border-radius:var(--radius);padding:8px;font-size:12.5px;resize:vertical;min-height:50px;}
+
+.eval-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.eval-cell{border:1px solid var(--grid-line);padding:7px 9px;}
+.eval-cell .el{font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;}
+.eval-cell .ev{font-family:var(--readout);font-weight:600;font-size:14px;margin-top:1px;}
+.eval-cell .ev.na{color:var(--ink-faint);font-size:11px;font-weight:500;}
+
+.queue-item{display:flex;justify-content:space-between;align-items:center;padding:6px 9px;border:1px solid var(--grid-line);margin-bottom:5px;font-size:12px;cursor:pointer;}
+.queue-item:hover{border-color:var(--warn);}
+.queue-item .qm{font-family:var(--readout);color:var(--warn);font-weight:600;}
+
+.modal-back{position:fixed;inset:0;background:rgba(18,36,33,.55);display:none;align-items:center;justify-content:center;z-index:50;}
+.modal-back.show{display:flex;}
+.modal{background:#fff;width:680px;max-width:92vw;max-height:82vh;overflow-y:auto;padding:24px;}
+.modal h2{margin-bottom:14px;}
+.hist-item{border-bottom:1px solid var(--grid-line);padding:11px 0;font-size:12.5px;}
+.hist-item .hd{display:flex;justify-content:space-between;color:var(--ink-soft);font-family:var(--readout);font-size:11px;}
+.hist-item .plates{margin-top:5px;display:flex;flex-wrap:wrap;gap:6px;}
+.hist-item .p-chip{border:1px solid var(--line);padding:2px 8px;font-size:11.5px;}
+.modal-close{float:right;border:none;background:none;font-size:18px;cursor:pointer;color:var(--ink-soft);}
+.hist-empty{color:var(--ink-faint);text-align:center;padding:30px 0;font-size:13px;}
+pre.codeblock{background:#0C1917;color:#C6D6D1;padding:14px;font-family:var(--readout);font-size:11px;overflow-x:auto;line-height:1.5;}
+
+.disclaimer{font-size:11px;color:var(--ink-faint);margin-top:14px;line-height:1.5;border-top:1px solid var(--grid-line);padding-top:9px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="dot"></span>ColonyCount</div>
+  <div class="sub">Agar Plate Colony Counter</div>
+  <div class="spacer"></div>
+  <div class="exp-field"><label>Experiment</label><input id="expName" placeholder="Experiment #001"></div>
+  <div class="exp-field"><label>Sample</label><input id="sampleName" placeholder="Sample A"></div>
+  <div class="exp-field"><label>Date</label><input id="expDate" type="date"></div>
+  <button class="btn-history" id="openHistory">History</button>
+</div>
+
+<div class="engine-strip">
+  <span class="engine-pill" id="enginePill"><span class="led" id="engineLed"></span><span id="engineLabel">OpenCV Mode</span></span>
+  <label style="display:flex;align-items:center;gap:6px;">Detection engine
+    <select class="engine-select" id="engineSelect">
+      <option value="opencv">OpenCV (CV pipeline)</option>
+      <option value="ai">AI Instance Segmentation</option>
+      <option value="hybrid">Hybrid (CV → AI → CV)</option>
+    </select>
+  </label>
+  <span class="engine-note" id="engineNote"><b>AI Model Not Connected</b> — no segmentation model is registered. All counts come from the OpenCV pipeline.</span>
+  <span class="spacer" style="flex:1"></span>
+  <button class="btn-history" id="openSchema" style="border-color:#2E4F48;">Model / Dataset Interface</button>
+</div>
+
+<div class="app">
+
+  <!-- ===================== SETUP ===================== -->
+  <div class="screen active" id="screen-setup">
+    <div class="setup-wrap">
+      <h1>🧫 ColonyCount</h1>
+      <div class="tag">Image-based colony counting assistant. Counting only — never species identification.</div>
+
+      <div class="field-block">
+        <label>Agar Type</label>
+        <div class="agar-grid" id="agarGrid"></div>
+        <div class="custom-fields" id="customFields">
+          <input type="text" id="customName" placeholder="Custom agar name">
+          <div class="sens-row">Detection sensitivity
+            <input type="range" id="customSens" min="0" max="100" value="50"><span id="customSensVal">50</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-block">
+        <label>Plate Image</label>
+        <div class="drop-zone" id="dropZone">
+          <div class="icon">📥</div>
+          <div>Click to upload or drag &amp; drop a plate photo</div>
+          <div class="hint">JPG / PNG — analyzed entirely in your browser</div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="demo-row">
+          <button class="demo-btn" data-demo="PCA">▶ PCA Demo</button>
+          <button class="demo-btn" data-demo="TSA">▶ TSA Demo</button>
+          <button class="demo-btn" data-demo="VRBA">▶ VRBA Demo</button>
+          <button class="demo-btn" data-demo="NA">▶ NA Demo</button>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        Detection currently runs on the OpenCV-style CV pipeline. The AI segmentation engine is an interface only — no model is loaded, and no AI results are shown until one is registered. Confidence values are heuristic scores from image quality, contrast, shape and morphology validation.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== ANALYSIS ===================== -->
+  <div class="screen" id="screen-analysis">
+    <div class="workspace">
+
+      <div class="left-col">
+        <div class="panel">
+          <h3>Plates</h3>
+          <div id="plateList"></div>
+          <button class="add-plate-btn" id="addPlateBtn">+ Add Plate</button>
+        </div>
+        <div class="panel">
+          <h3>Pipeline <span class="h3note" id="pipeEngine">opencv</span></h3>
+          <div id="pipelineBox"></div>
+        </div>
+        <div class="panel">
+          <h3>Image Quality</h3>
+          <div id="qualityBox"><div class="colony-empty">No image yet</div></div>
+        </div>
+        <div class="panel">
+          <h3>Plate Detection</h3>
+          <div id="plateDetectBox"><div class="colony-empty">—</div></div>
+        </div>
+        <div class="panel">
+          <h3>Notes</h3>
+          <textarea class="notes-area" id="plateNotes" placeholder="Plate notes..."></textarea>
+        </div>
+      </div>
+
+      <div class="center-col">
+        <div class="panel" style="padding:12px 12px 16px;">
+          <div class="viewer-toolbar">
+            <div class="mode-tabs">
+              <button data-view="original" class="on">Original</button>
+              <button data-view="detection">Detection</button>
+              <button data-view="masks">Masks</button>
+              <button data-view="overlay">Overlay</button>
+            </div>
+            <button class="tool-btn" id="modeAdd">+ Add</button>
+            <button class="tool-btn" id="modeDelete">🗑 Reject</button>
+            <select class="reject-select" id="rejectReason" title="Label used when rejecting a detection">
+              <option value="not_colony">not a colony</option>
+              <option value="dust">dust</option>
+              <option value="air_bubble">air bubble</option>
+              <option value="scratch">scratch</option>
+              <option value="reflection">reflection</option>
+              <option value="agar_defect">agar defect</option>
+              <option value="condensation">condensation</option>
+              <option value="debris">debris</option>
+            </select>
+            <button class="tool-btn" id="modeMerge">⇄ Merge</button>
+            <button class="tool-btn" id="modeSplit">⑃ Split</button>
+            <button class="tool-btn" id="undoBtn">↺ Undo</button>
+            <button class="tool-btn" id="resetBtn">⨯ Reset</button>
+            <button class="tool-btn" id="reanalyzeBtn">⟳ Re-run</button>
+            <div class="tb-spacer"></div>
+            <div class="zoom-group">
+              <button id="zoomOut">−</button><span class="zlabel" id="zoomLabel">100%</span>
+              <button id="zoomIn">+</button><button id="zoomFit">Fit</button>
+            </div>
+          </div>
+          <div class="stage" id="stage">
+            <div class="empty-stage" id="emptyStage">Upload or select a plate to begin analysis</div>
+            <div class="stage-inner" id="stageInner" style="display:none;">
+              <canvas id="canvasBase"></canvas>
+              <canvas id="canvasOverlay"></canvas>
+            </div>
+            <div class="badge-demo" id="demoBadge" style="display:none;">DEMO — Synthetic Example</div>
+            <div class="badge-plate" id="plateBadge" style="display:none;"></div>
+          </div>
+          <div class="stats-strip">
+            <div class="stat-cell"><div class="n" id="statTotal">0</div><div class="l">Colonies counted</div></div>
+            <div class="stat-cell high"><div class="n" id="statHigh">0</div><div class="l">High confidence</div></div>
+            <div class="stat-cell review"><div class="n" id="statReview">0</div><div class="l">Needs review</div></div>
+            <div class="stat-cell"><div class="n" id="statCorr">0</div><div class="l">User corrections</div></div>
+          </div>
+          <div class="filter-row">
+            <button class="on" data-filter="all">Show all</button>
+            <button data-filter="high">High confidence only</button>
+            <button data-filter="review">Needs review</button>
+          </div>
+          <div class="warn-banner" id="warnBanner"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Confidence breakdown <span class="h3note">heuristic — not model probability</span></h3>
+          <div class="conf-break" id="confBreak"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Evaluation <span class="h3note">enter a manual ground-truth count to score this plate</span></h3>
+          <div class="cfu-grid" style="grid-template-columns:1fr 1fr 1fr;">
+            <div class="cfu-field"><label>Ground truth count</label><input type="number" id="gtCount" min="0" placeholder="—"></div>
+            <div class="cfu-field"><label>Predicted count</label><input type="number" id="predCount" readonly></div>
+            <div class="cfu-field"><label>Engine used</label><input type="text" id="evalEngine" readonly></div>
+          </div>
+          <div class="eval-grid" id="evalGrid"></div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="panel">
+          <h3>Review queue <span class="h3note" id="queueCount"></span></h3>
+          <div id="reviewQueue"><div class="colony-empty">Nothing flagged</div></div>
+        </div>
+
+        <div class="panel">
+          <h3>Colony instances</h3>
+          <div class="colony-list" id="colonyList"><div class="colony-empty">No colonies yet</div></div>
+          <div class="detail-card" id="detailCard"></div>
+        </div>
+
+        <div class="panel">
+          <h3>CFU Calculator</h3>
+          <div class="cfu-grid">
+            <div class="cfu-field"><label>Colony Count</label><input type="number" id="cfuCount" readonly></div>
+            <div class="cfu-field"><label>Dilution (10⁻ⁿ)</label>
+              <select id="dilutionExp">
+                <option value="0">10⁰</option><option value="1" selected>10⁻¹</option>
+                <option value="2">10⁻²</option><option value="3">10⁻³</option>
+                <option value="4">10⁻⁴</option><option value="5">10⁻⁵</option>
+                <option value="6">10⁻⁶</option><option value="7">10⁻⁷</option>
+              </select>
+            </div>
+            <div class="cfu-field"><label>Plated Volume (mL)</label><input type="number" id="platedVolume" value="0.1" step="0.01" min="0.001"></div>
+            <div class="cfu-field"><label>Agar Type</label><input type="text" id="plateAgarLabel" readonly></div>
+          </div>
+          <div class="tntc-row"><button id="tntcBtn">Mark as TNTC</button></div>
+          <div class="cfu-readout"><div class="val" id="cfuValue">—</div><div class="unit">CFU / mL</div></div>
+          <div class="export-row">
+            <button id="saveBtn">Save</button>
+            <button class="ghost" id="exportBtn">Export CSV</button>
+            <button class="ghost" id="exportAnnBtn">Export annotations</button>
+          </div>
+          <div class="disclaimer">Detected colony count and calculated CFU/mL are distinct values. Annotation export writes the corrected instance masks in the dataset layout used for future model training.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="historyModal">
+  <div class="modal">
+    <button class="modal-close" data-close="historyModal">✕</button>
+    <h2>History</h2>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<div class="modal-back" id="schemaModal">
+  <div class="modal">
+    <button class="modal-close" data-close="schemaModal">✕</button>
+    <h2>Model / dataset interface</h2>
+    <p style="font-size:13px;color:var(--ink-soft);">
+      Register a segmentation backend from the browser console to switch the engine to AI or Hybrid.
+      Until a backend is registered, the AI and Hybrid modes stay unavailable and the app reports OpenCV mode.
+    </p>
+    <pre class="codeblock" id="schemaCode"></pre>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =========================================================================
+   ColonyCount v2 — segmentation-ready architecture
+
+   IMAGE → PLATE DETECTION → AGAR PROFILE → PREPROCESSING
+         → DETECTION ENGINE (opencv | ai | hybrid)
+         → INSTANCE COLONIES → FEATURE EXTRACTION
+         → AGAR-SPECIFIC VALIDATION → CONFIDENCE
+         → HUMAN REVIEW → FINAL COUNT → CFU/mL → SAVE / EXPORT
+
+   Only the OpenCV engine is implemented. The AI engine is an interface with
+   no model behind it; it never fabricates results.
+   ========================================================================= */
+
+/* ---------------------------------------------------------------------
+   AGAR PROFILES — detection weights + validation weights, editable here
+   --------------------------------------------------------------------- */
+const agarProfiles = {
+  PCA:{ name:'PCA', fullName:'Plate Count Agar', detectionMode:'contrast-shape',
+    weights:{contrast:.30,size:.18,shape:.24,color:.08,texture:.12,halo:.08},
+    validationWeights:{contrast:.40,shape:.32,area:.20,color:.04,texture:.04,halo:0},
+    hueGate:null, agarTint:[214,196,163],
+    aiModel:{ id:'colony-seg-pca', file:'models/pca_instanceseg.onnx', inputSize:640, registered:false } },
+  TSA:{ name:'TSA', fullName:'Tryptic Soy Agar', detectionMode:'contrast-shape',
+    weights:{contrast:.28,size:.16,shape:.20,color:.14,texture:.14,halo:.08},
+    validationWeights:{contrast:.30,shape:.22,area:.18,color:.15,texture:.15,halo:0},
+    hueGate:null, agarTint:[221,203,170],
+    aiModel:{ id:'colony-seg-tsa', file:'models/tsa_instanceseg.onnx', inputSize:640, registered:false } },
+  VRBA:{ name:'VRBA', fullName:'Violet Red Bile Agar', detectionMode:'color-halo',
+    weights:{contrast:.18,size:.12,shape:.10,color:.34,texture:.06,halo:.20},
+    validationWeights:{contrast:.14,shape:.10,area:.12,color:.36,texture:.03,halo:.25},
+    hueGate:[280,20], agarTint:[150,66,96],
+    aiModel:{ id:'colony-seg-vrba', file:'models/vrba_instanceseg.onnx', inputSize:640, registered:false } },
+  NA:{ name:'NA', fullName:'Nutrient Agar', detectionMode:'contrast-shape-soft',
+    weights:{contrast:.26,size:.16,shape:.14,color:.14,texture:.20,halo:.10},
+    validationWeights:{contrast:.28,shape:.20,area:.20,color:.14,texture:.18,halo:0},
+    hueGate:null, agarTint:[224,209,176],
+    aiModel:{ id:'colony-seg-na', file:'models/na_instanceseg.onnx', inputSize:640, registered:false } },
+  Custom:{ name:'Custom', fullName:'Custom Agar', detectionMode:'adaptive',
+    weights:{contrast:.24,size:.16,shape:.18,color:.16,texture:.16,halo:.10},
+    validationWeights:{contrast:.26,shape:.20,area:.18,color:.16,texture:.14,halo:.06},
+    hueGate:null, agarTint:[210,200,180],
+    aiModel:{ id:'colony-seg-generic', file:'models/generic_instanceseg.onnx', inputSize:640, registered:false } }
+};
+
+const NEGATIVE_CLASSES=['not_colony','dust','air_bubble','scratch','reflection','agar_defect','condensation','debris'];
+
+/* ---------------------------------------------------------------------
+   STATE
+   --------------------------------------------------------------------- */
+const state={
+  agarType:'PCA', customAgar:{name:'',sensitivity:50},
+  experimentId:'exp_'+Date.now(),
+  plates:[], activePlateId:null,
+  view:'original', editMode:'none', mergeSelect:[], filter:'all',
+  zoom:1, pan:{x:0,y:0}, activeColonyId:null
+};
+const ANALYSIS_MAX_DIM=640;
+
+/* =========================================================================
+   SECTION A — low-level image ops (shared by OpenCV engine and post-proc)
+   ========================================================================= */
+const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
+const lerp=(a,b,t)=>a+(b-a)*t;
+
+function rgb2hsv(r,g,b){
+  r/=255;g/=255;b/=255;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;
+  let h=0;
+  if(d){ if(max===r)h=60*(((g-b)/d)%6); else if(max===g)h=60*((b-r)/d+2); else h=60*((r-g)/d+4); }
+  if(h<0)h+=360;
+  return [h, max===0?0:d/max, max];
+}
+function rgb2lab(r,g,b){
+  const f0=v=>{v/=255; return v>.04045?Math.pow((v+.055)/1.055,2.4):v/12.92;};
+  const R=f0(r)*100,G=f0(g)*100,B=f0(b)*100;
+  let x=(R*.4124+G*.3576+B*.1805)/95.047,
+      y=(R*.2126+G*.7152+B*.0722)/100,
+      z=(R*.0193+G*.1192+B*.9505)/108.883;
+  const f=v=>v>.008856?Math.cbrt(v):(7.787*v+16/116);
+  x=f(x);y=f(y);z=f(z);
+  return [116*y-16, 500*(x-y), 200*(y-z)];
+}
+function hueGateScore(h,gate){
+  if(!gate) return .5;
+  const [lo,hi]=gate;
+  const inRange = lo>hi ? (h>=lo||h<=hi) : (h>=lo&&h<=hi);
+  if(inRange) return 1;
+  const d=Math.min(Math.min(Math.abs(h-lo),360-Math.abs(h-lo)),Math.min(Math.abs(h-hi),360-Math.abs(h-hi)));
+  return clamp(1-d/60,0,.4);
+}
+function toGray(img){
+  const {data,width:w,height:h}=img, out=new Float32Array(w*h);
+  for(let i=0,p=0;i<data.length;i+=4,p++) out[p]=.299*data[i]+.587*data[i+1]+.114*data[i+2];
+  return out;
+}
+function boxBlur(src,w,h,radius){
+  if(radius<=0) return src.slice();
+  const I=new Float64Array((w+1)*(h+1));
+  for(let y=0;y<h;y++){ let rs=0;
+    for(let x=0;x<w;x++){ rs+=src[y*w+x]; I[(y+1)*(w+1)+(x+1)]=I[y*(w+1)+(x+1)]+rs; } }
+  const out=new Float32Array(w*h);
+  for(let y=0;y<h;y++){
+    const y0=Math.max(0,y-radius),y1=Math.min(h-1,y+radius);
+    for(let x=0;x<w;x++){
+      const x0=Math.max(0,x-radius),x1=Math.min(w-1,x+radius);
+      const A=I[y0*(w+1)+x0],B=I[y0*(w+1)+(x1+1)],C=I[(y1+1)*(w+1)+x0],D=I[(y1+1)*(w+1)+(x1+1)];
+      out[y*w+x]=(D-B-C+A)/((x1-x0+1)*(y1-y0+1));
+    }
+  }
+  return out;
+}
+function localVariance(src,w,h,r){
+  const m=boxBlur(src,w,h,r), sq=new Float32Array(w*h);
+  for(let i=0;i<src.length;i++) sq[i]=src[i]*src[i];
+  const ms=boxBlur(sq,w,h,r), out=new Float32Array(w*h);
+  for(let i=0;i<src.length;i++) out[i]=Math.max(0,ms[i]-m[i]*m[i]);
+  return out;
+}
+function sobel(gray,w,h){
+  const mag=new Float32Array(w*h);
+  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
+    const i=y*w+x;
+    const a=gray[i-w-1],b=gray[i-w],c=gray[i-w+1],d=gray[i-1],f=gray[i+1],g=gray[i+w-1],hh=gray[i+w],k=gray[i+w+1];
+    const sx=(c+2*f+k)-(a+2*d+g), sy=(g+2*hh+k)-(a+2*b+c);
+    mag[i]=Math.sqrt(sx*sx+sy*sy);
+  }
+  return mag;
+}
+function laplacianVariance(gray,w,h){
+  let s=0,s2=0,n=0;
+  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
+    const i=y*w+x, lap=4*gray[i]-gray[i-1]-gray[i+1]-gray[i-w]-gray[i+w];
+    s+=lap;s2+=lap*lap;n++;
+  }
+  return s2/n-(s/n)*(s/n);
+}
+function circleMask(w,h,cx,cy,r){
+  const m=new Uint8Array(w*h), r2=r*r;
+  for(let y=Math.max(0,~~(cy-r));y<=Math.min(h-1,Math.ceil(cy+r));y++)
+    for(let x=Math.max(0,~~(cx-r));x<=Math.min(w-1,Math.ceil(cx+r));x++){
+      const dx=x-cx,dy=y-cy; if(dx*dx+dy*dy<=r2) m[y*w+x]=1;
+    }
+  return m;
+}
+function labelComponents(mask,w,h){
+  const labels=new Int32Array(w*h), stack=new Int32Array(w*h), blobs=[];
+  let label=0;
+  for(let s0=0;s0<w*h;s0++){
+    if(!mask[s0]||labels[s0]) continue;
+    label++; let sp=0; stack[sp++]=s0; labels[s0]=label;
+    const pixels=[];
+    while(sp>0){
+      const p=stack[--sp], x=p%w, y=(p/w)|0; pixels.push(p);
+      if(x>0&&mask[p-1]&&!labels[p-1]){labels[p-1]=label;stack[sp++]=p-1;}
+      if(x<w-1&&mask[p+1]&&!labels[p+1]){labels[p+1]=label;stack[sp++]=p+1;}
+      if(y>0&&mask[p-w]&&!labels[p-w]){labels[p-w]=label;stack[sp++]=p-w;}
+      if(y<h-1&&mask[p+w]&&!labels[p+w]){labels[p+w]=label;stack[sp++]=p+w;}
+    }
+    blobs.push(pixels);
+  }
+  return blobs;
+}
+function convexHullArea(points){
+  if(points.length<3) return points.length;
+  const pts=points.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  const cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const lower=[],upper=[];
+  for(const p of pts){ while(lower.length>=2&&cross(lower[lower.length-2],lower[lower.length-1],p)<=0)lower.pop(); lower.push(p); }
+  for(let i=pts.length-1;i>=0;i--){ const p=pts[i];
+    while(upper.length>=2&&cross(upper[upper.length-2],upper[upper.length-1],p)<=0)upper.pop(); upper.push(p); }
+  const hull=lower.slice(0,-1).concat(upper.slice(0,-1));
+  let a=0;
+  for(let i=0;i<hull.length;i++){ const j=(i+1)%hull.length; a+=hull[i][0]*hull[j][1]-hull[j][0]*hull[i][1]; }
+  return Math.abs(a)/2 || points.length;
+}
+/* distance-transform + local-maxima seeded split (watershed-style separation
+   of touching colonies) */
+function distanceTransform(pixels,w,h,bbox){
+  const set=new Set(pixels), dist=new Map();
+  for(const p of pixels){
+    const x=p%w,y=(p/w)|0;
+    let d=Infinity;
+    // 8-directional ray to nearest non-blob pixel, capped
+    for(let k=0;k<8;k++){
+      const dx=[1,-1,0,0,1,1,-1,-1][k], dy=[0,0,1,-1,1,-1,1,-1][k];
+      const norm=(k<4)?1:Math.SQRT2;
+      let step=1;
+      while(step<40){
+        const nx=x+dx*step, ny=y+dy*step;
+        if(nx<0||ny<0||nx>=w||ny>=h||!set.has(ny*w+nx)) break;
+        step++;
+      }
+      d=Math.min(d,step*norm);
+    }
+    dist.set(p,d);
+  }
+  return dist;
+}
+function splitTouchingBlob(pixels,w,h,expectedRadius){
+  const dist=distanceTransform(pixels,w,h);
+  // seeds = local maxima of the distance map, separated by >= expectedRadius
+  const sorted=pixels.slice().sort((a,b)=>dist.get(b)-dist.get(a));
+  const seeds=[];
+  const minSep=Math.max(2,expectedRadius*1.05);
+  for(const p of sorted){
+    if(dist.get(p)<Math.max(1.4,expectedRadius*0.45)) break;
+    const x=p%w,y=(p/w)|0;
+    if(seeds.every(s=>Math.hypot(x-s[0],y-s[1])>=minSep)) seeds.push([x,y,p]);
+    if(seeds.length>=12) break;
+  }
+  if(seeds.length<=1) return [pixels];
+  const groups=seeds.map(()=>[]);
+  for(const p of pixels){
+    const x=p%w,y=(p/w)|0;
+    let bi=0,bd=Infinity;
+    for(let i=0;i<seeds.length;i++){
+      const d=Math.hypot(x-seeds[i][0],y-seeds[i][1]);
+      if(d<bd){bd=d;bi=i;}
+    }
+    groups[bi].push(p);
+  }
+  return groups.filter(g=>g.length>=3);
+}
+
+/* =========================================================================
+   SECTION B — plate detection, quality, preprocessing (agar-aware)
+   ========================================================================= */
+function detectPlate(imgData){
+  const w0=imgData.width,h0=imgData.height;
+  const scale=190/Math.max(w0,h0);
+  const w=Math.max(20,Math.round(w0*scale)),h=Math.max(20,Math.round(h0*scale));
+  const tmp=document.createElement('canvas'); tmp.width=w; tmp.height=h;
+  tmp.getContext('2d').drawImage(imgData.__srcCanvas,0,0,w,h);
+  const small=tmp.getContext('2d').getImageData(0,0,w,h);
+  const mag=sobel(boxBlur(toGray(small),w,h,1),w,h);
+  const sortedMag=Array.from(mag).sort((a,b)=>b-a);
+  const thresh=sortedMag[Math.min(sortedMag.length-1,Math.floor(sortedMag.length*.06))]||1;
+  let pts=[];
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++) if(mag[y*w+x]>=thresh&&mag[y*w+x]>8) pts.push([x,y]);
+  if(pts.length>500){ const st=Math.ceil(pts.length/500); pts=pts.filter((_,i)=>i%st===0); }
+
+  let best={cx:w/2,cy:h/2,r:Math.min(w,h)*.42,votes:0};
+  if(pts.length>20){
+    const minR=Math.round(Math.min(w,h)*.28), maxR=Math.round(Math.min(w,h)*.50), T=24;
+    const acc=new Float32Array(w*h);
+    for(let r=minR;r<=maxR;r+=2){
+      acc.fill(0);
+      for(const [ex,ey] of pts) for(let t=0;t<T;t++){
+        const th=t/T*Math.PI*2;
+        const cx=Math.round(ex-r*Math.cos(th)), cy=Math.round(ey-r*Math.sin(th));
+        if(cx>=0&&cx<w&&cy>=0&&cy<h) acc[cy*w+cx]++;
+      }
+      let mi=0,mv=-1;
+      for(let i=0;i<acc.length;i++) if(acc[i]>mv){mv=acc[i];mi=i;}
+      if(mv>best.votes) best={cx:mi%w,cy:(mi/w)|0,r,votes:mv};
+    }
+  }
+  return { x:best.cx/scale, y:best.cy/scale, r:best.r/scale,
+           confidence:Math.round(clamp(best.votes/(pts.length*.35+1),.15,.99)*100) };
+}
+function checkImageQuality(imgData,plateDetect){
+  const {width:w,height:h,data}=imgData;
+  const gray=toGray(imgData);
+  let sum=0; for(const v of gray) sum+=v;
+  const mean=sum/gray.length;
+  let vr=0; for(const v of gray) vr+=(v-mean)*(v-mean);
+  const stdev=Math.sqrt(vr/gray.length);
+  const sw=Math.min(w,300), sh=Math.round(h*(sw/w));
+  const sc=document.createElement('canvas'); sc.width=sw; sc.height=sh;
+  sc.getContext('2d').drawImage(imgData.__srcCanvas,0,0,sw,sh);
+  const lapVar=laplacianVariance(toGray(sc.getContext('2d').getImageData(0,0,sw,sh)),sw,sh);
+  let bright=0;
+  for(let i=0;i<data.length;i+=4) if(data[i]>245&&data[i+1]>245&&data[i+2]>245) bright++;
+  const refl=bright/(data.length/4);
+  const q={
+    resolution:Math.min(w,h)>=700?'good':(Math.min(w,h)>=350?'fair':'poor'),
+    brightness:(mean>60&&mean<205)?'good':((mean>35&&mean<235)?'fair':'poor'),
+    contrast:stdev>28?'good':(stdev>14?'fair':'poor'),
+    focus:lapVar>60?'good':(lapVar>20?'fair':'poor'),
+    reflection:refl<.01?'good':(refl<.04?'fair':'poor'),
+    plateVisibility:plateDetect.confidence>=70?'good':(plateDetect.confidence>=40?'fair':'poor'),
+    meanBrightness:mean, stdev, lapVar
+  };
+  const sc2={good:1,fair:.7,poor:.35};
+  q.score=Math.round(( sc2[q.resolution]+sc2[q.brightness]+sc2[q.contrast]+sc2[q.focus]+sc2[q.reflection]+sc2[q.plateVisibility] )/6*100);
+  return q;
+}
+function computeBackgroundStats(imgData,mask){
+  const {data,width:w,height:h}=imgData;
+  let n=0,rs=0,gs=0,bs=0;
+  for(let p=0;p<w*h;p++){ if(!mask[p])continue; const i=p*4; rs+=data[i];gs+=data[i+1];bs+=data[i+2];n++; }
+  n=n||1;
+  const mr=rs/n,mg=gs/n,mb=bs/n;
+  const [hu,sa,va]=rgb2hsv(mr,mg,mb), [L,A,B]=rgb2lab(mr,mg,mb);
+  return { meanRGB:[mr,mg,mb], hue:hu, sat:sa, val:va, L, A, B, brightness:.299*mr+.587*mg+.114*mb };
+}
+/* agar-specific preprocessing — illumination map + agar-tuned emphasis */
+function preprocessImage(imgData,mask,agarType){
+  const {width:w,height:h}=imgData;
+  const gray=toGray(imgData);
+  const illum=boxBlur(gray,w,h,Math.round(Math.max(w,h)*.06)+6);
+  let s=0,c=0;
+  for(let p=0;p<w*h;p++) if(mask[p]){s+=gray[p];c++;}
+  const gm=c?s/c:128;
+  const normalized=new Float32Array(w*h);
+  for(let p=0;p<w*h;p++) normalized[p]=clamp(gray[p]-illum[p]+gm,0,255);
+  return { normalized, illum, steps:[
+    'grayscale',
+    'illumination map (box-blur estimate)',
+    'background subtraction / brightness normalization',
+    (agarProfiles[agarType]||agarProfiles.Custom).detectionMode==='color-halo'
+      ? 'HSV + LAB background-relative color transform' : 'local contrast enhancement'
+  ]};
+}
+
+/* =========================================================================
+   SECTION C — FEATURE EXTRACTION (engine-agnostic)
+   Runs on any instance mask, whether it came from OpenCV or an AI model.
+   ========================================================================= */
+function ringMeanColor(pixels,radius,imgData,w,h,plateMask){
+  const {data}=imgData, set=new Set(pixels);
+  const xs=pixels.map(p=>p%w), ys=pixels.map(p=>(p/w)|0);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+  const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+  let inner=0;
+  for(let i=0;i<xs.length;i++) inner=Math.max(inner,Math.hypot(xs[i]-cx,ys[i]-cy));
+  inner+=1;
+  let n=0,rs=0,gs=0,bs=0;
+  for(let y=Math.max(0,~~(minY-radius));y<=Math.min(h-1,maxY+radius);y++)
+    for(let x=Math.max(0,~~(minX-radius));x<=Math.min(w-1,maxX+radius);x++){
+      const p=y*w+x;
+      if(!plateMask[p]||set.has(p)) continue;
+      const d=Math.hypot(x-cx,y-cy);
+      if(d>=inner&&d<=inner+radius){ const i=p*4; rs+=data[i];gs+=data[i+1];bs+=data[i+2];n++; }
+    }
+  return n? [rs/n,gs/n,bs/n] : null;
+}
+function extractInstanceFeatures(pixels,imgData,plateMask,w,h,bgStats,mmPerPx,gradMag){
+  const {data}=imgData, n=pixels.length;
+  let rs=0,gs=0,bs=0,sg=0,sg2=0,minX=w,maxX=0,minY=h,maxY=0,sx=0,sy=0;
+  const pts=[];
+  const set=new Set(pixels);
+  for(const p of pixels){
+    const i=p*4;
+    rs+=data[i];gs+=data[i+1];bs+=data[i+2];
+    const g=.299*data[i]+.587*data[i+1]+.114*data[i+2];
+    sg+=g;sg2+=g*g;
+    const x=p%w,y=(p/w)|0;
+    sx+=x;sy+=y; pts.push([x,y]);
+    if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y;
+  }
+  const mr=rs/n,mg=gs/n,mb=bs/n;
+  const [hue,sat,val]=rgb2hsv(mr,mg,mb), [L,A,B]=rgb2lab(mr,mg,mb);
+  const meanGray=sg/n, varGray=Math.max(0,sg2/n-meanGray*meanGray);
+  const area=n, diameter=2*Math.sqrt(area/Math.PI);
+  const bw=maxX-minX+1, bh=maxY-minY+1;
+  const aspectRatio=Math.max(bw,bh)/Math.max(1,Math.min(bw,bh));
+  const extent=area/(bw*bh);
+  const solidity=clamp(area/convexHullArea(pts),0,1);
+
+  // second moments → eccentricity
+  const cxm=sx/n, cym=sy/n;
+  let mxx=0,myy=0,mxy=0;
+  for(const [x,y] of pts){ mxx+=(x-cxm)**2; myy+=(y-cym)**2; mxy+=(x-cxm)*(y-cym); }
+  mxx/=n;myy/=n;mxy/=n;
+  const tr=mxx+myy, det=mxx*myy-mxy*mxy;
+  const l1=tr/2+Math.sqrt(Math.max(0,tr*tr/4-det)), l2=tr/2-Math.sqrt(Math.max(0,tr*tr/4-det));
+  const eccentricity = l1>0? Math.sqrt(Math.max(0,1-l2/l1)) : 0;
+
+  let perim=0,edgeSum=0,edgeN=0;
+  for(const p of pixels){
+    const x=p%w,y=(p/w)|0;
+    const border = x===0||x===w-1||y===0||y===h-1 ||
+      !set.has(p-1)||!set.has(p+1)||!set.has(p-w)||!set.has(p+w);
+    if(border){ perim++; edgeSum+=gradMag[p]||0; edgeN++; }
+  }
+  perim=Math.max(4,perim);
+  const circularity=clamp(4*Math.PI*area/(perim*perim),0,1);
+  const contrast=Math.abs(meanGray-bgStats.brightness);
+
+  const ring=ringMeanColor(pixels,Math.max(3,Math.round(diameter*.35)),imgData,w,h,plateMask);
+  let haloScore=0, haloDetail=null;
+  if(ring){
+    const rb=.299*ring[0]+.587*ring[1]+.114*ring[2];
+    const [rh,rsat]=rgb2hsv(ring[0],ring[1],ring[2]);
+    const brightDiff=Math.abs(rb-bgStats.brightness)/40;
+    const satDrop=clamp((bgStats.sat-rsat)*1.4,0,1);
+    haloScore=clamp(brightDiff*.6+satDrop*.4,0,1);
+    haloDetail={ringRGB:ring,ringHue:rh,ringSat:rsat,brightDiff,satDrop};
+  }
+  const redPurpleScore=hueGateScore(hue,[280,20])*clamp(sat*1.6,0,1);
+  const dL=L-bgStats.L, dA=A-bgStats.A, dB=B-bgStats.B;
+  const deltaE=Math.sqrt(dL*dL+dA*dA+dB*dB);
+
+  return {
+    centroid:[cxm,cym], x:cxm, y:cym,
+    bbox:[minX,minY,bw,bh],
+    area, diameter, perimeter:perim,
+    areaMm2:area*mmPerPx*mmPerPx, diameterMm:diameter*mmPerPx,
+    circularity, aspectRatio, solidity, extent, eccentricity,
+    rgb:[mr,mg,mb], hsv:[hue,sat,val], lab:[L,A,B], hue, sat, val,
+    deltaE, contrast, textureScore:Math.sqrt(varGray), localVariance:varGray,
+    edgeStrength:edgeN?edgeSum/edgeN:0,
+    haloScore, haloDetail, redPurpleScore
+  };
+}
+
+/* =========================================================================
+   SECTION D — AGAR-SPECIFIC VALIDATION (soft features, never hard rules)
+   ========================================================================= */
+function validateInstance(feat, profile, ctx){
+  const vw=profile.validationWeights;
+  const sizeRatio=feat.area/(ctx.medianArea||feat.area);
+  const parts={
+    contrast: clamp(feat.contrast/55,0,1),
+    shape:    clamp(feat.circularity*.55 + feat.solidity*.30 + clamp(1/feat.aspectRatio,0,1)*.15,0,1),
+    area:     sizeRatio<.15?.05:clamp(1-Math.abs(Math.log(sizeRatio))/1.6,0,1),
+    color:    profile.hueGate? feat.redPurpleScore : clamp(feat.deltaE/26,0,1),
+    texture:  clamp(feat.textureScore/26,0,1),
+    halo:     feat.haloScore
+  };
+  let score=0;
+  for(const k in vw) score+=parts[k]*vw[k];
+  return { validationScore:clamp(score,0,1), validationParts:parts };
+}
+/* VRBA-specific candidate labelling — descriptive of the image only */
+function vrbaCandidateClass(feat){
+  const strongColor=feat.redPurpleScore>.55, someColor=feat.redPurpleScore>.28;
+  const halo=feat.haloScore>.45;
+  if(strongColor&&halo) return 'typical';
+  if(strongColor||(someColor&&halo)) return 'possible';
+  if(someColor) return 'atypical';
+  return 'non-target';
+}
+function classifyConfidence(s){ return s>=.72?'high':s>=.50?'medium':s>=.30?'low':'noise'; }
+
+/* =========================================================================
+   SECTION E — DETECTION ENGINE ABSTRACTION
+   ========================================================================= */
+
+/* --- E1. AI backend registry. Empty until a real model is registered. --- */
+const aiBackend={
+  registry:{},                     // agarType -> { predict(imageData, opts) }
+  register(agarType, impl){
+    if(typeof impl?.predict!=='function') throw new Error('backend must expose predict(image, options)');
+    this.registry[agarType]=impl;
+    if(agarProfiles[agarType]) agarProfiles[agarType].aiModel.registered=true;
+    renderEngineStrip();
+    return true;
+  },
+  unregister(agarType){
+    delete this.registry[agarType];
+    if(agarProfiles[agarType]) agarProfiles[agarType].aiModel.registered=false;
+    renderEngineStrip();
+  },
+  isAvailable(agarType){ return !!this.registry[agarType]; },
+  anyAvailable(){ return Object.keys(this.registry).length>0; }
+};
+window.colonyAI=aiBackend;   // console entry point for future model wiring
+
+/* --- E2. OpenCV engine (implemented) --- */
+function buildCandidateMask(agarType,normalized,imgData,plateMask,bgStats,w,h,sensitivity){
+  const profile=agarProfiles[agarType]||agarProfiles.Custom;
+  const localMean=boxBlur(normalized,w,h,5);
+  const lvar=localVariance(normalized,w,h,5);
+  const {data}=imgData;
+  const candidate=new Uint8Array(w*h);
+  const baseThresh=10+(100-sensitivity)*.18;
+  for(let p=0;p<w*h;p++){
+    if(!plateMask[p]) continue;
+    const diff=Math.abs(normalized[p]-localMean[p]);
+    let score=(diff/45)*.6+Math.min(lvar[p]/300,1)*.2;
+    if(profile.detectionMode==='color-halo'){
+      const i=p*4;
+      const [hue,sat]=rgb2hsv(data[i],data[i+1],data[i+2]);
+      score=score*.35+hueGateScore(hue,profile.hueGate)*(sat>.28?1:.5)*.65;
+    } else if(profile.detectionMode==='contrast-shape-soft'){
+      score=score*.85+Math.min(lvar[p]/220,1)*.15;
+    }
+    if(score*100>baseThresh) candidate[p]=1;
+  }
+  return candidate;
+}
+function detectColoniesOpenCV(image, agarType, options={}){
+  const t0=performance.now();
+  const w=image.width,h=image.height;
+  const profile=agarProfiles[agarType]||agarProfiles.Custom;
+  const pd=options.plateDetect || detectPlate(image);
+  const plateMask=circleMask(w,h,pd.x,pd.y,pd.r*.97);
+  const bgStats=computeBackgroundStats(image,plateMask);
+  const pre=preprocessImage(image,plateMask,agarType);
+  const gradMag=sobel(boxBlur(toGray(image),w,h,1),w,h);
+  const sensitivity=options.sensitivity ?? 55;
+
+  const candidate=buildCandidateMask(agarType,pre.normalized,image,plateMask,bgStats,w,h,sensitivity);
+  const plateArea=Math.PI*pd.r*pd.r;
+  let blobs=labelComponents(candidate,w,h).filter(px=>px.length>=3&&px.length<plateArea*.2);
+
+  const areas=blobs.map(b=>b.length).sort((a,b)=>a-b);
+  const medianArea=areas.length?areas[Math.floor(areas.length/2)]:20;
+  const expectedRadius=Math.sqrt(medianArea/Math.PI);
+
+  // instance separation of touching colonies
+  const groups=[];
+  let splitEvents=0;
+  for(const px of blobs){
+    if(px.length>medianArea*2.0&&medianArea>4){
+      const parts=splitTouchingBlob(px,w,h,expectedRadius);
+      if(parts.length>1) splitEvents++;
+      groups.push(...parts);
+    } else groups.push(px);
+  }
+
+  const mmPerPx=90/(pd.r*2);
+  const instances=[];
+  let id=1;
+  for(const pixels of groups){
+    const feat=extractInstanceFeatures(pixels,image,plateMask,w,h,bgStats,mmPerPx,gradMag);
+    // detection score (engine-level) using detection weights
+    const dw=profile.weights;
+    const sizeRatio=feat.area/(medianArea||feat.area);
+    const dparts={
+      contrast:clamp(feat.contrast/55,0,1),
+      size:sizeRatio<.15?.05:clamp(1-Math.abs(Math.log(sizeRatio))/1.6,0,1),
+      shape:clamp(feat.circularity*.75+clamp(1/feat.aspectRatio,0,1)*.25,0,1),
+      color:profile.hueGate?feat.redPurpleScore:clamp(feat.sat*.5+.3,0,1),
+      texture:clamp(feat.textureScore/26,0,1),
+      halo:feat.haloScore
+    };
+    let ds=0; for(const k in dw) ds+=dparts[k]*dw[k];
+    instances.push({
+      id:id++, source:'opencv',
+      mask:{ rle:encodeRLE(pixels), width:w, height:h, pixelCount:pixels.length },
+      bbox:feat.bbox, centroid:feat.centroid, area:feat.area,
+      detectionScore:clamp(ds,0,1), detectionParts:dparts,
+      features:feat, _pixels:pixels
+    });
+  }
+  return {
+    engine:'opencv', agarType,
+    instances, plateDetect:pd, bgStats, medianArea, mmPerPx,
+    candidateMask:candidate, maskW:w, maskH:h,
+    preprocessSteps:pre.steps, splitEvents,
+    elapsedMs:Math.round(performance.now()-t0),
+    aiConfidenceAvailable:false
+  };
+}
+
+/* --- E3. AI engine (interface only — never fabricates results) --- */
+async function detectColoniesAI(image, agarType, options={}){
+  const backend=aiBackend.registry[agarType]||aiBackend.registry.__default;
+  if(!backend){
+    return { engine:'ai', unavailable:true,
+      reason:'AI Model Not Connected — no instance-segmentation backend registered for '+agarType,
+      instances:[] };
+  }
+  /* Expected backend contract:
+       predict(imageData, { agarType, plateDetect, inputSize })
+         -> [{ id, mask:{rle|bitmap,width,height}, bbox, confidence, area, centroid }]
+     Feature extraction + agar validation below are shared with the CV engine. */
+  const pd=options.plateDetect||detectPlate(image);
+  const raw=await backend.predict(image,{ agarType, plateDetect:pd, inputSize:(agarProfiles[agarType]?.aiModel.inputSize)||640 });
+  if(!Array.isArray(raw)) return { engine:'ai', unavailable:true, reason:'Backend returned no instance list', instances:[] };
+
+  const w=image.width,h=image.height;
+  const plateMask=circleMask(w,h,pd.x,pd.y,pd.r*.97);
+  const bgStats=computeBackgroundStats(image,plateMask);
+  const gradMag=sobel(boxBlur(toGray(image),w,h,1),w,h);
+  const mmPerPx=90/(pd.r*2);
+  const instances=raw.map((inst,i)=>{
+    const pixels=inst._pixels||decodeRLE(inst.mask.rle);
+    const feat=extractInstanceFeatures(pixels,image,plateMask,w,h,bgStats,mmPerPx,gradMag);
+    return { id:i+1, source:'ai', mask:inst.mask, bbox:inst.bbox||feat.bbox,
+      centroid:inst.centroid||feat.centroid, area:inst.area||feat.area,
+      aiConfidence:inst.confidence, detectionScore:inst.confidence,
+      detectionParts:{}, features:feat, _pixels:pixels };
+  });
+  const areas=instances.map(i=>i.area).sort((a,b)=>a-b);
+  return { engine:'ai', agarType, instances, plateDetect:pd, bgStats,
+    medianArea:areas.length?areas[Math.floor(areas.length/2)]:20, mmPerPx,
+    candidateMask:null, maskW:w, maskH:h, preprocessSteps:['model-native preprocessing'],
+    aiConfidenceAvailable:true };
+}
+
+/* --- E4. Hybrid: OpenCV preprocess → AI segmentation → OpenCV post-process --- */
+async function detectColoniesHybrid(image, agarType, options={}){
+  const aiRes=await detectColoniesAI(image,agarType,options);
+  if(aiRes.unavailable){
+    return { ...aiRes, engine:'hybrid',
+      reason:aiRes.reason+' — Hybrid mode requires an AI backend.' };
+  }
+  const cvRes=detectColoniesOpenCV(image,agarType,options);
+  // OpenCV post-processing: recover instances the model missed entirely
+  const merged=aiRes.instances.slice();
+  const taken=merged.map(i=>i.centroid);
+  const minSep=Math.sqrt(cvRes.medianArea/Math.PI)*1.6;
+  for(const cv of cvRes.instances){
+    if(taken.every(c=>Math.hypot(c[0]-cv.centroid[0],c[1]-cv.centroid[1])>minSep)){
+      merged.push({...cv, source:'opencv-recovered', id:merged.length+1});
+    }
+  }
+  return { ...aiRes, engine:'hybrid', instances:merged.map((m,i)=>({...m,id:i+1})),
+    candidateMask:cvRes.candidateMask, preprocessSteps:cvRes.preprocessSteps,
+    aiConfidenceAvailable:true };
+}
+
+/* --- E5. The engine facade --- */
+const detectionEngine={
+  mode:'opencv',
+  setMode(m){
+    if(m!=='opencv'&&!aiBackend.anyAvailable()) return { ok:false, reason:'AI Model Not Connected' };
+    this.mode=m; return { ok:true };
+  },
+  async detect(image, agarType, options={}){
+    if(this.mode==='ai')     return await detectColoniesAI(image,agarType,options);
+    if(this.mode==='hybrid') return await detectColoniesHybrid(image,agarType,options);
+    return detectColoniesOpenCV(image,agarType,options);
+  }
+};
+window.colonyDetectionEngine=detectionEngine;
+
+/* mask RLE codec — compact instance masks for storage / annotation export */
+function encodeRLE(pixels){
+  const sorted=pixels.slice().sort((a,b)=>a-b), out=[];
+  let start=sorted[0], prev=sorted[0], run=1;
+  for(let i=1;i<sorted.length;i++){
+    if(sorted[i]===prev+1){run++;}
+    else{ out.push(start,run); start=sorted[i]; run=1; }
+    prev=sorted[i];
+  }
+  out.push(start,run);
+  return out;
+}
+function decodeRLE(rle){
+  const px=[];
+  for(let i=0;i<rle.length;i+=2) for(let k=0;k<rle[i+1];k++) px.push(rle[i]+k);
+  return px;
+}
+
+/* =========================================================================
+   SECTION F — CONFIDENCE + CFU + EVALUATION
+   ========================================================================= */
+function computeConfidence(plate){
+  const active=activeColonies(plate);
+  const morph = active.length
+    ? active.reduce((s,c)=>s+(c.validationScore ?? c.detectionScore ?? .5),0)/active.length
+    : 0;
+  const imageQuality=(plate.quality?.score ?? 70)/100;
+  const plateConf=(plate.plateDetect?.confidence ?? 50)/100;
+  const aiConf = plate.result?.aiConfidenceAvailable
+    ? active.reduce((s,c)=>s+(c.aiConfidence??0),0)/Math.max(1,active.length)
+    : null;
+  const stability=active.length
+    ? 1-clamp(active.filter(c=>c.confidenceClass!=='high').length/active.length,0,1)*.5
+    : .5;
+  const weights = aiConf==null
+    ? {morph:.45,imageQuality:.25,plateConf:.15,stability:.15}
+    : {ai:.40,morph:.25,imageQuality:.20,stability:.15};
+  let overall;
+  if(aiConf==null) overall=morph*weights.morph+imageQuality*weights.imageQuality+plateConf*weights.plateConf+stability*weights.stability;
+  else overall=aiConf*weights.ai+morph*weights.morph+imageQuality*weights.imageQuality+stability*weights.stability;
+  return {
+    aiConfidence: aiConf==null? null : Math.round(aiConf*100),
+    imageQuality: Math.round(imageQuality*100),
+    plateDetection: Math.round(plateConf*100),
+    morphologyValidation: Math.round(morph*100),
+    detectionStability: Math.round(stability*100),
+    overall: Math.round(clamp(overall,0,1)*100)
+  };
+}
+function calculateCFU(count,dilutionExp,volumeMl){
+  if(volumeMl<=0) return 0;
+  return count*Math.pow(10,dilutionExp)/volumeMl;
+}
+function evaluatePlate(plate){
+  const predicted=plate.tntc? null : activeColonies(plate).length;
+  const gt=plate.groundTruthCount;
+  const ev={
+    groundTruthCount: gt ?? null, predictedCount: predicted,
+    absoluteError:null, relativeError:null,
+    precision:null, recall:null, f1:null,
+    iou:null, dice:null, mAP:null,
+    countAccuracy:null,
+    maskMetricsAvailable:false,
+    engine: plate.result?.engine || 'opencv'
+  };
+  if(gt!=null && predicted!=null){
+    ev.absoluteError=Math.abs(predicted-gt);
+    ev.relativeError= gt>0? (predicted-gt)/gt : null;
+    ev.countAccuracy= gt>0? clamp(1-Math.abs(predicted-gt)/gt,0,1) : null;
+    // count-level precision/recall proxy (no per-instance ground-truth matching)
+    const tp=Math.min(predicted,gt);
+    ev.precision= predicted>0? tp/predicted : null;
+    ev.recall= gt>0? tp/gt : null;
+    ev.f1=(ev.precision!=null&&ev.recall!=null&&ev.precision+ev.recall>0)
+      ? 2*ev.precision*ev.recall/(ev.precision+ev.recall) : null;
+    ev.metricNote='count-level only — per-instance matching needs ground-truth masks';
+  }
+  return ev;
+}
+
+/* =========================================================================
+   SECTION G — HUMAN-IN-THE-LOOP / ACTIVE LEARNING RECORD
+   ========================================================================= */
+function newCorrectionLog(plate,result){
+  return {
+    plateId:plate.id, agarType:plate.agarType, engine:result.engine,
+    createdAt:Date.now(),
+    originalPrediction:result.instances.map(i=>({
+      id:i.id, centroid:i.centroid, bbox:i.bbox, area:i.area,
+      confidence:i.detectionScore, source:i.source
+    })),
+    userCorrections:[],   // {type, colonyId, reason?, at, payload?}
+    correctedPrediction:null
+  };
+}
+function logCorrection(plate,type,colonyId,extra={}){
+  if(!plate.corrections) return;
+  plate.corrections.userCorrections.push({ type, colonyId, at:Date.now(), ...extra });
+  plate.corrections.correctedPrediction=activeColonies(plate).map(c=>({
+    id:c.id, centroid:[c.x,c.y], bbox:c.bbox, area:c.area,
+    confidence:c.validationScore, manuallyAdded:!!c.manuallyAdded
+  }));
+}
+function negativeSamples(plate){
+  return plate.colonies.filter(c=>c.manuallyDeleted&&c.rejectReason&&c.rejectReason!=='not_colony')
+    .map(c=>({ id:c.id, centroid:[c.x,c.y], bbox:c.bbox, area:c.area, class:c.rejectReason,
+      mask:c.mask? {rle:c.mask.rle,width:c.mask.width,height:c.mask.height}:null }));
+}
+
+/* =========================================================================
+   SECTION H — APPLICATION / UI
+   ========================================================================= */
+const activeColonies=p=>p.colonies.filter(c=>!c.manuallyDeleted);
+const activePlate=()=>state.plates.find(p=>p.id===state.activePlateId);
+const uid=p=>p+'_'+Math.random().toString(36).slice(2,9);
+
+/* ---- engine strip ---- */
+function renderEngineStrip(){
+  const led=document.getElementById('engineLed');
+  const label=document.getElementById('engineLabel');
+  const note=document.getElementById('engineNote');
+  const sel=document.getElementById('engineSelect');
+  const available=aiBackend.anyAvailable();
+  sel.querySelector('option[value=ai]').disabled=!available;
+  sel.querySelector('option[value=hybrid]').disabled=!available;
+  sel.value=detectionEngine.mode;
+  if(detectionEngine.mode==='opencv'){
+    led.classList.remove('off');
+    label.textContent='OpenCV Mode';
+  } else {
+    led.classList.remove('off');
+    label.textContent=detectionEngine.mode==='ai'?'AI Segmentation Mode':'Hybrid Mode';
+  }
+  if(!available){
+    note.innerHTML='<b>AI Model Not Connected</b> — no segmentation backend registered. All counts come from the OpenCV pipeline.';
+  } else {
+    const models=Object.keys(aiBackend.registry).join(', ');
+    note.innerHTML='AI backend registered for: <b>'+models+'</b>. Feature extraction and agar validation are shared across engines.';
+  }
+  const pe=document.getElementById('pipeEngine');
+  if(pe) pe.textContent=detectionEngine.mode;
+}
+document.getElementById('engineSelect').onchange=e=>{
+  const r=detectionEngine.setMode(e.target.value);
+  if(!r.ok){
+    alert('AI Model Not Connected.\n\nRegister a segmentation backend first (see “Model / Dataset Interface”). Staying in OpenCV mode.');
+  }
+  renderEngineStrip();
+  const p=activePlate();
+  if(p&&r.ok) runAnalysis(p).then(renderAll);
+};
+
+/* ---- setup screen ---- */
+const agarGrid=document.getElementById('agarGrid');
+function renderAgarGrid(){
+  agarGrid.innerHTML='';
+  Object.values(agarProfiles).forEach(p=>{
+    const el=document.createElement('div');
+    el.className='agar-opt'+(state.agarType===p.name?' selected':'');
+    el.innerHTML=`<strong>${p.name}</strong><span>${p.fullName}</span>`;
+    el.onclick=()=>{ state.agarType=p.name; renderAgarGrid();
+      document.getElementById('customFields').classList.toggle('show',p.name==='Custom'); };
+    agarGrid.appendChild(el);
+  });
+}
+renderAgarGrid();
+document.getElementById('customSens').oninput=e=>{
+  state.customAgar.sensitivity=+e.target.value;
+  document.getElementById('customSensVal').textContent=e.target.value;
+};
+document.getElementById('customName').oninput=e=>state.customAgar.name=e.target.value;
+
+const dropZone=document.getElementById('dropZone'), fileInput=document.getElementById('fileInput');
+dropZone.onclick=()=>fileInput.click();
+dropZone.ondragover=e=>{e.preventDefault();dropZone.classList.add('dragover');};
+dropZone.ondragleave=()=>dropZone.classList.remove('dragover');
+dropZone.ondrop=e=>{e.preventDefault();dropZone.classList.remove('dragover');
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);};
+fileInput.onchange=e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); };
+document.querySelectorAll('.demo-btn').forEach(b=>{
+  b.onclick=()=>{ state.agarType=b.dataset.demo; renderAgarGrid();
+    loadImage(generateSyntheticPlate(b.dataset.demo),true); };
+});
+function handleFile(f){ const r=new FileReader(); r.onload=e=>loadImage(e.target.result,false); r.readAsDataURL(f); }
+
+function loadImage(dataUrl,isDemo){
+  const img=new Image();
+  img.onload=async()=>{
+    const plate={ id:uid('plate'), agarType:state.agarType,
+      customAgar: state.agarType==='Custom'? {...state.customAgar}:null,
+      imgEl:img, w:img.naturalWidth, h:img.naturalHeight,
+      colonies:[], plateDetect:null, quality:null, result:null, corrections:null,
+      dilutionExp:1, volume:.1, tntc:false, notes:'', isDemo:!!isDemo,
+      groundTruthCount:null, undoStack:[] };
+    state.plates.push(plate); state.activePlateId=plate.id;
+    switchScreen('analysis');
+    await runAnalysis(plate);
+    renderAll();
+  };
+  img.src=dataUrl;
+}
+function switchScreen(n){
+  document.getElementById('screen-setup').classList.toggle('active',n==='setup');
+  document.getElementById('screen-analysis').classList.toggle('active',n==='analysis');
+}
+
+/* ---- full pipeline run ---- */
+async function runAnalysis(plate){
+  const full=document.createElement('canvas'); full.width=plate.w; full.height=plate.h;
+  full.getContext('2d').drawImage(plate.imgEl,0,0);
+  plate.baseCanvas=full;
+
+  const scale=Math.min(1,ANALYSIS_MAX_DIM/Math.max(plate.w,plate.h));
+  const aw=Math.max(1,Math.round(plate.w*scale)), ah=Math.max(1,Math.round(plate.h*scale));
+  const ac=document.createElement('canvas'); ac.width=aw; ac.height=ah;
+  ac.getContext('2d').drawImage(plate.imgEl,0,0,aw,ah);
+  const aImg=ac.getContext('2d').getImageData(0,0,aw,ah);
+  aImg.__srcCanvas=ac;
+
+  const fullImg=full.getContext('2d').getImageData(0,0,plate.w,plate.h);
+  fullImg.__srcCanvas=full;
+
+  const sensitivity= plate.agarType==='Custom'&&plate.customAgar? plate.customAgar.sensitivity : 55;
+  const pd=detectPlate(aImg);
+  const result=await detectionEngine.detect(aImg,plate.agarType,{sensitivity,plateDetect:pd});
+
+  if(result.unavailable){
+    alert(result.reason);
+    detectionEngine.mode='opencv'; renderEngineStrip();
+    return runAnalysis(plate);
+  }
+
+  plate.quality=checkImageQuality(fullImg,pd);
+  plate.plateDetect={ x:pd.x/scale, y:pd.y/scale, r:pd.r/scale, confidence:pd.confidence };
+  plate.analysisScale=scale;
+  plate.mmPerPx=result.mmPerPx/scale;
+  plate.result=result;
+
+  const profile=agarProfiles[plate.agarType]||agarProfiles.Custom;
+  const ctx={ medianArea:result.medianArea };
+
+  plate.colonies=[];
+  for(const inst of result.instances){
+    const f=inst.features;
+    const v=validateInstance(f,profile,ctx);
+    const base = inst.aiConfidence!=null
+      ? inst.aiConfidence*.5+v.validationScore*.5
+      : inst.detectionScore*.45+v.validationScore*.55;
+    const cls=classifyConfidence(base);
+    if(cls==='noise') continue;
+    plate.colonies.push({
+      id:plate.colonies.length+1, source:inst.source,
+      mask:inst.mask, bbox:[inst.bbox[0]/scale,inst.bbox[1]/scale,inst.bbox[2]/scale,inst.bbox[3]/scale],
+      x:f.x/scale, y:f.y/scale, diameter:f.diameter/scale, area:f.area,
+      areaMm2:f.areaMm2, diameterMm:f.diameterMm,
+      circularity:f.circularity, aspectRatio:f.aspectRatio, solidity:f.solidity,
+      extent:f.extent, eccentricity:f.eccentricity, perimeter:f.perimeter,
+      rgb:f.rgb, hsv:f.hsv, lab:f.lab, deltaE:f.deltaE,
+      contrast:f.contrast, textureScore:f.textureScore, edgeStrength:f.edgeStrength,
+      haloScore:f.haloScore, redPurpleScore:f.redPurpleScore,
+      aiConfidence:inst.aiConfidence ?? null,
+      detectionScore:inst.detectionScore, detectionParts:inst.detectionParts,
+      validationScore:v.validationScore, validationParts:v.validationParts,
+      vrbaClass: plate.agarType==='VRBA'? vrbaCandidateClass(f) : null,
+      score:base, confidenceClass:cls, confidence:cls,
+      manuallyAdded:false, manuallyDeleted:false, rejectReason:null,
+      _analysisPixels:inst._pixels
+    });
+  }
+  plate.corrections=newCorrectionLog(plate,result);
+  plate.confidence=computeConfidence(plate);
+}
+
+/* ---- left column ---- */
+function renderPlateList(){
+  const list=document.getElementById('plateList'); list.innerHTML='';
+  if(!state.plates.length){ list.innerHTML='<div class="colony-empty">No plates yet</div>'; return; }
+  state.plates.forEach((p,i)=>{
+    const el=document.createElement('div');
+    el.className='plate-list-item'+(p.id===state.activePlateId?' active':'');
+    el.innerHTML=`<span>Plate ${i+1} · ${p.agarType}</span><span class="${p.tntc?'tntc':'cnt'}">${p.tntc?'TNTC':activeColonies(p).length}</span>`;
+    el.onclick=()=>{state.activePlateId=p.id;state.activeColonyId=null;renderAll();};
+    list.appendChild(el);
+  });
+}
+document.getElementById('addPlateBtn').onclick=()=>switchScreen('setup');
+
+function renderPipeline(){
+  const box=document.getElementById('pipelineBox');
+  const p=activePlate();
+  if(!p||!p.result){ box.innerHTML='<div class="colony-empty">—</div>'; return; }
+  const steps=[
+    ['Plate detection', p.plateDetect.confidence+'%'],
+    ['Agar profile', p.agarType],
+    ...(p.result.preprocessSteps||[]).map(s=>[s,'✓']),
+    ['Detection engine', p.result.engine],
+    ['Instance separation', (p.result.splitEvents??0)+' split'],
+    ['Instances', p.result.instances.length],
+    ['Agar validation', 'applied'],
+    ['Runtime', (p.result.elapsedMs??0)+' ms']
+  ];
+  box.innerHTML=steps.map(([a,b])=>`<div class="qrow"><span>${a}</span><b style="font-family:var(--readout);font-size:11.5px">${b}</b></div>`).join('');
+}
+function renderQuality(){
+  const box=document.getElementById('qualityBox'), dbox=document.getElementById('plateDetectBox');
+  const p=activePlate();
+  if(!p||!p.quality){ box.innerHTML='<div class="colony-empty">No image yet</div>'; dbox.innerHTML='<div class="colony-empty">—</div>'; return; }
+  const rows=[['Resolution','resolution'],['Brightness','brightness'],['Contrast','contrast'],['Focus','focus'],['Reflection','reflection'],['Plate detection','plateVisibility']];
+  box.innerHTML=rows.map(([l,k])=>{
+    const v=p.quality[k];
+    return `<div class="qrow"><span>${l}</span><span class="qtag ${v}">${v[0].toUpperCase()+v.slice(1)}</span></div>`;
+  }).join('');
+  dbox.innerHTML=`<div class="qrow"><span>Confidence</span><b style="font-family:var(--readout)">${p.plateDetect.confidence}%</b></div>
+    <div class="qrow"><span>Radius</span><span>${Math.round(p.plateDetect.r)} px</span></div>
+    <div class="qrow"><span>Assumed dish</span><span>⌀ 90 mm</span></div>
+    ${p.plateDetect.confidence<40?'<div style="color:var(--warn);font-size:11.5px;margin-top:6px;">Low-confidence plate outline — verify the crop.</div>':''}`;
+}
+
+/* ---- canvas ---- */
+const stage=document.getElementById('stage'), stageInner=document.getElementById('stageInner');
+const canvasBase=document.getElementById('canvasBase'), canvasOverlay=document.getElementById('canvasOverlay');
+
+function instanceColor(c){
+  if(c.confidenceClass==='high') return '#2E7D5B';
+  if(c.confidenceClass==='medium') return '#C98A2C';
+  return '#A6333F';
+}
+function drawStage(){
+  const p=activePlate(), empty=document.getElementById('emptyStage');
+  if(!p){ empty.style.display='flex'; stageInner.style.display='none';
+    document.getElementById('demoBadge').style.display='none';
+    document.getElementById('plateBadge').style.display='none'; return; }
+  empty.style.display='none'; stageInner.style.display='block';
+  document.getElementById('demoBadge').style.display=p.isDemo?'block':'none';
+  const pb=document.getElementById('plateBadge');
+  pb.style.display='block';
+  pb.textContent=`${p.agarType} · ${p.result.engine} · ${activeColonies(p).length} colonies`;
+
+  canvasBase.width=p.w; canvasBase.height=p.h;
+  canvasOverlay.width=p.w; canvasOverlay.height=p.h;
+  const b=canvasBase.getContext('2d');
+  b.clearRect(0,0,p.w,p.h);
+
+  if(state.view==='detection'&&p.result.candidateMask){
+    b.drawImage(p.baseCanvas,0,0);
+    b.globalAlpha=.55; b.fillStyle='#000'; b.fillRect(0,0,p.w,p.h); b.globalAlpha=1;
+    const cw=p.result.maskW, ch=p.result.maskH, s=p.analysisScale;
+    const mc=document.createElement('canvas'); mc.width=cw; mc.height=ch;
+    const mctx=mc.getContext('2d'), mi=mctx.createImageData(cw,ch);
+    for(let i=0;i<p.result.candidateMask.length;i++)
+      if(p.result.candidateMask[i]){ mi.data[i*4]=90;mi.data[i*4+1]=230;mi.data[i*4+2]=210;mi.data[i*4+3]=200; }
+    mctx.putImageData(mi,0,0);
+    b.imageSmoothingEnabled=false;
+    b.drawImage(mc,0,0,cw/s,ch/s);
+  } else if(state.view==='masks'){
+    b.drawImage(p.baseCanvas,0,0);
+    b.globalAlpha=.62; b.fillStyle='#0C1917'; b.fillRect(0,0,p.w,p.h); b.globalAlpha=1;
+    // per-instance colored masks — this is the instance segmentation view
+    const s=p.analysisScale, cw=p.result.maskW, ch=p.result.maskH;
+    const mc=document.createElement('canvas'); mc.width=cw; mc.height=ch;
+    const mctx=mc.getContext('2d'), mi=mctx.createImageData(cw,ch);
+    activeColonies(p).forEach((c,idx)=>{
+      if(!c._analysisPixels) return;
+      const hue=(idx*47)%360;
+      const col=hslToRgb(hue/360,.62,.58);
+      for(const px of c._analysisPixels){
+        mi.data[px*4]=col[0]; mi.data[px*4+1]=col[1]; mi.data[px*4+2]=col[2]; mi.data[px*4+3]=225;
+      }
+    });
+    mctx.putImageData(mi,0,0);
+    b.imageSmoothingEnabled=false;
+    b.drawImage(mc,0,0,cw/s,ch/s);
+  } else {
+    b.drawImage(p.baseCanvas,0,0);
+  }
+
+  const o=canvasOverlay.getContext('2d');
+  o.clearRect(0,0,p.w,p.h);
+  if(state.view!=='original'){
+    o.strokeStyle='rgba(233,232,222,.5)'; o.lineWidth=Math.max(1,p.w*.0018); o.setLineDash([6,5]);
+    o.beginPath(); o.arc(p.plateDetect.x,p.plateDetect.y,p.plateDetect.r,0,Math.PI*2); o.stroke();
+    o.setLineDash([]);
+  }
+  if(state.view==='overlay'||state.view==='original'||state.view==='masks'){
+    let list=activeColonies(p);
+    if(state.filter==='high') list=list.filter(c=>c.confidenceClass==='high');
+    if(state.filter==='review') list=list.filter(c=>c.confidenceClass!=='high');
+    const rs=Math.max(1,p.w/900);
+    list.forEach(c=>{
+      o.beginPath();
+      o.arc(c.x,c.y,Math.max(4*rs,c.diameter/2),0,Math.PI*2);
+      o.strokeStyle=instanceColor(c); o.lineWidth=Math.max(1.4,2*rs);
+      if(c.id===state.activeColonyId){ o.strokeStyle='#EAF1EE'; o.lineWidth=Math.max(2.5,3.4*rs); }
+      if(c.manuallyAdded) o.setLineDash([4,3]);
+      o.stroke(); o.setLineDash([]);
+    });
+  }
+}
+function hslToRgb(h,s,l){
+  const f=n=>{ const k=(n+h*12)%12; const a=s*Math.min(l,1-l);
+    return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,Math.min(9-k,1))))); };
+  return [f(0),f(8),f(4)];
+}
+function applyTransform(){
+  stageInner.style.transform=`translate(${state.pan.x}px,${state.pan.y}px) scale(${state.zoom})`;
+  document.getElementById('zoomLabel').textContent=Math.round(state.zoom*100)+'%';
+}
+function fitZoom(){
+  const p=activePlate(); if(!p) return;
+  const r=stage.getBoundingClientRect();
+  state.zoom=Math.min(r.width/p.w,r.height/p.h)*.97;
+  state.pan={x:(r.width-p.w*state.zoom)/2,y:(r.height-p.h*state.zoom)/2};
+  applyTransform();
+}
+document.getElementById('zoomIn').onclick=()=>{state.zoom=clamp(state.zoom*1.25,.1,6);applyTransform();};
+document.getElementById('zoomOut').onclick=()=>{state.zoom=clamp(state.zoom/1.25,.1,6);applyTransform();};
+document.getElementById('zoomFit').onclick=fitZoom;
+stage.addEventListener('wheel',e=>{ if(!activePlate())return; e.preventDefault();
+  state.zoom=clamp(state.zoom*(e.deltaY<0?1.08:.92),.1,6); applyTransform(); },{passive:false});
+
+let panning=false,panStart=null;
+stage.addEventListener('mousedown',e=>{
+  if(!activePlate()) return;
+  if(state.editMode==='add') return handleAddClick(e);
+  if(state.editMode!=='none') return handleColonyClick(e);
+  panning=true; stage.classList.add('panning');
+  panStart={x:e.clientX-state.pan.x,y:e.clientY-state.pan.y};
+});
+window.addEventListener('mousemove',e=>{ if(!panning)return;
+  state.pan={x:e.clientX-panStart.x,y:e.clientY-panStart.y}; applyTransform(); });
+window.addEventListener('mouseup',()=>{panning=false;stage.classList.remove('panning');});
+function toImage(e){
+  const r=stage.getBoundingClientRect();
+  return { x:(e.clientX-r.left-state.pan.x)/state.zoom, y:(e.clientY-r.top-state.pan.y)/state.zoom };
+}
+function pushUndo(p){
+  p.undoStack.push(JSON.stringify(p.colonies.map(c=>({...c,_analysisPixels:null}))));
+  if(p.undoStack.length>20) p.undoStack.shift();
+}
+function handleAddClick(e){
+  const p=activePlate(); const {x,y}=toImage(e);
+  const act=activeColonies(p);
+  const d=act.length? act.reduce((s,c)=>s+c.diameter,0)/act.length : 14;
+  const a=act.length? act.reduce((s,c)=>s+c.area,0)/act.length : Math.PI*49;
+  pushUndo(p);
+  const id=Math.max(0,...p.colonies.map(c=>c.id))+1;
+  p.colonies.push({ id, source:'manual', mask:null, bbox:[x-d/2,y-d/2,d,d],
+    x,y,diameter:d,area:a, areaMm2:a*(p.mmPerPx||.14)**2, diameterMm:d*(p.mmPerPx||.14),
+    circularity:1,aspectRatio:1,solidity:1,extent:.785,eccentricity:0,perimeter:Math.PI*d,
+    rgb:[200,200,200],hsv:[0,0,.8],lab:[80,0,0],deltaE:0,
+    contrast:40,textureScore:5,edgeStrength:30,haloScore:0,redPurpleScore:0,
+    aiConfidence:null,detectionScore:1,detectionParts:{},validationScore:1,validationParts:{},
+    vrbaClass:null, score:1, confidenceClass:'high', confidence:'high',
+    manuallyAdded:true, manuallyDeleted:false, rejectReason:null, _analysisPixels:null });
+  logCorrection(p,'add',id,{payload:{x,y}});
+  refresh();
+}
+function handleColonyClick(e){
+  const p=activePlate(); const {x,y}=toImage(e);
+  let closest=null,bd=Infinity;
+  for(const c of activeColonies(p)){ const d=Math.hypot(c.x-x,c.y-y); if(d<bd){bd=d;closest=c;} }
+  if(!closest||bd>Math.max(30,closest.diameter)) return;
+
+  if(state.editMode==='delete'){
+    const reason=document.getElementById('rejectReason').value;
+    pushUndo(p); closest.manuallyDeleted=true; closest.rejectReason=reason;
+    logCorrection(p,'reject',closest.id,{reason});
+    if(state.activeColonyId===closest.id) state.activeColonyId=null;
+    refresh();
+  } else if(state.editMode==='merge'){
+    state.mergeSelect.push(closest.id);
+    if(state.mergeSelect.length===2){
+      pushUndo(p);
+      const [a,b]=state.mergeSelect.map(id=>p.colonies.find(c=>c.id===id));
+      if(a&&b&&a!==b){
+        a.x=(a.x+b.x)/2; a.y=(a.y+b.y)/2; a.area+=b.area;
+        a.diameter=2*Math.sqrt(a.area/Math.PI); a.diameterMm=a.diameter*(p.mmPerPx||.14);
+        if(a._analysisPixels&&b._analysisPixels) a._analysisPixels=a._analysisPixels.concat(b._analysisPixels);
+        b.manuallyDeleted=true; b.rejectReason='merged';
+        logCorrection(p,'merge',a.id,{mergedWith:b.id});
+      }
+      state.mergeSelect=[]; refresh();
+    }
+  } else if(state.editMode==='split'){
+    pushUndo(p);
+    const na=closest.area/2, nd=2*Math.sqrt(na/Math.PI), off=nd*.55;
+    closest.area=na; closest.diameter=nd; closest.diameterMm=nd*(p.mmPerPx||.14); closest.x-=off/2;
+    const id=Math.max(0,...p.colonies.map(c=>c.id))+1;
+    p.colonies.push({...closest,id,x:closest.x+off,manuallyAdded:true,manuallyDeleted:false,_analysisPixels:null});
+    logCorrection(p,'split',closest.id,{newId:id});
+    refresh();
+  }
+}
+document.getElementById('undoBtn').onclick=()=>{
+  const p=activePlate(); if(!p||!p.undoStack.length) return;
+  p.colonies=JSON.parse(p.undoStack.pop());
+  logCorrection(p,'undo',null); refresh();
+};
+document.getElementById('resetBtn').onclick=async()=>{
+  const p=activePlate(); if(!p) return;
+  if(!confirm('Discard all manual edits and re-run detection on this plate?')) return;
+  await runAnalysis(p); renderAll();
+};
+document.getElementById('reanalyzeBtn').onclick=async()=>{
+  const p=activePlate(); if(!p) return;
+  await runAnalysis(p); renderAll();
+};
+['modeAdd','modeDelete','modeMerge','modeSplit'].forEach(id=>{
+  document.getElementById(id).onclick=()=>{
+    const map={modeAdd:'add',modeDelete:'delete',modeMerge:'merge',modeSplit:'split'};
+    state.editMode = state.editMode===map[id]?'none':map[id];
+    state.mergeSelect=[];
+    ['modeAdd','modeDelete','modeMerge','modeSplit'].forEach(i=>
+      document.getElementById(i).classList.toggle('on', i===id&&state.editMode!=='none'));
+    stage.classList.toggle('adding',state.editMode==='add');
+  };
+});
+document.querySelectorAll('.mode-tabs button').forEach(b=>{
+  b.onclick=()=>{ document.querySelectorAll('.mode-tabs button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); state.view=b.dataset.view; drawStage(); };
+});
+document.querySelectorAll('.filter-row button').forEach(b=>{
+  b.onclick=()=>{ document.querySelectorAll('.filter-row button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); state.filter=b.dataset.filter; renderColonyList(); drawStage(); };
+});
+
+/* ---- stats, confidence, queue, list, detail ---- */
+function refresh(){ const p=activePlate(); if(p) p.confidence=computeConfidence(p); renderAll(); }
+function renderStats(){
+  const p=activePlate();
+  const act=p?activeColonies(p):[];
+  const high=act.filter(c=>c.confidenceClass==='high').length;
+  const review=act.length-high;
+  document.getElementById('statTotal').textContent=p&&p.tntc?'TNTC':act.length;
+  document.getElementById('statHigh').textContent=high;
+  document.getElementById('statReview').textContent=review;
+  document.getElementById('statCorr').textContent=p&&p.corrections?p.corrections.userCorrections.length:0;
+
+  const warn=document.getElementById('warnBanner');
+  warn.classList.remove('show','bad');
+  if(p&&!p.tntc){
+    if(act.length>0&&act.length<25){ warn.textContent='Very Low Count — below the typical countable range. Review the dilution selected.'; warn.classList.add('show'); }
+    else if(act.length>=250&&act.length<400){ warn.textContent='High Colony Density — colonies may overlap. Manual review recommended.'; warn.classList.add('show'); }
+    else if(act.length>=400){ warn.textContent='Possible TNTC — individual colonies may not be reliably separable at this density.'; warn.classList.add('show','bad'); }
+  }
+}
+function confRow(label,value,note){
+  if(value==null) return `<div class="conf-row na"><span class="cl">${label}</span><span class="conf-bar"></span><span class="cv">${note||'n/a'}</span></div>`;
+  const cls=value>=75?'':value>=50?'mid':'low';
+  return `<div class="conf-row"><span class="cl">${label}</span><span class="conf-bar"><i class="${cls}" style="width:${value}%"></i></span><span class="cv">${value}%</span></div>`;
+}
+function renderConfidence(){
+  const el=document.getElementById('confBreak'), p=activePlate();
+  if(!p||!p.confidence){ el.innerHTML='<div class="colony-empty">—</div>'; return; }
+  const c=p.confidence;
+  el.innerHTML=
+    confRow('AI confidence', c.aiConfidence, 'not connected')+
+    confRow('Image quality', c.imageQuality)+
+    confRow('Plate detection', c.plateDetection)+
+    confRow('Morphology validation', c.morphologyValidation)+
+    confRow('Detection stability', c.detectionStability)+
+    `<div class="conf-row total"><span class="cl">Overall confidence</span><span class="conf-bar"><i class="${c.overall>=75?'':c.overall>=50?'mid':'low'}" style="width:${c.overall}%"></i></span><span class="cv">${c.overall}%</span></div>`;
+}
+function renderQueue(){
+  const el=document.getElementById('reviewQueue'), p=activePlate();
+  const cnt=document.getElementById('queueCount');
+  if(!p){ el.innerHTML='<div class="colony-empty">Nothing flagged</div>'; cnt.textContent=''; return; }
+  const q=activeColonies(p).filter(c=>c.confidenceClass!=='high')
+    .sort((a,b)=>a.score-b.score).slice(0,12);
+  cnt.textContent=q.length?`${q.length} lowest-confidence first`:'';
+  if(!q.length){ el.innerHTML='<div class="colony-empty">Nothing flagged — all instances high confidence</div>'; return; }
+  el.innerHTML='';
+  q.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='queue-item';
+    d.innerHTML=`<span>Colony #${c.id}${c.vrbaClass?' · '+c.vrbaClass:''}</span><span class="qm">${Math.round(c.score*100)}%</span>`;
+    d.onclick=()=>{ state.activeColonyId=c.id; centerOn(c); renderDetail(); drawStage(); };
+    el.appendChild(d);
+  });
+}
+function centerOn(c){
+  const r=stage.getBoundingClientRect();
+  state.zoom=clamp(Math.max(state.zoom,2),.1,6);
+  state.pan={x:r.width/2-c.x*state.zoom, y:r.height/2-c.y*state.zoom};
+  applyTransform();
+}
+function renderColonyList(){
+  const el=document.getElementById('colonyList'), p=activePlate();
+  if(!p||!activeColonies(p).length){ el.innerHTML='<div class="colony-empty">No colonies yet</div>'; return; }
+  let list=activeColonies(p);
+  if(state.filter==='high') list=list.filter(c=>c.confidenceClass==='high');
+  if(state.filter==='review') list=list.filter(c=>c.confidenceClass!=='high');
+  el.innerHTML='';
+  list.sort((a,b)=>a.id-b.id).forEach(c=>{
+    const row=document.createElement('div'); row.className='colony-row';
+    const dc=c.confidenceClass==='high'?'dot-high':c.confidenceClass==='medium'?'dot-med':'dot-low';
+    row.innerHTML=`<span><span class="dot-conf ${dc}"></span>#${c.id}${c.source==='manual'?' · manual':''}</span><span>${Math.round(c.score*100)}%</span>`;
+    row.onclick=()=>{ state.activeColonyId=c.id; renderDetail(); drawStage(); };
+    el.appendChild(row);
+  });
+}
+function renderDetail(){
+  const card=document.getElementById('detailCard'), p=activePlate();
+  if(!p||state.activeColonyId==null){ card.classList.remove('show'); return; }
+  const c=p.colonies.find(x=>x.id===state.activeColonyId&&!x.manuallyDeleted);
+  if(!c){ card.classList.remove('show'); return; }
+  card.classList.add('show');
+  const vp=c.validationParts||{};
+  card.innerHTML=`
+    <div class="dc-title"><span>Colony #${c.id}</span><span style="color:var(--ink-faint);font-size:11px">${c.source}</span></div>
+    <div class="dc-sec">Geometry</div>
+    <div class="dc-row"><span>Area</span><b>${c.areaMm2?c.areaMm2.toFixed(2):'—'} mm²</b></div>
+    <div class="dc-row"><span>Diameter</span><b>${c.diameterMm?c.diameterMm.toFixed(2):'—'} mm</b></div>
+    <div class="dc-row"><span>Perimeter</span><b>${Math.round(c.perimeter)} px</b></div>
+    <div class="dc-row"><span>Circularity</span><b>${c.circularity.toFixed(2)}</b></div>
+    <div class="dc-row"><span>Aspect ratio</span><b>${c.aspectRatio.toFixed(2)}</b></div>
+    <div class="dc-row"><span>Solidity</span><b>${c.solidity.toFixed(2)}</b></div>
+    <div class="dc-row"><span>Extent</span><b>${c.extent.toFixed(2)}</b></div>
+    <div class="dc-row"><span>Eccentricity</span><b>${c.eccentricity.toFixed(2)}</b></div>
+    <div class="dc-sec">Color</div>
+    <div class="dc-row"><span>RGB</span><b>${c.rgb.map(v=>Math.round(v)).join(', ')}</b></div>
+    <div class="dc-row"><span>HSV</span><b>${Math.round(c.hsv[0])}°, ${c.hsv[1].toFixed(2)}, ${c.hsv[2].toFixed(2)}</b></div>
+    <div class="dc-row"><span>LAB</span><b>${c.lab.map(v=>v.toFixed(1)).join(', ')}</b></div>
+    <div class="dc-row"><span>ΔE vs background</span><b>${c.deltaE.toFixed(1)}</b></div>
+    ${p.agarType==='VRBA'?`<div class="dc-row"><span>Red/purple score</span><b>${c.redPurpleScore.toFixed(2)}</b></div>
+    <div class="dc-row"><span>Candidate class</span><b>${c.vrbaClass||'—'}</b></div>`:''}
+    <div class="dc-sec">Validation (${p.agarType})</div>
+    ${['contrast','shape','area','color','texture','halo'].map(k=>
+      vp[k]==null?'':`<div class="dc-row"><span>${k}</span><b>${vp[k].toFixed(2)}</b></div>`).join('')}
+    <div class="dc-row"><span>Halo score</span><b>${c.haloScore.toFixed(2)}</b></div>
+    <div class="dc-sec">Confidence</div>
+    <div class="dc-row"><span>AI confidence</span><b>${c.aiConfidence!=null?Math.round(c.aiConfidence*100)+'%':'n/a'}</b></div>
+    <div class="dc-row"><span>Detection score</span><b>${(c.detectionScore??0).toFixed(2)}</b></div>
+    <div class="dc-row"><span>Validation score</span><b>${(c.validationScore??0).toFixed(2)}</b></div>
+    <div class="dc-row"><span>Combined</span><b style="text-transform:capitalize">${c.confidenceClass} · ${Math.round(c.score*100)}%</b></div>
+    <div class="dc-actions">
+      <select class="reject-select" id="detailReason" style="flex:1;">
+        ${NEGATIVE_CLASSES.map(n=>`<option value="${n}">${n.replace(/_/g,' ')}</option>`).join('')}
+      </select>
+      <button class="danger" id="detailDelete">Reject</button>
+    </div>`;
+  document.getElementById('detailDelete').onclick=()=>{
+    const reason=document.getElementById('detailReason').value;
+    pushUndo(p); c.manuallyDeleted=true; c.rejectReason=reason;
+    logCorrection(p,'reject',c.id,{reason});
+    state.activeColonyId=null; refresh();
+  };
+}
+
+/* ---- CFU + evaluation ---- */
+function renderCFU(){
+  const p=activePlate();
+  const cfuVal=document.getElementById('cfuValue');
+  if(!p){ document.getElementById('cfuCount').value=''; cfuVal.textContent='—'; return; }
+  const n=activeColonies(p).length;
+  document.getElementById('cfuCount').value=p.tntc?'':n;
+  document.getElementById('dilutionExp').value=p.dilutionExp;
+  document.getElementById('platedVolume').value=p.volume;
+  document.getElementById('plateAgarLabel').value=p.agarType+(p.customAgar?.name?' — '+p.customAgar.name:'');
+  document.getElementById('tntcBtn').classList.toggle('active',p.tntc);
+  document.getElementById('plateNotes').value=p.notes||'';
+  if(p.tntc){ cfuVal.textContent='Not calculated'; cfuVal.classList.add('dim'); p.cfuPerMl=null; }
+  else{
+    const cfu=calculateCFU(n,p.dilutionExp,p.volume);
+    cfuVal.textContent=cfu>=1000?Math.round(cfu).toLocaleString():cfu.toFixed(1);
+    cfuVal.classList.remove('dim'); p.cfuPerMl=cfu;
+  }
+}
+function renderEval(){
+  const p=activePlate(), grid=document.getElementById('evalGrid');
+  document.getElementById('predCount').value=p?(p.tntc?'':activeColonies(p).length):'';
+  document.getElementById('gtCount').value=p&&p.groundTruthCount!=null?p.groundTruthCount:'';
+  document.getElementById('evalEngine').value=p?.result?.engine||'';
+  if(!p){ grid.innerHTML=''; return; }
+  const ev=evaluatePlate(p);
+  const cell=(l,v,na)=>`<div class="eval-cell"><div class="el">${l}</div><div class="ev${v==null?' na':''}">${v==null?(na||'enter ground truth'):v}</div></div>`;
+  grid.innerHTML=
+    cell('Absolute error', ev.absoluteError)+
+    cell('Relative error', ev.relativeError==null?null:(ev.relativeError*100).toFixed(1)+'%')+
+    cell('Count accuracy', ev.countAccuracy==null?null:(ev.countAccuracy*100).toFixed(1)+'%')+
+    cell('Precision', ev.precision==null?null:ev.precision.toFixed(3))+
+    cell('Recall', ev.recall==null?null:ev.recall.toFixed(3))+
+    cell('F1', ev.f1==null?null:ev.f1.toFixed(3))+
+    cell('IoU', null, 'needs GT masks')+
+    cell('Dice', null, 'needs GT masks')+
+    cell('mAP', null, 'needs GT masks');
+}
+document.getElementById('gtCount').oninput=e=>{
+  const p=activePlate(); if(!p) return;
+  p.groundTruthCount=e.target.value===''?null:+e.target.value;
+  renderEval();
+};
+document.getElementById('dilutionExp').onchange=e=>{const p=activePlate();if(p){p.dilutionExp=+e.target.value;renderCFU();}};
+document.getElementById('platedVolume').oninput=e=>{const p=activePlate();if(p){p.volume=Math.max(.001,+e.target.value||.1);renderCFU();}};
+document.getElementById('plateNotes').oninput=e=>{const p=activePlate();if(p)p.notes=e.target.value;};
+document.getElementById('tntcBtn').onclick=()=>{const p=activePlate();if(p){p.tntc=!p.tntc;renderAll();}};
+
+document.getElementById('expName').oninput=e=>state.experimentName=e.target.value;
+document.getElementById('sampleName').oninput=e=>state.sampleName=e.target.value;
+const expDate=document.getElementById('expDate');
+expDate.value=new Date().toISOString().slice(0,10);
+
+function renderAll(){
+  renderEngineStrip(); renderPlateList(); renderPipeline(); renderQuality();
+  drawStage(); fitZoom(); renderStats(); renderConfidence(); renderQueue();
+  renderColonyList(); renderDetail(); renderCFU(); renderEval();
+}
+window.addEventListener('resize',()=>{ if(activePlate()) fitZoom(); });
+
+/* =========================================================================
+   SECTION I — DEMO GENERATOR
+   ========================================================================= */
+function generateSyntheticPlate(agarType){
+  const size=620, c=document.createElement('canvas'); c.width=size;c.height=size;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#B9BDB6'; ctx.fillRect(0,0,size,size);
+  for(let i=0;i<400;i++){ ctx.fillStyle=`rgba(0,0,0,${Math.random()*.03})`;
+    ctx.fillRect(Math.random()*size,Math.random()*size,2,2); }
+  const cx=size/2,cy=size/2,r=size*.40;
+  const tint=(agarProfiles[agarType]||agarProfiles.Custom).agarTint;
+  const g=ctx.createRadialGradient(cx-r*.25,cy-r*.3,r*.1,cx,cy,r*1.05);
+  g.addColorStop(0,`rgb(${Math.min(255,tint[0]+25)},${Math.min(255,tint[1]+25)},${Math.min(255,tint[2]+25)})`);
+  g.addColorStop(.7,`rgb(${tint[0]},${tint[1]},${tint[2]})`);
+  g.addColorStop(1,`rgb(${tint[0]*.85|0},${tint[1]*.85|0},${tint[2]*.85|0})`);
+  ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip();
+  ctx.fillStyle=g; ctx.fillRect(cx-r,cy-r,r*2,r*2);
+
+  const n=32+Math.floor(Math.random()*68);
+  const placed=[];
+  for(let i=0;i<n;i++){
+    let x,y,rr=2.6+Math.random()*5.2;
+    if(placed.length&&Math.random()<.22){ // deliberately touching pairs
+      const base=placed[Math.floor(Math.random()*placed.length)];
+      const ang=Math.random()*Math.PI*2, dd=(base[2]+rr)*.82;
+      x=base[0]+Math.cos(ang)*dd; y=base[1]+Math.sin(ang)*dd;
+      if(Math.hypot(x-cx,y-cy)>r*.92) continue;
+    } else {
+      const ang=Math.random()*Math.PI*2, rad=Math.random()*r*.92;
+      x=cx+Math.cos(ang)*rad; y=cy+Math.sin(ang)*rad;
+    }
+    placed.push([x,y,rr]);
+    let col,halo=false;
+    if(agarType==='VRBA'){
+      const hu=[350,340,320,300,5,10][Math.floor(Math.random()*6)];
+      col=`hsl(${hu},${55+Math.random()*30}%,${28+Math.random()*18}%)`; halo=Math.random()<.75;
+    } else if(agarType==='TSA'){ col=['#EFE7D6','#E8DFC8','#D8B23A','#C9A227','#DCD3BC'][Math.floor(Math.random()*5)]; }
+    else if(agarType==='NA'){ col=['#E7E1CF','#D8B23A','#CFC7AE','#E3DCC6'][Math.floor(Math.random()*4)]; }
+    else { col=['#F1ECDD','#E6E0CC','#D9D2B8','#EFE9D8'][Math.floor(Math.random()*4)]; }
+    if(halo){
+      const hg=ctx.createRadialGradient(x,y,rr*.9,x,y,rr*2.6);
+      hg.addColorStop(0,'rgba(230,200,210,.55)'); hg.addColorStop(1,'rgba(230,200,210,0)');
+      ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(x,y,rr*2.6,0,Math.PI*2); ctx.fill();
+    }
+    ctx.fillStyle=col; ctx.beginPath();
+    if(agarType==='NA'&&Math.random()<.15){
+      ctx.moveTo(x+rr,y);
+      for(let a=0;a<Math.PI*2;a+=.6){ const rv=rr*(.7+Math.random()*.6); ctx.lineTo(x+Math.cos(a)*rv,y+Math.sin(a)*rv); }
+      ctx.closePath();
+    } else ctx.arc(x,y,rr,0,Math.PI*2);
+    ctx.fill();
+  }
+  // negative-sample-like artifacts
+  for(let i=0;i<10;i++){ ctx.fillStyle='rgba(40,40,40,.5)';
+    ctx.beginPath(); ctx.arc(cx+(Math.random()-.5)*r*1.6,cy+(Math.random()-.5)*r*1.6,.6+Math.random(),0,Math.PI*2); ctx.fill(); }
+  for(let i=0;i<3;i++){ // air-bubble rings
+    const bx=cx+(Math.random()-.5)*r*1.3, by=cy+(Math.random()-.5)*r*1.3, br=3+Math.random()*4;
+    ctx.strokeStyle='rgba(255,255,255,.45)'; ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.arc(bx,by,br,0,Math.PI*2); ctx.stroke();
+  }
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=3; ctx.stroke();
+  ctx.strokeStyle='rgba(0,0,0,.15)'; ctx.lineWidth=1; ctx.stroke();
+  return c.toDataURL('image/png');
+}
+
+/* =========================================================================
+   SECTION J — SAVE / EXPORT / HISTORY / SCHEMA
+   ========================================================================= */
+function snapshot(){
+  return {
+    experimentId:state.experimentId,
+    experimentName:document.getElementById('expName').value||'Experiment',
+    sampleName:document.getElementById('sampleName').value||'',
+    date:expDate.value||new Date().toISOString().slice(0,10),
+    savedAt:Date.now(),
+    engine:detectionEngine.mode,
+    plates:state.plates.map(p=>{
+      const act=activeColonies(p);
+      return { id:p.id, agarType:p.agarType,
+        colonyCount:p.tntc?'TNTC':act.length,
+        highCount:act.filter(c=>c.confidenceClass==='high').length,
+        reviewCount:act.filter(c=>c.confidenceClass!=='high').length,
+        dilutionExp:p.dilutionExp, volume:p.volume,
+        cfuPerMl:p.tntc?null:calculateCFU(act.length,p.dilutionExp,p.volume),
+        confidence:p.confidence, engine:p.result?.engine, tntc:p.tntc, notes:p.notes||'',
+        evaluation:evaluatePlate(p),
+        corrections:p.corrections?p.corrections.userCorrections.length:0 };
+    })
+  };
+}
+document.getElementById('saveBtn').onclick=()=>{
+  const s=snapshot();
+  let h=[]; try{h=JSON.parse(localStorage.getItem('colonyCounterHistory')||'[]');}catch(e){}
+  h.unshift(s); if(h.length>50) h=h.slice(0,50);
+  try{localStorage.setItem('colonyCounterHistory',JSON.stringify(h));}catch(e){}
+  const b=document.getElementById('saveBtn'), o=b.textContent;
+  b.textContent='Saved ✓'; setTimeout(()=>b.textContent=o,1200);
+};
+function download(name,content,type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type})); a.download=name; a.click();
+}
+const csvEsc=s=>{s=String(s??'');return /[,"\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
+document.getElementById('exportBtn').onclick=()=>{
+  const s=snapshot();
+  const head=['Experiment','Sample','Date','Engine','Agar Type','Plate','Colony Count','High Confidence Count','Review Count','Dilution','Plated Volume','CFU/mL','AI Confidence','Image Quality','Morphology Validation','Overall Confidence','Ground Truth','Absolute Error','Relative Error','User Corrections','TNTC'];
+  const rows=[head.join(',')];
+  s.plates.forEach((p,i)=>{
+    const c=p.confidence||{}, e=p.evaluation||{};
+    rows.push([csvEsc(s.experimentName),csvEsc(s.sampleName),s.date,p.engine,p.agarType,'Plate '+(i+1),
+      p.colonyCount,p.highCount,p.reviewCount,'10^-'+p.dilutionExp,p.volume,
+      p.cfuPerMl==null?'N/A':Math.round(p.cfuPerMl),
+      c.aiConfidence==null?'N/A':c.aiConfidence+'%',
+      (c.imageQuality??'')+'%',(c.morphologyValidation??'')+'%',(c.overall??'')+'%',
+      e.groundTruthCount??'',e.absoluteError??'',
+      e.relativeError==null?'':(e.relativeError*100).toFixed(1)+'%',
+      p.corrections,p.tntc?'Yes':'No'].join(','));
+  });
+  download((s.experimentName||'experiment').replace(/\s+/g,'_')+'_colonycount.csv',rows.join('\n'),'text/csv');
+};
+/* annotation export — dataset/<AGAR>/{images,masks} layout for future training */
+document.getElementById('exportAnnBtn').onclick=()=>{
+  const s=snapshot();
+  const ann={
+    format:'colonycount-instance-annotation/v1',
+    datasetLayout:'dataset/<AGAR_TYPE>/images/<id>.png  +  dataset/<AGAR_TYPE>/masks/<id>.json',
+    experiment:{ id:s.experimentId, name:s.experimentName, sample:s.sampleName, date:s.date },
+    engineUsed:detectionEngine.mode,
+    plates:state.plates.map(p=>({
+      plateId:p.id, agarType:p.agarType,
+      imageFile:`dataset/${p.agarType}/images/${p.id}.png`,
+      maskFile:`dataset/${p.agarType}/masks/${p.id}.json`,
+      imageSize:[p.w,p.h], analysisSize:[p.result?.maskW,p.result?.maskH],
+      plateDetection:p.plateDetect,
+      imageQuality:p.quality,
+      originalPrediction:p.corrections?.originalPrediction||[],
+      userCorrections:p.corrections?.userCorrections||[],
+      correctedPrediction:activeColonies(p).map(c=>({
+        id:c.id, centroid:[c.x,c.y], bbox:c.bbox, area:c.area,
+        mask:c.mask?{rle:c.mask.rle,width:c.mask.width,height:c.mask.height}:null,
+        label:'colony', source:c.source,
+        confidence:c.score, aiConfidence:c.aiConfidence,
+        features:{ circularity:c.circularity, solidity:c.solidity, extent:c.extent,
+          eccentricity:c.eccentricity, aspectRatio:c.aspectRatio,
+          rgb:c.rgb, hsv:c.hsv, lab:c.lab, deltaE:c.deltaE,
+          contrast:c.contrast, texture:c.textureScore, edgeStrength:c.edgeStrength,
+          haloScore:c.haloScore, redPurpleScore:c.redPurpleScore },
+        vrbaClass:c.vrbaClass
+      })),
+      negativeSamples:negativeSamples(p),
+      evaluation:evaluatePlate(p),
+      confidence:p.confidence,
+      timestamp:Date.now()
+    }))
+  };
+  download((s.experimentName||'experiment').replace(/\s+/g,'_')+'_annotations.json',JSON.stringify(ann,null,2),'application/json');
+};
+
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>document.getElementById(b.dataset.close).classList.remove('show'));
+document.querySelectorAll('.modal-back').forEach(m=>m.onclick=e=>{ if(e.target===m) m.classList.remove('show'); });
+document.getElementById('openHistory').onclick=()=>{ renderHistory(); document.getElementById('historyModal').classList.add('show'); };
+function renderHistory(){
+  let h=[]; try{h=JSON.parse(localStorage.getItem('colonyCounterHistory')||'[]');}catch(e){}
+  const el=document.getElementById('historyList');
+  if(!h.length){ el.innerHTML='<div class="hist-empty">No saved experiments yet.</div>'; return; }
+  el.innerHTML=h.map(x=>`<div class="hist-item">
+    <div class="hd"><span>${x.date} · ${x.engine||'opencv'}</span><span>${new Date(x.savedAt).toLocaleTimeString()}</span></div>
+    <div style="font-weight:600;margin-top:3px;">${esc(x.experimentName)} ${x.sampleName?'· '+esc(x.sampleName):''}</div>
+    <div class="plates">${x.plates.map(p=>`<span class="p-chip">${p.agarType} — ${p.tntc?'TNTC':p.colonyCount+' colonies'}${p.cfuPerMl!=null?' · '+Math.round(p.cfuPerMl).toLocaleString()+' CFU/mL':''}${p.confidence?' · '+p.confidence.overall+'%':''}</span>`).join('')}</div>
+  </div>`).join('');
+}
+const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML;};
+
+document.getElementById('openSchema').onclick=()=>{
+  document.getElementById('schemaCode').textContent=
+`// 1. Register an instance-segmentation backend (per agar type)
+colonyAI.register('PCA', {
+  async predict(imageData, { agarType, plateDetect, inputSize }) {
+    // run YOLO-seg / Mask R-CNN / U-Net via TensorFlow.js or ONNX Runtime Web
+    // return an array of instances:
+    return [{
+      id: 1,
+      mask: { rle: [startIndex, runLength, ...], width, height },
+      bbox: [x, y, w, h],
+      confidence: 0.94,
+      area: 231,
+      centroid: [x, y]
+    }];
+  }
+});
+
+// 2. Switch the engine
+colonyDetectionEngine.setMode('ai');      // or 'hybrid', or 'opencv'
+
+// Pipeline applied to every engine's instances:
+//   extractInstanceFeatures()  -> area, diameter, perimeter, circularity,
+//                                 aspectRatio, solidity, extent, eccentricity,
+//                                 centroid, RGB/HSV/LAB, deltaE, contrast,
+//                                 texture, edgeStrength, haloScore, redPurpleScore
+//   validateInstance()         -> agar-specific validation score (soft weights)
+//   computeConfidence()        -> { aiConfidence, imageQuality, plateDetection,
+//                                   morphologyValidation, detectionStability, overall }
+
+// Dataset layout expected by "Export annotations":
+//   dataset/PCA/images/*.png   dataset/PCA/masks/*.json
+//   dataset/TSA/images/*.png   dataset/TSA/masks/*.json
+//   dataset/VRBA/images/*.png  dataset/VRBA/masks/*.json
+//   dataset/NA/images/*.png    dataset/NA/masks/*.json
+// Negative sample classes recorded from user rejections:
+//   ${NEGATIVE_CLASSES.join(', ')}
+
+// Active learning loop:
+//   prediction -> low-confidence review queue -> user correction
+//   -> annotation export -> retraining -> register improved model`;
+  document.getElementById('schemaModal').classList.add('show');
+};
+
+renderEngineStrip();
+switchScreen('setup');
+</script>
+</body>
+</html>
