@@ -1,0 +1,3518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Petricore Colony Counter</title>
+<style>
+:root {
+    --ink: #14232A;
+    --muted: #5B6B72;
+    --accent: #0E7C7B;
+    --accent-dark: #0B5F5E;
+    --accent-soft: rgba(14,124,123,0.14);
+    --warn: #C77C1F;
+    --warn-soft: rgba(199,124,31,0.18);
+    --danger: #C1443B;
+    --danger-soft: rgba(193,68,59,0.14);
+    --blue: #2563EB;
+    --blue-soft: rgba(37,99,235,0.14);
+    --border: rgba(255,255,255,0.55);
+    --mono: 'SF Mono', 'Consolas', 'Menlo', 'Liberation Mono', monospace;
+    --sans: -apple-system, 'Segoe UI', 'Pretendard', 'Noto Sans KR', sans-serif;
+
+    --glass-bg: rgba(255,255,255,0.62);
+    --glass-bg-strong: rgba(255,255,255,0.78);
+    --glass-border: rgba(255,255,255,0.65);
+    --glass-shadow: 0 8px 32px rgba(31,41,55,0.14), inset 0 1px 0 rgba(255,255,255,0.6);
+    --radius-lg: 22px;
+    --radius-md: 14px;
+    --radius-sm: 9px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ---------- 그라디언트 메시 배경 ---------- */
+html { min-height: 100%; }
+body {
+    min-height: 100vh;
+    font-family: var(--sans);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    background-color: #eef1f7;
+    background-image:
+        radial-gradient(at 12% 18%, rgba(14,124,123,0.38) 0, transparent 52%),
+        radial-gradient(at 88% 12%, rgba(99,102,241,0.30) 0, transparent 50%),
+        radial-gradient(at 80% 82%, rgba(236,72,153,0.22) 0, transparent 50%),
+        radial-gradient(at 15% 88%, rgba(56,189,248,0.30) 0, transparent 50%),
+        radial-gradient(at 50% 45%, rgba(167,139,250,0.18) 0, transparent 60%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+button { font-family: var(--sans); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.dot {
+    display: inline-block;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    border: 2px solid #D6453B;
+    background: transparent;
+    vertical-align: middle;
+}
+
+/* ---------- 글래스모피즘 공통 ---------- */
+.panel, .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--radius-lg);
+}
+
+/* ---------- 상단 헤더 ---------- */
+.app-header {
+    background: linear-gradient(135deg, rgba(11,95,94,0.88), rgba(14,124,123,0.82) 70%);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: var(--radius-lg);
+    padding: 22px 28px;
+    color: #F4FAF9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 28px;
+    box-shadow: 0 12px 36px rgba(11,95,94,0.28), inset 0 1px 0 rgba(255,255,255,0.2);
+    margin: 20px 20px 0 20px;
+    flex-wrap: wrap;
+}
+.app-header .title-block h1 { font-size: 24px; letter-spacing: -0.02em; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.app-header .title-block h1 .dot { border-color: #FFFFFF; width: 11px; height: 11px; }
+.app-header .title-block p { margin-top: 6px; font-size: 13px; color: #D9EFEC; max-width: 560px; line-height: 1.5; }
+.usage-steps { display: flex; gap: 12px; flex-wrap: wrap; }
+.usage-steps .step { background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.25); border-radius: var(--radius-md); padding: 9px 12px; font-size: 11.5px; line-height: 1.5; width: 160px; }
+.usage-steps .step b { display: inline-flex; align-items: center; justify-content: center; width: 17px; height: 17px; border-radius: 50%; background: #FFFFFF; color: var(--accent-dark); font-size: 10.5px; margin-right: 5px; }
+
+/* ---------- 벤토 통계 타일 ---------- */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 16px 20px 0 20px;
+}
+.stat-tile {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.stat-value { font-size: 26px; font-family: var(--mono); color: var(--accent-dark); }
+
+/* ---------- 본문: 벤토 그리드 ---------- */
+.main-split {
+    display: grid;
+    grid-template-columns: 0.93fr 1fr;
+    gap: 18px;
+    padding: 18px 20px 28px 20px;
+    align-items: start;
+}
+.left-col { display: flex; flex-direction: column; gap: 18px; min-width: 420px; }
+
+/* ---------- 업로드 구역 ---------- */
+.dropzone { padding: 22px 20px; display: flex; align-items: center; justify-content: space-between; border: 1.5px dashed rgba(14,124,123,0.35); transition: padding 0.15s ease, background 0.15s ease; }
+.dropzone.dragover { border-color: var(--accent); background: rgba(14,124,123,0.18); }
+.dropzone.compact { padding: 12px 18px; }
+.dropzone .dz-left { display: flex; align-items: center; gap: 12px; }
+.dropzone .dz-icon { width: 34px; height: 34px; border-radius: var(--radius-sm); background: rgba(14,124,123,0.16); color: var(--accent-dark); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.dropzone .dz-text b { font-size: 13.5px; display:block; }
+.dropzone .dz-text span { font-size: 11px; color: var(--muted); }
+.dz-progress-track { margin-top: 6px; width: 200px; max-width: 46vw; height: 5px; border-radius: 3px; background: rgba(14,124,123,0.16); overflow: hidden; display: none; }
+.dz-progress-track.active { display: block; }
+.dz-progress-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 3px; transition: width 0.2s ease; }
+html[data-theme="dark"] .dz-progress-track { background: rgba(45,212,191,0.14); }
+.dz-btn { background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); padding: 9px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer; flex-shrink: 0; box-shadow: 0 6px 16px rgba(14,124,123,0.35); }
+.dz-btn:hover { background: var(--accent-dark); }
+
+/* ---------- 데이터 테이블 구역 ---------- */
+.table-panel { padding: 14px 16px 10px 16px; }
+.table-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.search-box, .type-filter { border: 1px solid rgba(20,35,42,0.12); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 12px; background: rgba(255,255,255,0.6); color: var(--ink); }
+.search-box { flex: 1; }
+.sort-badge {
+    font-size: 10px; font-family: var(--mono); font-weight: 700; letter-spacing: 0.04em;
+    background: rgba(14,124,123,0.16); color: var(--accent-dark);
+    padding: 5px 10px; border-radius: 999px; white-space: nowrap;
+    border: 1px solid rgba(14,124,123,0.25);
+}
+.bulk-actions { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.bulk-hint { flex: 1; font-size: 11px; color: var(--muted); }
+.bulk-actions button { border: none; border-radius: var(--radius-sm); padding: 7px 11px; font-size: 11.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn-excel { background: rgba(14,124,123,0.16); color: var(--accent-dark); }
+.btn-excel:not(:disabled):hover { background: rgba(14,124,123,0.26); }
+.btn-zip { background: rgba(37,99,235,0.14); color: #1D4ED8; }
+.btn-zip:not(:disabled):hover { background: rgba(37,99,235,0.24); }
+.btn-delete { background: var(--danger-soft); color: var(--danger); }
+.btn-delete:not(:disabled):hover { background: rgba(193,68,59,0.24); }
+
+.table-responsive { max-height: 560px; overflow-y: auto; overflow-x: auto; border-radius: var(--radius-md); }
+table { width: 100%; border-collapse: collapse; }
+thead th { position: sticky; top: 0; background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); text-align: left; padding: 7px 6px; border-bottom: 1.5px solid rgba(20,35,42,0.08); z-index: 1; white-space: nowrap; }
+tbody td { font-size: 12px; padding: 8px 6px; border-bottom: 1px solid rgba(20,35,42,0.06); font-family: var(--mono); }
+tbody tr.selected { background: rgba(14,124,123,0.12); }
+tbody tr.active-row { outline: 2px solid var(--accent); outline-offset: -2px; }
+.editable-cell { cursor: text; min-width: 2.6rem; font-family: var(--mono); border-radius: 6px; }
+.editable-cell:focus { outline: 2px solid var(--accent); background: rgba(14,124,123,0.1); }
+.editable-cell.needs-review { background: var(--warn-soft); box-shadow: inset 0 0 0 1px var(--warn); }
+.cfu-red { color: #C1443B; font-weight: 700; }
+.cfu-blue { color: #2563EB; font-weight: 700; }
+.view-btn, .edit-btn, .delete-row-btn { border: none; border-radius: var(--radius-sm); padding: 5px 8px; font-size: 10px; font-family: var(--sans); font-weight: 600; cursor: pointer; margin-right: 3px; }
+.view-btn { background: var(--ink); color: #fff; }
+.view-btn.active { background: var(--accent); }
+.view-btn:hover { background: var(--accent-dark); }
+.edit-btn { background: rgba(20,35,42,0.08); color: var(--ink); border: 1px solid rgba(20,35,42,0.1); }
+.edit-btn:hover { background: rgba(20,35,42,0.16); }
+.delete-row-btn { background: var(--danger-soft); color: var(--danger); }
+.delete-row-btn:hover { background: rgba(193,68,59,0.24); }
+.empty-message { text-align: center; color: var(--muted); padding: 2rem !important; font-family: var(--sans); }
+
+/* ---------- 우측: 사진 뷰어 (읽기전용) ---------- */
+.viewer-panel { display: flex; flex-direction: column; min-height: 640px; position: sticky; top: 18px; }
+.viewer-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 14px 18px; border-bottom: 1px solid rgba(20,35,42,0.08); gap: 10px; flex-wrap: wrap; }
+.viewer-header .vh-title { font-size: 13px; font-weight: 700; display:flex; align-items:center; gap:8px; }
+.viewer-header .vh-sub { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+.viewer-controls { display: flex; align-items: center; gap: 8px; }
+.cfu-split-mini { display: flex; gap: 6px; }
+.cfu-mini { font-size: 11px; font-family: var(--mono); border-radius: 999px; padding: 4px 9px; }
+.cfu-mini.red { background: var(--danger-soft); color: var(--danger); }
+.cfu-mini.blue { background: var(--blue-soft); color: var(--blue); }
+.zoom-pill { background: rgba(255,255,255,0.5); border: 1px solid rgba(20,35,42,0.1); border-radius: 999px; padding: 5px 12px; font-size: 11px; color: var(--muted); font-family: var(--mono); }
+.viewer-canvas { flex: 1; background: #101B20; border-radius: 0 0 var(--radius-lg) var(--radius-lg); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; min-height: 420px; }
+.viewer-canvas canvas { border-radius: 4px; box-shadow: 0 8px 30px rgba(0,0,0,0.35); cursor: default; }
+.viewer-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #7C9198; font-size: 12px; background: #101B20; text-align:center; padding: 0 20px; }
+.scroll-hint { position: absolute; bottom: 12px; right: 12px; background: rgba(0,0,0,0.55); color: #fff; font-size: 10px; padding: 6px 10px; border-radius: var(--radius-sm); pointer-events: none; }
+
+@media (max-width: 1200px) {
+    .main-split { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr; }
+    .viewer-panel { position: static; min-height: 480px; }
+}
+
+/* =========================================================
+   Colony Editor 모달 (다크 글래스)
+   ========================================================= */
+.editor-modal { position: fixed; inset: 0; background: rgba(6,12,15,0.5); backdrop-filter: blur(6px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.editor-modal-inner {
+    width: 100%; max-width: 1360px; height: 92vh;
+    background: rgba(13,20,24,0.82);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px; overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.5);
+}
+
+.editor-modal-header { background: linear-gradient(135deg, rgba(11,95,94,0.55), rgba(18,58,68,0.55) 80%); padding: 16px 24px; display: flex; justify-content: space-between; align-items: flex-start; color: #EAF6F5; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.emh-eyebrow { font-size: 10.5px; letter-spacing: 0.12em; color: #9FD8D3; font-family: var(--mono); }
+.emh-title { font-size: 21px; font-weight: 700; margin-top: 4px; }
+.emh-file { font-size: 11.5px; color: #A9C6C3; margin-top: 4px; }
+.emh-close { background: rgba(255,255,255,0.12); border: none; color: #fff; width: 32px; height: 32px; border-radius: var(--radius-sm); font-size: 15px; cursor: pointer; }
+.emh-close:hover { background: rgba(255,255,255,0.22); }
+
+.editor-modal-body { flex: 1; display: flex; min-height: 0; }
+.editor-canvas-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.editor-canvas-wrapper { flex: 1; position: relative; background: #0b1418; overflow: hidden; }
+.editor-canvas-wrapper canvas { display: block; }
+.editor-canvas-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: rgba(11,20,24,0.6); border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; flex-wrap: wrap; gap: 8px; }
+.ec-nav, .ec-view-toggles { display: flex; align-items: center; gap: 6px; }
+.ec-btn { background: rgba(255,255,255,0.08); color: #DCE9E8; border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm); padding: 6px 11px; font-size: 11.5px; cursor: pointer; }
+.ec-btn:hover { background: rgba(255,255,255,0.16); }
+.ec-btn.toggle.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.ec-counter { color: #9FB3B1; font-size: 11px; font-family: var(--mono); margin-left: 4px; }
+.ec-zoom-val { color: #DCE9E8; font-size: 11.5px; font-family: var(--mono); width: 42px; text-align: center; }
+
+.editor-sidebar { width: 460px; flex-shrink: 0; background: rgba(16,26,31,0.55); padding: 18px 18px 24px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; border-left: 1px solid rgba(255,255,255,0.06); }
+.es-eyebrow { font-size: 10px; letter-spacing: 0.1em; color: #7FA7A3; text-transform: uppercase; font-family: var(--mono); }
+.es-eyebrow.section-gap { margin-top: 10px; }
+
+.es-card.cfu-card { background: rgba(22,35,42,0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px 14px; }
+.cfu-card-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 8px; }
+.cfu-split { display: flex; gap: 14px; }
+.cfu-block span { display: block; font-size: 10px; color: #8FA6A3; }
+.cfu-block b { font-size: 26px; font-family: var(--mono); }
+.cfu-block.red b { color: #F87171; }
+.cfu-block.blue b { color: #60A5FA; }
+.cfu-conc { text-align: right; }
+.cfu-conc span { display: block; font-size: 9.5px; color: #8FA6A3; }
+.cfu-conc b { font-size: 14px; color: #E7F3F2; font-family: var(--mono); }
+.range-bar { height: 5px; background: rgba(255,255,255,0.1); border-radius: 999px; margin-top: 10px; overflow: hidden; }
+.range-bar-fill { height: 100%; background: linear-gradient(90deg, #2dd4bf, #34d399); width: 0%; transition: width 0.2s; }
+.range-label { font-size: 10.5px; color: #8FA6A3; margin-top: 6px; }
+.range-label.warn { color: #FBBF24; }
+
+.es-mode-row { display: flex; gap: 6px; }
+.es-mode-btn { flex: 1; background: rgba(22,35,42,0.7); color: #D7E5E3; border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 8px 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.es-mode-btn:hover { background: rgba(29,46,53,0.8); }
+.es-mode-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.es-mode-btn.secondary { font-weight: 500; color: #B7C8C6; }
+
+.es-color-btn { flex: 1; background: rgba(22,35,42,0.7); color: #D7E5E3; border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 7px 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; }
+.es-color-btn.red.active { background: #C1443B; border-color: #C1443B; color: #fff; }
+.es-color-btn.blue.active { background: #2563EB; border-color: #2563EB; color: #fff; }
+.es-color-btn.active:not(.red):not(.blue) { background: #3B4B52; border-color: #3B4B52; color: #fff; }
+
+.es-slider { font-size: 10.5px; color: #B7C8C6; }
+.es-slider label { display: flex; justify-content: space-between; margin-bottom: 3px; }
+.es-slider label span { color: #E7F3F2; font-family: var(--mono); }
+.es-slider input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+.es-primary-btn { background: #2563EB; color: #fff; border: none; border-radius: var(--radius-sm); padding: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.es-primary-btn:hover { background: #1D4ED8; }
+.es-secondary-btn { background: rgba(22,35,42,0.7); color: #D7E5E3; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 9px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.es-secondary-btn:hover { background: rgba(29,46,53,0.8); }
+
+.es-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+.es-meta-grid div { display: flex; flex-direction: column; gap: 3px; }
+.es-meta-grid div.span2 { grid-column: span 2; }
+.es-meta-grid label { font-size: 9.5px; color: #8FA6A3; }
+.es-meta-grid input, .es-meta-grid input[type="text"] { width: 90%; background: rgba(22,35,42,0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px 8px; color: #EAF6F5; font-family: var(--mono); font-size: 12.5px; }
+.es-meta-grid input:focus { outline: none; border-color: var(--accent); }
+
+.ocr-raw-box { background: rgba(11,20,24,0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm); padding: 9px 10px; font-size: 10.5px; color: #9FB3B1; font-family: var(--mono); line-height: 1.5; word-break: break-all; max-height: 70px; overflow-y: auto; }
+
+.es-commit-btn { background: #059669; color: #fff; border: none; border-radius: var(--radius-md); padding: 12px; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 6px; }
+.es-commit-btn:hover { background: #047857; }
+
+/* ---------- 다크모드 토글 버튼 ---------- */
+.theme-toggle {
+    background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.28);
+    color: #F4FAF9;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    font-size: 17px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s ease;
+}
+.theme-toggle:hover { background: rgba(255,255,255,0.28); }
+
+/* =========================================================
+   다크모드
+   ========================================================= */
+html[data-theme="dark"] {
+    --ink: #E7F0EF;
+    --muted: #9BB0AD;
+    --accent: #2DD4BF;
+    --accent-dark: #14B8A6;
+    --border: rgba(255,255,255,0.12);
+    --glass-bg: rgba(20,28,32,0.62);
+    --glass-bg-strong: rgba(20,28,32,0.8);
+    --glass-border: rgba(255,255,255,0.10);
+    --glass-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+html[data-theme="dark"] body {
+    background-color: #0B1418;
+    background-image:
+        radial-gradient(at 12% 18%, rgba(45,212,191,0.28) 0, transparent 52%),
+        radial-gradient(at 88% 12%, rgba(129,140,248,0.24) 0, transparent 50%),
+        radial-gradient(at 80% 82%, rgba(236,72,153,0.18) 0, transparent 50%),
+        radial-gradient(at 15% 88%, rgba(56,189,248,0.22) 0, transparent 50%),
+        radial-gradient(at 50% 45%, rgba(167,139,250,0.14) 0, transparent 60%);
+}
+html[data-theme="dark"] .app-header {
+    background: linear-gradient(135deg, rgba(6,40,40,0.85), rgba(11,95,94,0.7) 70%);
+    border-color: rgba(255,255,255,0.08);
+}
+html[data-theme="dark"] .theme-toggle { background: rgba(255,255,255,0.08); }
+
+html[data-theme="dark"] .stat-value { color: var(--accent); }
+
+html[data-theme="dark"] .search-box,
+html[data-theme="dark"] .type-filter {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.12);
+    color: var(--ink);
+}
+html[data-theme="dark"] .sort-badge {
+    background: rgba(45,212,191,0.14);
+    color: var(--accent);
+    border-color: rgba(45,212,191,0.3);
+}
+html[data-theme="dark"] .dropzone { border-color: rgba(45,212,191,0.35); }
+html[data-theme="dark"] .dropzone.dragover { background: rgba(45,212,191,0.14); }
+html[data-theme="dark"] .dropzone .dz-icon { background: rgba(45,212,191,0.14); color: var(--accent); }
+html[data-theme="dark"] .dz-btn { background: var(--accent); color: #06201E; box-shadow: 0 6px 16px rgba(45,212,191,0.3); }
+html[data-theme="dark"] .dz-btn:hover { background: var(--accent-dark); }
+
+html[data-theme="dark"] thead th { background: rgba(20,28,32,0.85); border-bottom-color: rgba(255,255,255,0.08); }
+html[data-theme="dark"] tbody td { border-bottom-color: rgba(255,255,255,0.06); }
+html[data-theme="dark"] tbody tr.selected { background: rgba(45,212,191,0.12); }
+html[data-theme="dark"] .editable-cell:focus { background: rgba(45,212,191,0.12); }
+html[data-theme="dark"] .edit-btn { background: rgba(255,255,255,0.08); color: var(--ink); border-color: rgba(255,255,255,0.12); }
+html[data-theme="dark"] .edit-btn:hover { background: rgba(255,255,255,0.16); }
+html[data-theme="dark"] .view-btn { background: rgba(255,255,255,0.14); color: var(--ink); }
+html[data-theme="dark"] .view-btn.active { background: var(--accent); color: #06201E; }
+html[data-theme="dark"] .btn-excel { background: rgba(45,212,191,0.14); color: var(--accent); }
+html[data-theme="dark"] .btn-zip { background: rgba(96,165,250,0.16); color: #93C5FD; }
+
+html[data-theme="dark"] .zoom-pill { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); color: var(--muted); }
+
+/* ---------- 페이지네이션 ---------- */
+.pagination-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 4px 4px 4px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.pagination-info { font-size: 11px; color: var(--muted); }
+.pagination-controls { display: flex; align-items: center; gap: 10px; }
+.page-btn {
+    background: rgba(14,124,123,0.14);
+    color: var(--accent-dark);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.page-btn:hover:not(:disabled) { background: rgba(14,124,123,0.24); }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.page-indicator { font-size: 11.5px; font-family: var(--mono); color: var(--ink); min-width: 52px; text-align: center; }
+html[data-theme="dark"] .page-btn { background: rgba(45,212,191,0.14); color: var(--accent); }
+
+
+/* =========================================================
+   COLOR REFRESH — 담청색 + 청회색
+   기능/DOM/UI 배치는 변경하지 않고 색상만 재정의합니다.
+   ========================================================= */
+:root {
+    --ink: #253746;
+    --muted: #6B7C87;
+    --accent: #78A6C3;
+    --accent-dark: #5F879F;
+    --accent-soft: rgba(120,166,195,0.15);
+    --warn: #B8833F;
+    --warn-soft: rgba(184,131,63,0.14);
+    --danger: #C85B57;
+    --danger-soft: rgba(200,91,87,0.12);
+    --blue: #4F82B8;
+    --blue-soft: rgba(79,130,184,0.13);
+    --border: #D9E2E7;
+    --glass-bg: #FFFFFF;
+    --glass-bg-strong: #FFFFFF;
+    --glass-border: #DCE4E9;
+    --glass-shadow: 0 5px 18px rgba(63,84,97,0.07);
+    --radius-lg: 14px;
+    --radius-md: 10px;
+    --radius-sm: 7px;
+}
+
+body {
+    background: #F3F6F8;
+    background-image:
+        radial-gradient(at 8% 5%, rgba(120,166,195,0.10) 0, transparent 38%),
+        radial-gradient(at 94% 8%, rgba(101,126,141,0.08) 0, transparent 34%),
+        radial-gradient(at 88% 94%, rgba(120,166,195,0.06) 0, transparent 38%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
+.panel, .glass {
+    background: var(--glass-bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--radius-lg);
+}
+
+.app-header {
+    background: linear-gradient(135deg, #789FB8, #667F8D 100%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid #6F8998;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 7px 20px rgba(72,94,106,0.16), inset 0 1px 0 rgba(255,255,255,0.16);
+}
+.app-header .title-block p { color: #EAF1F4; }
+.usage-steps .step {
+    background: rgba(255,255,255,0.11);
+    border-color: rgba(255,255,255,0.22);
+}
+.usage-steps .step b { color: #5F7F92; }
+
+.stat-value { color: var(--accent-dark); }
+
+.dropzone { border-color: rgba(120,166,195,0.55); }
+.dropzone.dragover { border-color: var(--accent-dark); background: rgba(120,166,195,0.10); }
+.dropzone .dz-icon { background: rgba(120,166,195,0.14); color: var(--accent-dark); }
+.dz-progress-track { background: rgba(120,166,195,0.16); }
+.dz-progress-fill { background: var(--accent); }
+.dz-btn { background: var(--accent-dark); box-shadow: 0 5px 14px rgba(95,135,159,0.20); }
+.dz-btn:hover { background: #4F7185; }
+
+.search-box, .type-filter {
+    border-color: #D5E0E6;
+    background: #FBFCFD;
+}
+.search-box:focus, .type-filter:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(120,166,195,0.12);
+}
+.sort-badge {
+    background: rgba(120,166,195,0.12);
+    color: #5F7F92;
+    border-color: rgba(120,166,195,0.25);
+}
+.btn-excel { background: rgba(120,166,195,0.14); color: #567F98; }
+.btn-excel:not(:disabled):hover { background: rgba(120,166,195,0.23); }
+.btn-zip { background: rgba(79,130,184,0.11); color: #4F76A2; }
+.btn-zip:not(:disabled):hover { background: rgba(79,130,184,0.19); }
+.btn-delete { background: var(--danger-soft); color: var(--danger); }
+
+.table-responsive { border-radius: var(--radius-md); }
+thead th {
+    background: #F6F9FA;
+    backdrop-filter: none;
+    color: #657681;
+    border-bottom-color: #DCE4E9;
+}
+tbody td { border-bottom-color: #E7EDF0; }
+tbody tr.selected { background: rgba(120,166,195,0.10); }
+tbody tr.active-row { outline-color: var(--accent-dark); }
+.editable-cell:focus { outline-color: var(--accent); background: rgba(120,166,195,0.09); }
+.editable-cell.needs-review { background: var(--warn-soft); box-shadow: inset 0 0 0 1px var(--warn); }
+.cfu-red { color: #C85B57; }
+.cfu-blue { color: #4F82B8; }
+.view-btn { background: #506572; }
+.view-btn.active, .view-btn:hover { background: var(--accent-dark); }
+.edit-btn { background: #F3F6F8; color: #415561; border-color: #D9E2E7; }
+.edit-btn:hover { background: #E9EFF2; }
+.delete-row-btn { background: var(--danger-soft); color: var(--danger); }
+
+.viewer-header { border-bottom-color: #DCE4E9; }
+.cfu-mini.red { background: var(--danger-soft); color: var(--danger); }
+.cfu-mini.blue { background: var(--blue-soft); color: var(--blue); }
+.zoom-pill { background: #F7F9FA; border-color: #D9E2E7; color: #667983; }
+
+.pagination-bar { border-color: #E1E8EC; }
+.page-btn { background: rgba(120,166,195,0.13); color: #5F7F92; }
+.page-btn:hover:not(:disabled) { background: rgba(120,166,195,0.22); }
+.page-indicator { color: var(--ink); }
+
+.theme-toggle {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.22);
+}
+.theme-toggle:hover { background: rgba(255,255,255,0.20); }
+
+/* Colony Editor: 기능 배치는 그대로, 담청/청회색 계열로만 조정 */
+.editor-modal { background: rgba(35,51,61,0.48); backdrop-filter: blur(4px); }
+.editor-modal-inner {
+    background: #F5F8FA;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-color: #D3DEE4;
+    border-radius: 16px;
+    box-shadow: 0 24px 70px rgba(39,56,67,0.24);
+}
+.editor-modal-header {
+    background: linear-gradient(135deg, #6F96AD, #5F7481 100%);
+    color: #F8FBFC;
+    border-bottom-color: rgba(255,255,255,0.16);
+}
+.emh-eyebrow { color: #DDEBF2; }
+.emh-file { color: #D4E2E8; }
+.emh-close { background: rgba(255,255,255,0.12); }
+.emh-close:hover { background: rgba(255,255,255,0.22); }
+.editor-canvas-wrapper { background: #17242C; }
+.editor-canvas-toolbar {
+    background: #253740;
+    border-top-color: rgba(255,255,255,0.10);
+}
+.ec-btn {
+    background: rgba(255,255,255,0.07);
+    color: #DCE7EB;
+    border-color: rgba(255,255,255,0.12);
+}
+.ec-btn:hover { background: rgba(255,255,255,0.14); }
+.ec-btn.toggle.active { background: var(--accent-dark); border-color: var(--accent-dark); }
+.ec-counter, .ec-zoom-val { color: #B7C8CF; }
+.editor-sidebar {
+    background: #EAF0F3;
+    border-left-color: #D5E0E5;
+}
+.es-eyebrow { color: #69818D; }
+.es-card.cfu-card {
+    background: #F8FAFB;
+    border-color: #D7E1E6;
+}
+.cfu-block span, .cfu-conc span, .range-label { color: #71838C; }
+.cfu-block.red b { color: #C85B57; }
+.cfu-block.blue b { color: #4F82B8; }
+.cfu-conc b { color: #344C58; }
+.range-bar { background: #DCE5E9; }
+.range-bar-fill { background: linear-gradient(90deg, #78A6C3, #607F90); }
+.range-label.warn { color: #A97738; }
+.es-mode-btn, .es-color-btn {
+    background: #F7F9FA;
+    color: #526773;
+    border-color: #D3DEE4;
+}
+.es-mode-btn:hover, .es-color-btn:hover { background: #EDF2F4; }
+.es-mode-btn.active { background: var(--accent-dark); border-color: var(--accent-dark); color: #fff; }
+.es-mode-btn.secondary { color: #647985; }
+.es-color-btn.red.active { background: #C85B57; border-color: #C85B57; color: #fff; }
+.es-color-btn.blue.active { background: #4F82B8; border-color: #4F82B8; color: #fff; }
+.es-color-btn.active:not(.red):not(.blue) { background: #607985; border-color: #607985; color: #fff; }
+.es-slider { color: #647985; }
+.es-slider label span { color: #344C58; }
+.es-slider input[type="range"] { accent-color: var(--accent-dark); }
+.es-primary-btn { background: #5F879F; }
+.es-primary-btn:hover { background: #4F7185; }
+.es-secondary-btn {
+    background: #F7F9FA;
+    color: #526773;
+    border-color: #D3DEE4;
+}
+.es-secondary-btn:hover { background: #EDF2F4; }
+.es-meta-grid label { color: #71838C; }
+.es-meta-grid input, .es-meta-grid input[type="text"] {
+    background: #FFFFFF;
+    border-color: #D2DEE4;
+    color: #344C58;
+}
+.es-meta-grid input:focus { border-color: var(--accent); }
+.ocr-raw-box {
+    background: #F7F9FA;
+    border-color: #D6E0E5;
+    color: #687C86;
+}
+.es-commit-btn { background: #607F90; }
+.es-commit-btn:hover { background: #506B79; }
+
+/* 기존 다크모드 기능은 유지하되 동일한 담청/청회색 계열로 통일 */
+html[data-theme="dark"] {
+    --ink: #E7EEF2;
+    --muted: #9BAEB8;
+    --accent: #8DB5CC;
+    --accent-dark: #7098B0;
+    --accent-soft: rgba(141,181,204,0.14);
+    --border: rgba(205,220,228,0.14);
+    --glass-bg: #1D2A32;
+    --glass-bg-strong: #24343D;
+    --glass-border: rgba(205,220,228,0.13);
+    --glass-shadow: 0 8px 28px rgba(0,0,0,0.30);
+}
+html[data-theme="dark"] body {
+    background-color: #17242C;
+    background-image:
+        radial-gradient(at 8% 5%, rgba(120,166,195,0.12) 0, transparent 38%),
+        radial-gradient(at 94% 8%, rgba(96,122,138,0.10) 0, transparent 34%),
+        radial-gradient(at 88% 94%, rgba(120,166,195,0.07) 0, transparent 38%);
+}
+html[data-theme="dark"] .app-header {
+    background: linear-gradient(135deg, #496777, #3E505B 100%);
+    border-color: rgba(205,220,228,0.13);
+}
+html[data-theme="dark"] .search-box,
+html[data-theme="dark"] .type-filter {
+    background: #202F38;
+    border-color: #3A4B55;
+    color: var(--ink);
+}
+html[data-theme="dark"] thead th { background: #202F38; }
+html[data-theme="dark"] tbody tr.selected { background: rgba(141,181,204,0.12); }
+html[data-theme="dark"] .edit-btn,
+html[data-theme="dark"] .es-secondary-btn,
+html[data-theme="dark"] .es-mode-btn,
+html[data-theme="dark"] .es-color-btn {
+    background: #24343D;
+    color: #D7E3E8;
+    border-color: #3B4C56;
+}
+html[data-theme="dark"] .editor-modal-inner { background: #1D2A32; border-color: #3B4C56; }
+html[data-theme="dark"] .editor-sidebar { background: #202F38; border-left-color: #3A4B55; }
+html[data-theme="dark"] .es-card.cfu-card { background: #263740; border-color: #3A4B55; }
+html[data-theme="dark"] .es-meta-grid input,
+html[data-theme="dark"] .es-meta-grid input[type="text"] { background: #263740; color: #E7EEF2; border-color: #3B4C56; }
+html[data-theme="dark"] .ocr-raw-box { background: #19272F; border-color: #344650; color: #A6B7BF; }
+html[data-theme="dark"] .dz-btn { box-shadow: 0 5px 14px rgba(112,152,176,0.22); }
+
+
+/* =========================================================
+   AGAR TAB — 기존 Petrifilm 기능을 건드리지 않는 별도 워크스페이스
+   ========================================================= */
+#appTabs{margin:16px 20px 0;display:flex;gap:6px;padding:5px;background:#E7EEF2;border:1px solid #D3DEE4;border-radius:10px;width:max-content}
+#appTabs .app-tab{border:0;background:transparent;color:#5F7180;padding:9px 18px;border-radius:7px;font-size:12.5px;font-weight:700;cursor:pointer}
+#appTabs .app-tab.active{background:#5F879F;color:#fff;box-shadow:0 3px 9px rgba(70,98,112,.18)}
+.agar-workspace{padding:16px 20px 30px;display:none}.agar-workspace.active{display:block}
+.agar-grid{display:grid;grid-template-columns:minmax(360px,.88fr) minmax(520px,1.35fr);gap:16px;align-items:start}
+.agar-card{background:#fff;border:1px solid #DCE4E9;border-radius:14px;box-shadow:0 5px 18px rgba(63,84,97,.07)}
+.agar-controls,.agar-result{padding:16px}.agar-section-title{font-size:11px;letter-spacing:.08em;color:#69818D;font-family:var(--mono);margin-bottom:8px;text-transform:uppercase}
+.agar-title{font-size:18px;font-weight:800;color:#253746;margin-bottom:4px}.agar-subtitle{font-size:11.5px;color:#6B7C87;line-height:1.5;margin-bottom:14px}
+.agar-type-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.agar-type-btn{padding:10px 9px;border:1px solid #D3DEE4;border-radius:8px;background:#F7F9FA;color:#526773;cursor:pointer;text-align:left;font-size:11.5px;font-weight:700}
+.agar-type-btn small{display:block;font-size:9px;font-weight:500;color:#7B8C95;margin-top:2px}.agar-type-btn.active{background:#E8F0F4;border-color:#78A6C3;color:#4F7185;box-shadow:inset 0 0 0 1px #78A6C3}
+.agar-drop{margin-top:12px;border:1.5px dashed rgba(120,166,195,.65);border-radius:11px;padding:22px 16px;text-align:center;background:#F8FBFC;cursor:pointer;transition:.15s}.agar-drop.dragover{background:#EAF3F7;border-color:#5F879F}
+.agar-drop .big-icon{font-size:27px;color:#6F96AD;margin-bottom:6px}.agar-drop b{display:block;font-size:13px;color:#3E5561}.agar-drop span{display:block;font-size:10.5px;color:#7B8C95;margin-top:4px}
+.agar-file-name{margin-top:8px;font-size:10px;color:#5F7180;word-break:break-all}.agar-actions{display:flex;gap:7px;margin-top:12px}
+.agar-btn{flex:1;border:0;border-radius:8px;padding:9px 10px;font-size:11.5px;font-weight:700;cursor:pointer}.agar-btn.primary{background:#5F879F;color:#fff}.agar-btn.secondary{background:#EDF2F4;color:#526773;border:1px solid #D3DEE4}.agar-btn:disabled{opacity:.45;cursor:not-allowed}
+.agar-param{margin-top:13px;padding-top:12px;border-top:1px solid #E4EBEF}.agar-slider{margin:9px 0}.agar-slider label{display:flex;justify-content:space-between;font-size:10.5px;color:#647985;margin-bottom:4px}.agar-slider label b{font-family:var(--mono);color:#415864}.agar-slider input{width:100%;accent-color:#5F879F}
+.agar-info{margin-top:12px;padding:10px 11px;background:#F4F7F8;border-radius:8px;font-size:10.5px;color:#637780;line-height:1.55}.agar-info strong{color:#4F7185}
+.agar-training{margin-top:12px;padding:14px;border-top:1px solid #E1E8EC}.agar-training-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.agar-training-count{font-family:var(--mono);font-size:11px;color:#5F879F;font-weight:700}
+.agar-progress{height:5px;background:#E1E8EC;border-radius:999px;overflow:hidden;margin:9px 0}.agar-progress>div{height:100%;width:0;background:#78A6C3;transition:width .25s}.agar-train-note{font-size:9.5px;color:#7A8B94;line-height:1.45;margin-top:8px}
+.agar-result-head{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #E1E8EC;padding-bottom:10px}.agar-result-title{font-size:13px;font-weight:800;color:#344C58}.agar-result-meta{font-size:10px;color:#71838C}
+.agar-count-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.agar-count{background:#F7F9FA;border:1px solid #DCE4E9;border-radius:9px;padding:10px}.agar-count span{display:block;font-size:9px;color:#71838C}.agar-count b{display:block;font-size:22px;font-family:var(--mono);color:#4F7185;margin-top:2px}
+.agar-canvas-wrap{position:relative;height:min(68vh,680px);min-height:390px;background:#17242C;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}.agar-canvas-wrap canvas{max-width:100%;max-height:100%;display:block}
+.agar-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8BA0A8;font-size:12px;text-align:center;padding:20px}.agar-legend{position:absolute;right:10px;top:10px;background:rgba(8,18,23,.72);color:#DCE7EB;border-radius:7px;padding:6px 8px;font-size:9.5px}.agar-legend .auto{color:#8DD0E8}.agar-legend .manual{color:#F6C37B}
+.agar-edit-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.agar-edit-tools button{border:1px solid #D3DEE4;background:#F7F9FA;color:#526773;border-radius:7px;padding:7px 10px;font-size:10.5px;font-weight:700;cursor:pointer}.agar-edit-tools button.active{background:#5F879F;color:#fff;border-color:#5F879F}
+.agar-save-note{font-size:9.5px;color:#7B8C95;margin-top:8px}.agar-history{margin-top:12px;padding-top:11px;border-top:1px solid #E1E8EC;font-size:10px;color:#6B7C87;line-height:1.5}.agar-history b{color:#526773}
+.agar-custom{margin-top:8px}.agar-custom input{width:100%;padding:8px;border:1px solid #D3DEE4;border-radius:7px;font-size:11px;background:#FBFCFD;color:#344C58}
+html[data-theme="dark"] #appTabs{background:#202F38;border-color:#3A4B55}html[data-theme="dark"] #appTabs .app-tab{color:#AFC0C8}html[data-theme="dark"] #appTabs .app-tab.active{background:#7098B0;color:#fff}
+html[data-theme="dark"] .agar-card{background:#1D2A32;border-color:#3B4C56}html[data-theme="dark"] .agar-title,html[data-theme="dark"] .agar-result-title{color:#E7EEF2}html[data-theme="dark"] .agar-subtitle,html[data-theme="dark"] .agar-result-meta{color:#9BAEB8}
+html[data-theme="dark"] .agar-type-btn,html[data-theme="dark"] .agar-edit-tools button{background:#24343D;color:#D7E3E8;border-color:#3B4C56}html[data-theme="dark"] .agar-type-btn.active{background:#304753;border-color:#7098B0}
+html[data-theme="dark"] .agar-drop{background:#202F38;border-color:#527487}html[data-theme="dark"] .agar-count{background:#263740;border-color:#3A4B55}html[data-theme="dark"] .agar-count b{color:#8DB5CC}
+@media(max-width:1100px){.agar-grid{grid-template-columns:1fr}.agar-canvas-wrap{height:58vh}}@media(max-width:620px){.agar-count-grid{grid-template-columns:repeat(2,1fr)}#appTabs{width:calc(100% - 40px)}#appTabs .app-tab{flex:1}}
+
+
+/* ===== Agar training dataset v3 ===== */
+.agar-dataset-card{margin-top:14px;padding:16px;border:1px solid #d6e2ea;border-radius:14px;background:rgba(255,255,255,.72)}
+.agar-dataset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.agar-dataset-stat{padding:10px;border-radius:10px;background:#eef5f8;text-align:center}.agar-dataset-stat b{display:block;font-size:18px}.agar-dataset-stat span{font-size:11px;color:#617583}
+.agar-dataset-actions{display:flex;gap:8px;flex-wrap:wrap}.agar-dataset-actions button{flex:1;min-width:150px}
+.agar-dataset-note{font-size:11px;color:#667984;line-height:1.5;margin-top:8px}
+.agar-type-breakdown{font-size:11px;color:#536873;line-height:1.7;margin-top:8px}
+.agar-model-note{margin-top:10px;padding:10px;border-radius:10px;background:#f4f8fa;font-size:11px;line-height:1.55;color:#536873}
+@media(max-width:900px){.agar-dataset-grid{grid-template-columns:repeat(2,1fr)}}
+
+
+/* ===== Dry media type / AI dataset ===== */
+.drymedia-type-card{margin:14px 20px 0;padding:15px 17px;background:#fff;border:1px solid #DCE4E9;border-radius:14px;box-shadow:0 5px 18px rgba(63,84,97,.07)}
+.drymedia-type-head,.drymedia-ai-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.drymedia-kicker{font-size:10px;letter-spacing:.08em;color:#69818D;font-family:var(--mono);font-weight:700}.drymedia-title{font-size:14px;font-weight:800;color:#334A56;margin-top:3px}.drymedia-subtitle{font-size:10.5px;color:#71838C;margin-top:4px}.drymedia-selected{min-width:56px;text-align:center;padding:8px 12px;border-radius:8px;background:#E8F0F4;color:#4F7185;font:700 12px var(--mono)}
+.drymedia-type-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}.drymedia-type-btn{border:1px solid #D3DEE4;background:#F7F9FA;border-radius:8px;padding:9px 7px;text-align:left;cursor:pointer;color:#526773;font-weight:800;font-size:11.5px}.drymedia-type-btn small{display:block;margin-top:3px;font-size:8.5px;color:#7B8C95;font-weight:500}.drymedia-type-btn.active{background:#E8F0F4;border-color:#78A6C3;color:#4F7185;box-shadow:inset 0 0 0 1px #78A6C3}.drymedia-custom-wrap{margin-top:8px}.drymedia-custom-wrap input{width:100%;box-sizing:border-box;border:1px solid #D3DEE4;border-radius:8px;padding:8px 10px;font-size:10.5px;background:#FAFCFD;color:#415864}.drymedia-ai-card{margin-top:12px;padding:14px 15px;background:#fff;border:1px solid #DCE4E9;border-radius:14px;box-shadow:0 5px 18px rgba(63,84,97,.06)}.drymedia-ai-title{font-size:12px;font-weight:800;color:#415864;margin-top:3px}.drymedia-count{font:700 10px var(--mono);color:#5F879F}.drymedia-dataset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.drymedia-dataset-grid>div{background:#F7F9FA;border:1px solid #DCE4E9;border-radius:8px;padding:9px}.drymedia-dataset-grid b{display:block;font:800 18px var(--mono);color:#4F7185}.drymedia-dataset-grid span{display:block;font-size:8.5px;color:#71838C;margin-top:2px}.drymedia-breakdown{font-size:9.5px;color:#536873;margin-top:8px;line-height:1.6}.drymedia-ai-actions{display:flex;gap:7px;margin-top:10px}.drymedia-btn{flex:1;border:0;border-radius:8px;padding:9px 8px;font-size:10.5px;font-weight:700;cursor:pointer}.drymedia-btn.primary{background:#5F879F;color:#fff}.drymedia-btn.secondary{background:#EDF2F4;color:#526773;border:1px solid #D3DEE4}.drymedia-btn:disabled{opacity:.45;cursor:not-allowed}.drymedia-note{font-size:9px;line-height:1.5;color:#71838C;margin-top:8px}@media(max-width:900px){.drymedia-type-row{grid-template-columns:repeat(3,1fr)}.drymedia-ai-actions{flex-wrap:wrap}.drymedia-btn{min-width:30%}}
+
+/* ===== Dry media film-shape learning ===== */
+.drymedia-film-card{margin:14px 20px 0;padding:16px 17px;background:#fff;border:1px solid #DCE4E9;border-radius:14px;box-shadow:0 5px 18px rgba(63,84,97,.07)}
+.drymedia-film-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.drymedia-film-title{font-size:13px;font-weight:800;color:#334A56;margin-top:3px}.drymedia-film-subtitle{font-size:10.5px;color:#71838C;line-height:1.5;margin-top:4px}.drymedia-film-badge{font:700 10px var(--mono);color:#5F879F;background:#E8F0F4;border-radius:8px;padding:8px 10px;white-space:nowrap}
+.drymedia-film-upload{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}.drymedia-film-upload label{border:1px solid #D3DEE4;background:#F7F9FA;color:#526773;border-radius:8px;padding:9px 11px;font-size:10.5px;font-weight:700;cursor:pointer}.drymedia-film-upload input{display:none}.drymedia-film-name{font-size:9.5px;color:#71838C;flex:1;min-width:180px}
+.drymedia-film-work{display:grid;grid-template-columns:minmax(420px,1.6fr) minmax(240px,.7fr);gap:12px;margin-top:12px}.drymedia-film-canvas-wrap{position:relative;background:#17242C;border-radius:10px;min-height:320px;height:min(52vh,560px);display:flex;align-items:center;justify-content:center;overflow:hidden}.drymedia-film-canvas-wrap canvas{max-width:100%;max-height:100%;display:block;cursor:crosshair}.drymedia-film-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8BA0A8;font-size:11px;text-align:center;padding:20px;pointer-events:none}.drymedia-film-side{border:1px solid #DCE4E9;border-radius:10px;background:#F8FAFB;padding:12px}.drymedia-film-side h4{font-size:11px;color:#415864;margin:0 0 7px}.drymedia-film-help{font-size:9.5px;color:#71838C;line-height:1.55;margin-bottom:9px}.drymedia-film-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}.drymedia-film-actions button{border:0;border-radius:8px;padding:9px 7px;font-size:10px;font-weight:700;cursor:pointer}.drymedia-film-actions .primary{background:#5F879F;color:#fff}.drymedia-film-actions .secondary{background:#EDF2F4;border:1px solid #D3DEE4;color:#526773}.drymedia-film-actions button:disabled{opacity:.45;cursor:not-allowed}.drymedia-film-count{margin-top:10px;padding:9px;border-radius:8px;background:#fff;border:1px solid #DCE4E9;font:700 11px var(--mono);color:#4F7185}.drymedia-film-list{margin-top:9px;max-height:180px;overflow:auto}.drymedia-film-row{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:6px 7px;border-bottom:1px solid #E7ECEF;font-size:9.5px;color:#5D707B}.drymedia-film-row button{border:1px solid #D3DEE4;background:#fff;border-radius:6px;padding:3px 6px;font-size:9px;cursor:pointer;color:#6A7C85}.drymedia-film-note{margin-top:9px;font-size:9px;color:#71838C;line-height:1.5}.drymedia-film-dataset{margin-top:12px;padding-top:12px;border-top:1px solid #E1E8EC}.drymedia-film-dataset-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}.drymedia-film-dataset-grid>div{padding:8px;background:#F7F9FA;border:1px solid #DCE4E9;border-radius:8px;text-align:center}.drymedia-film-dataset-grid b{display:block;font:800 16px var(--mono);color:#4F7185}.drymedia-film-dataset-grid span{display:block;font-size:8px;color:#71838C;margin-top:2px}.drymedia-film-dataset-actions{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}.drymedia-film-dataset-actions button{flex:1;min-width:145px;border:0;border-radius:8px;padding:9px;font-size:10px;font-weight:700;cursor:pointer}.drymedia-film-dataset-actions .primary{background:#5F879F;color:#fff}.drymedia-film-dataset-actions .secondary{background:#EDF2F4;border:1px solid #D3DEE4;color:#526773}
+@media(max-width:900px){.drymedia-film-work{grid-template-columns:1fr}.drymedia-film-canvas-wrap{height:48vh}.drymedia-film-dataset-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+<body>
+
+<nav id="appTabs" aria-label="분석 모드">
+  <button class="app-tab active" data-tab="petri">Dry media</button>
+  <button class="app-tab" data-tab="agar">Agar</button>
+</nav>
+
+<section id="agarWorkspace" class="agar-workspace" aria-label="Agar Colony Counter">
+  <div class="agar-grid">
+    <div>
+      <div class="agar-card agar-controls">
+        <div class="agar-section-title">AGAR COLONY COUNTER</div>
+        <div class="agar-title">Agar Plate 자동 계수</div>
+        <div class="agar-subtitle">Agar type을 먼저 선택한 뒤 Plate 사진을 넣으면 배경과 colony의 대비를 분석해 자동 검출합니다. 결과는 수정할 수 있으며 수정 데이터는 다음 검출의 보정 학습에 사용됩니다.</div>
+
+        <div class="agar-section-title">1 · AGAR TYPE</div>
+        <div class="agar-type-row" id="agarTypeButtons">
+          <button class="agar-type-btn active" data-agar-type="tsa">TSA<small>밝은 배경 · 미세 colony</small></button>
+          <button class="agar-type-btn" data-agar-type="pca">PCA<small>저대비 · 미세 colony</small></button>
+          <button class="agar-type-btn" data-agar-type="vrba">VRBA<small>분홍/적색 배경 · 진한 colony</small></button>
+          <button class="agar-type-btn" data-agar-type="tbx">TBX<small>연녹색 배경 · 청록 colony</small></button>
+          <button class="agar-type-btn" data-agar-type="sda">SDA<small>큰 colony · 곰팡이/효모</small></button>
+          <button class="agar-type-btn" data-agar-type="other">기타 Agar Type<small>사용자 정의 검출값</small></button>
+        </div>
+        <div class="agar-custom"><input id="agarCustomType" placeholder="기타 Agar type (선택사항)"></div>
+
+        <div class="agar-section-title" style="margin-top:14px">2 · PLATE IMAGE</div>
+        <div class="agar-drop" id="agarDropZone">
+          <div class="big-icon">⇪</div><b>사진을 드래그 & 드롭</b><span>JPG · PNG · WEBP / 한 장의 Plate 사진 권장</span>
+          <div class="agar-file-name" id="agarFileName">아직 선택된 사진이 없습니다.</div>
+        </div>
+        <input type="file" id="agarFileInput" accept="image/*" style="display:none">
+
+        <div class="agar-param">
+          <div class="agar-section-title">AUTO DETECT TUNING</div>
+          <div class="agar-slider"><label>검출 민감도 <b id="agarSensVal">55</b></label><input id="agarSensitivity" type="range" min="25" max="85" value="55"></div>
+          <div class="agar-slider"><label>최소 colony 크기 <b id="agarMinAreaVal">18 px</b></label><input id="agarMinArea" type="range" min="4" max="80" value="18"></div>
+          <div class="agar-slider"><label>최대 colony 크기 <b id="agarMaxAreaVal">1800 px</b></label><input id="agarMaxArea" type="range" min="300" max="5000" value="1800"></div>
+          <div class="agar-slider"><label>plate 가장자리 제외 <b id="agarEdgeVal">3%</b></label><input id="agarEdge" type="range" min="0" max="15" value="3"></div>
+        </div>
+        <div class="agar-actions">
+          <button class="agar-btn primary" id="agarDetectBtn" disabled>자동 계수</button>
+          <button class="agar-btn secondary" id="agarResetBtn" disabled>초기화</button>
+        </div>
+        <div class="agar-info"><strong>계수 방식</strong><br>Plate 내부의 대표 배경색을 추정하고 colony와 배경의 색상·명도 차이를 픽셀 단위로 분리한 뒤 연결 성분을 분석합니다. Agar type별 기본값으로 미세 노이즈와 과대 영역을 제거합니다. 겹친 colony는 한 덩어리로 검출될 수 있으므로 <strong>수정</strong>에서 추가·삭제할 수 있습니다.</div>
+      </div>
+
+      <div class="agar-card agar-training">
+        <div class="agar-training-head">
+          <div><div class="agar-section-title" style="margin:0">AI LEARNING</div><div style="font-size:12px;font-weight:800;color:#415864;margin-top:3px">수정 데이터를 학습에 사용</div></div>
+          <span class="agar-training-count" id="agarTrainingCount">0 samples</span>
+        </div>
+        <div class="agar-progress"><div id="agarTrainProgress"></div></div>
+        <button class="agar-btn secondary" id="agarTrainBtn">수정 데이터 학습</button>
+        <div class="agar-train-note">수정 전 자동 검출값과 수정 후 결과를 Agar type별로 저장하고, 브라우저 내부에서 보정 프로파일을 생성합니다. 이미지 자체는 서버로 전송하지 않습니다.</div>
+      </div>
+
+      <div class="agar-dataset-card">
+        <div class="agar-section-title">실제 AI 학습 데이터셋</div>
+        <div class="agar-dataset-grid">
+          <div class="agar-dataset-stat"><b id="agarDatasetImages">0</b><span>저장 이미지</span></div>
+          <div class="agar-dataset-stat"><b id="agarDatasetColonies">0</b><span>라벨 콜로니</span></div>
+          <div class="agar-dataset-stat"><b id="agarDatasetSize">0 KB</b><span>예상 데이터</span></div>
+        </div>
+        <div class="agar-type-breakdown" id="agarDatasetBreakdown">TSA 0 · PCA 0 · VRBA 0 · TBX 0 · SDA 0 · 기타 0</div>
+        <div class="agar-dataset-actions">
+          <button class="agar-btn secondary" id="agarExportDatasetBtn">학습 데이터셋 ZIP 내보내기</button>
+          <button class="agar-btn secondary" id="agarClearDatasetBtn">학습 데이터 삭제</button>
+        </div>
+        <div class="agar-dataset-note">저장할 때 원본 이미지와 사람이 최종 확정한 콜로니 위치를 함께 보관합니다. ZIP에는 이미지, YOLO 형식 라벨, metadata.json, dataset.yaml이 포함됩니다.</div>
+        <div class="agar-model-note"><b>권장 학습 모델:</b> YOLO26n Detect부터 시작합니다. 콜로니를 <code>colony</code> 1개 클래스로 학습한 뒤 ONNX로 내보내면 웹앱에서 ONNX Runtime Web으로 브라우저 추론에 연결할 수 있습니다.</div>
+      </div>
+    </div>
+
+    <div class="agar-card agar-result">
+      <div class="agar-result-head">
+        <div><div class="agar-result-title" id="agarResultTitle">Agar Plate 결과</div><div class="agar-result-meta" id="agarResultMeta">사진을 업로드하면 자동 계수할 수 있습니다.</div></div>
+        <button class="agar-btn secondary" id="agarSaveTrainingBtn" style="flex:0 0 auto" disabled>현재 결과 학습 데이터로 저장</button>
+      </div>
+      <div class="agar-count-grid">
+        <div class="agar-count"><span>자동 검출</span><b id="agarAutoCount">0</b></div>
+        <div class="agar-count"><span>현재 계수</span><b id="agarCurrentCount">0</b></div>
+        <div class="agar-count"><span>추가</span><b id="agarAddedCount">0</b></div>
+        <div class="agar-count"><span>삭제</span><b id="agarDeletedCount">0</b></div>
+      </div>
+      <div class="agar-canvas-wrap" id="agarCanvasWrap">
+        <canvas id="agarCanvas"></canvas>
+        <div class="agar-empty" id="agarEmpty">Agar Plate 사진을 왼쪽 영역으로 드래그하면<br>여기에 검출 결과가 표시됩니다.</div>
+        <div class="agar-legend"><span class="auto">● 자동</span> &nbsp; <span class="manual">● 수동 수정</span></div>
+      </div>
+      <div class="agar-edit-tools">
+        <button id="agarEditBtn" disabled>수정 모드</button><button id="agarAddBtn" disabled>＋ colony 추가</button><button id="agarDeleteBtn" disabled>− colony 삭제</button><button id="agarMoveBtn" disabled>↔ 이동</button><button id="agarUndoBtn" disabled>되돌리기</button><button id="agarRedoBtn" disabled>다시 실행</button>
+      </div>
+      <div class="agar-save-note">수정 모드에서 캔버스를 클릭하면 추가/삭제할 수 있습니다. 결과는 자동 검출값과 별도로 현재 수정값으로 유지됩니다.</div>
+      <div class="agar-history" id="agarHistory"><b>학습 상태:</b> 아직 학습 데이터가 없습니다.</div>
+    </div>
+  </div>
+</section>
+
+
+    <header class="app-header petri-view">
+        <div class="title-block">
+            <h1><span class="dot"></span>Petricore Colony Counter</h1>
+            <p>Dry media 사진에서 콜로니를 자동으로 검출해 CFU를 계산하고, Type · Lot No · Bacteria · No. · Dilute 정보를 자동 인식해 표로 정리하는 도구입니다.</p>
+        </div>
+        <div class="usage-steps">
+            <div class="step"><b>1</b>사진 또는 PDF를 업로드하세요. 한 장에 여러 배지가 있어도 자동으로 나뉩니다.</div>
+            <div class="step"><b>2</b>"보기"로 결과를 확인하고, "수정"으로 세부 편집을 진행하세요.</div>
+            <div class="step"><b>3</b>필요한 항목만 체크한 뒤 Excel · 이미지로 저장하거나 삭제하세요.</div>
+        </div>
+        <button id="btnThemeToggle" class="theme-toggle" title="다크모드 전환">🌙</button>
+    </header>
+
+    <div class="stats-row petri-view">
+        <div class="stat-tile glass">
+            <span class="stat-label">총 데이터</span>
+            <b class="stat-value" id="statTotal">0</b>
+        </div>
+        <div class="stat-tile glass">
+            <span class="stat-label">선택됨</span>
+            <b class="stat-value" id="statSelected">0</b>
+        </div>
+        <div class="stat-tile glass">
+            <span class="stat-label">총 CFU (R / B)</span>
+            <b class="stat-value" id="statCfu">0 / 0</b>
+        </div>
+    </div>
+
+    <div class="drymedia-type-card petri-view">
+        <div class="drymedia-type-head">
+            <div><div class="drymedia-kicker">DRY MEDIA TYPE</div><div class="drymedia-title">1 · Dry media type을 먼저 선택하세요</div><div class="drymedia-subtitle">배지 타입을 선택한 뒤 사진을 넣으면 해당 타입을 계수·학습 데이터에 함께 기록합니다.</div></div>
+            <div class="drymedia-selected" id="dryMediaSelectedLabel">AC</div>
+        </div>
+        <div class="drymedia-type-row" id="dryMediaTypeButtons">
+            <button type="button" class="drymedia-type-btn active" data-dry-type="AC">AC<small>Coliform / 일반</small></button>
+            <button type="button" class="drymedia-type-btn" data-dry-type="EC">EC<small>E. coli / Coliform</small></button>
+            <button type="button" class="drymedia-type-btn" data-dry-type="CC">CC<small>Coliform</small></button>
+            <button type="button" class="drymedia-type-btn" data-dry-type="YM">YM<small>Yeast / Mold</small></button>
+            <button type="button" class="drymedia-type-btn" data-dry-type="EB">EB<small>Enterobacteriaceae</small></button>
+            <button type="button" class="drymedia-type-btn" data-dry-type="other">other<small>사용자 정의</small></button>
+        </div>
+        <div class="drymedia-custom-wrap"><input id="dryMediaCustomType" type="text" placeholder="other 선택 시 Dry media type 입력 (선택사항)"></div>
+    </div>
+
+
+    <div class="drymedia-film-card petri-view" id="dryMediaFilmTrainingCard">
+      <div class="drymedia-film-head"><div><div class="drymedia-kicker">DRY MEDIA FILM SEGMENTATION</div><div class="drymedia-film-title">3 · 전체 필름의 형태를 먼저 학습해 사진을 낱장으로 분할</div><div class="drymedia-film-subtitle">여러 장의 Dry media가 한 사진에 들어온 경우, 각 필름의 전체 영역을 박스로 표시해 학습 데이터를 만듭니다. 학습 후에는 <b>필름 검출 → 필름별 crop → 콜로니 검출</b> 순서로 사용할 수 있습니다.</div></div><span class="drymedia-film-badge" id="dryMediaFilmDatasetCount">0 pages · 0 films</span></div>
+      <div class="drymedia-film-upload"><label for="dryMediaFilmFileInput">+ 전체 사진 추가</label><input id="dryMediaFilmFileInput" type="file" accept="image/*"><span id="dryMediaFilmFileName" class="drymedia-film-name">한 장에 여러 Dry media가 보이는 원본 사진을 넣어주세요.</span></div>
+      <div class="drymedia-film-work"><div class="drymedia-film-canvas-wrap" id="dryMediaFilmCanvasWrap"><canvas id="dryMediaFilmCanvas"></canvas><div class="drymedia-film-empty" id="dryMediaFilmEmpty">전체 사진을 넣으면 여기에 표시됩니다.<br>필름마다 드래그해서 사각형을 지정하세요.</div></div>
+        <div class="drymedia-film-side"><h4>필름 영역 라벨링</h4><div class="drymedia-film-help">① <b>자동 후보</b>로 기존 분할 알고리즘과 비슷한 영역을 먼저 표시합니다.<br>② 후보가 틀리면 삭제하고 직접 드래그해 박스를 만듭니다.<br>③ 보이는 모든 필름을 정확하게 감싼 뒤 저장하세요.</div><div class="drymedia-film-actions"><button id="dryMediaFilmAutoBtn" class="primary" disabled>자동 후보</button><button id="dryMediaFilmClearBtn" class="secondary" disabled>전체 삭제</button><button id="dryMediaFilmBoxBtn" class="secondary" disabled>직접 박스</button><button id="dryMediaFilmUndoBtn" class="secondary" disabled>되돌리기</button></div><div class="drymedia-film-count" id="dryMediaFilmCurrentCount">현재 필름 0개</div><div class="drymedia-film-list" id="dryMediaFilmList"></div><div class="drymedia-film-note" id="dryMediaFilmStatus">저장되는 라벨은 <b>film</b> 하나의 객체 클래스입니다. 사진 전체에서 필름 위치·크기·가로세로 비율을 학습하고, 나중에 새 사진에서 필름을 찾아 자동 분할하는 데 사용합니다.</div>
+          <div class="drymedia-film-dataset"><div class="drymedia-kicker">FILM DETECTOR DATASET</div><div class="drymedia-film-dataset-grid"><div><b id="dryMediaFilmPages">0</b><span>원본 페이지</span></div><div><b id="dryMediaFilmBoxes">0</b><span>필름 라벨</span></div><div><b id="dryMediaFilmSize">0 KB</b><span>데이터 크기</span></div></div><div class="drymedia-film-dataset-actions"><button id="dryMediaFilmSaveBtn" class="primary" disabled>현재 필름 라벨 저장</button><button id="dryMediaFilmExportBtn" class="secondary">필름 학습 데이터 ZIP</button><button id="dryMediaFilmClearDatasetBtn" class="secondary">필름 데이터 삭제</button></div></div>
+        </div></div>
+    </div>
+    <main class="main-split petri-view">
+        <!-- 좌측: 위(업로드) / 아래(테이블) -->
+        <div class="left-col">
+            <div class="panel dropzone" id="dropZone">
+                <div class="dz-left">
+                    <div class="dz-icon">⇪</div>
+                    <div class="dz-text">
+                        <b>사진 · PDF를 드래그하거나 놓으세요</b>
+                        <span id="uploadStatus">여러 장이 한 페이지에 스캔된 사진도 자동 분할됩니다</span>
+                        <div class="dz-progress-track" id="uploadProgressTrack">
+                            <div class="dz-progress-fill" id="uploadProgressFill"></div>
+                        </div>
+                    </div>
+                </div>
+                <button class="dz-btn" id="btnSelectFile">+ 파일 추가</button>
+                <input type="file" id="fileInput" multiple accept="image/*,application/pdf" style="display: none;">
+            </div>
+
+            <div class="drymedia-ai-card petri-view">
+                <div class="drymedia-ai-head"><div><div class="drymedia-kicker">AI LEARNING DATASET</div><div class="drymedia-ai-title">2 · 수정한 Dry media 결과를 실제 학습 데이터로 저장</div></div><span id="dryMediaDatasetCount" class="drymedia-count">0 samples</span></div>
+                <div class="drymedia-dataset-grid">
+                    <div><b id="dryMediaDatasetImages">0</b><span>저장 이미지</span></div>
+                    <div><b id="dryMediaDatasetColonies">0</b><span>라벨 콜로니</span></div>
+                    <div><b id="dryMediaDatasetSize">0 KB</b><span>데이터 크기</span></div>
+                </div>
+                <div id="dryMediaDatasetBreakdown" class="drymedia-breakdown">AC 0 · EC 0 · CC 0 · YM 0 · EB 0 · other 0</div>
+                <div class="drymedia-ai-actions">
+                    <button id="dryMediaSaveDatasetBtn" class="drymedia-btn primary" disabled>현재 결과 학습 데이터 저장</button>
+                    <button id="dryMediaExportDatasetBtn" class="drymedia-btn secondary">학습 데이터 ZIP 내보내기</button>
+                    <button id="dryMediaClearDatasetBtn" class="drymedia-btn secondary">학습 데이터 삭제</button>
+                </div>
+                <div id="dryMediaDatasetStatus" class="drymedia-note">사진을 업로드하고 결과를 ‘수정’한 뒤 저장하면 원본 이미지 + 최종 콜로니 위치 + Dry media type이 데이터셋에 기록됩니다.</div>
+            </div>
+
+            <div class="panel table-panel">
+                <div class="table-toolbar">
+                    <input type="text" id="searchInput" class="search-box" placeholder="검색 (예: BC26, Lot No)...">
+                    <select id="filterType" class="type-filter">
+                        <option value="">모든 Type</option>
+                        <option value="AC">AC</option>
+                        <option value="EC">EC</option>
+                        <option value="CC">CC</option>
+                        <option value="YM">YM</option>
+                        <option value="EB">EB</option>
+                        <option value="other">other</option>
+                    </select>
+                    <span class="sort-badge" title="최신 데이터가 위로 오도록 정렬됩니다">Sort: Descending (DESC)</span>
+                </div>
+                <div class="bulk-actions">
+                    <span id="selectionHint" class="bulk-hint">선택된 항목 없음</span>
+                    <button id="btnExportExcel" class="btn-excel" disabled>Excel 저장</button>
+                    <button id="btnExportZip" class="btn-zip" disabled>이미지 일괄 저장(ZIP)</button>
+                    <button id="btnDeleteSelected" class="btn-delete" disabled>삭제</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="data-table" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAllCheckbox"></th>
+                                <th>Type</th>
+                                <th>Lot No</th>
+                                <th>Bacteria</th>
+                                <th>No</th>
+                                <th>Dilute</th>
+                                <th>CFU(R)</th>
+                                <th>CFU(B)</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr><td colspan="9" class="empty-message">등록된 데이터가 없습니다. 위에서 파일을 업로드해주세요.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination-bar">
+                    <span id="paginationInfo" class="pagination-info">0건</span>
+                    <div class="pagination-controls">
+                        <button id="btnPrevPage" class="page-btn">← 이전</button>
+                        <span id="pageIndicator" class="page-indicator">1 / 1</span>
+                        <button id="btnNextPage" class="page-btn">다음 →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 우측: 사진 뷰어 (읽기 전용) -->
+        <div class="panel viewer-panel">
+            <div class="viewer-header">
+                <div>
+                    <div class="vh-title" id="viewerTitle"><span class="dot"></span>선택된 데이터 없음</div>
+                    <div class="vh-sub">표에서 "보기"를 누르면 인식 결과만 표시됩니다 · 편집은 "수정"</div>
+                </div>
+                <div class="viewer-controls">
+                    <div class="cfu-split-mini" id="viewerCfuMini">
+                        <span class="cfu-mini red">R <b>0</b></span>
+                        <span class="cfu-mini blue">B <b>0</b></span>
+                    </div>
+                    <div class="zoom-pill" id="zoomPill">🔍 100%</div>
+                </div>
+            </div>
+            <div class="viewer-canvas" id="viewerCanvasWrapper">
+                <canvas id="viewerCanvas"></canvas>
+                <div class="scroll-hint">↕ 마우스 휠로 확대 · 축소</div>
+                <div class="viewer-empty" id="viewerEmpty">표에서 "보기"를 눌러 사진을 확인하세요</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Colony Editor 모달 -->
+    <div class="editor-modal" id="colonyEditorModal" style="display:none;">
+        <div class="editor-modal-inner">
+            <div class="editor-modal-header">
+                <div class="emh-left">
+                    <div class="emh-eyebrow">COLONY EDITOR</div>
+                    <div class="emh-title" id="emTitle">AC · Pa4 · 10⁻⁶</div>
+                    <div class="emh-file" id="emFilename">filename.png</div>
+                </div>
+                <button class="emh-close" id="btnCloseEditor">✕</button>
+            </div>
+
+            <div class="editor-modal-body">
+                <div class="editor-canvas-area">
+                    <div class="editor-canvas-wrapper" id="editorCanvasWrapper">
+                        <canvas id="editorCanvas"></canvas>
+                    </div>
+                    <div class="editor-canvas-toolbar">
+                        <div class="ec-nav">
+                            <button id="btnPrevRecord" class="ec-btn">← 이전</button>
+                            <button id="btnNextRecord" class="ec-btn">다음 →</button>
+                            <span class="ec-counter" id="emCounter">1 / 1</span>
+                            <button id="btnRotateImage" class="ec-btn" title="이미지 90도 회전">⟳ 회전</button>
+                        </div>
+                        <div class="ec-view-toggles">
+                            <button id="btnToggleNumbers" class="ec-btn toggle">번호</button>
+                            <button id="btnToggleDensity" class="ec-btn toggle">밀도</button>
+                            <button id="btnToggleGrid" class="ec-btn toggle">격자</button>
+                            <button id="btnZoomOut" class="ec-btn">−</button>
+                            <span class="ec-zoom-val" id="emZoomVal">100%</span>
+                            <button id="btnZoomIn" class="ec-btn">+</button>
+                            <button id="btnZoomFit" class="ec-btn">맞춤</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="editor-sidebar">
+                    <div class="es-card cfu-card">
+                        <div class="es-eyebrow">콜로니 수 · CFU</div>
+                        <div class="cfu-card-row">
+                            <div class="cfu-split">
+                                <div class="cfu-block red"><span>Red</span><b id="emCfuRed">0</b></div>
+                                <div class="cfu-block blue"><span>Blue</span><b id="emCfuBlue">0</b></div>
+                            </div>
+                            <div class="cfu-conc">
+                                <span>CFU/mL</span>
+                                <b id="emConcentration">-</b>
+                            </div>
+                        </div>
+                        <div class="range-bar"><div class="range-bar-fill" id="emRangeFill"></div></div>
+                        <div class="range-label" id="emRangeLabel">적정 · 적정 25–250</div>
+                    </div>
+
+                    <div class="es-mode-row">
+                        <button id="btnModeAdd" class="es-mode-btn active">추가</button>
+                        <button id="btnModeDelete" class="es-mode-btn">삭제</button>
+                        <button id="btnModeMove" class="es-mode-btn">이동</button>
+                    </div>
+                    <div class="es-mode-row">
+                        <button id="btnUndo" class="es-mode-btn secondary">되돌리기</button>
+                        <button id="btnRedo" class="es-mode-btn secondary">다시 실행</button>
+                    </div>
+
+                    <div class="es-eyebrow section-gap">AUTO DETECT</div>
+                    <div class="es-mode-row">
+                        <button id="btnColorRed" class="es-color-btn red active">붉은색</button>
+                        <button id="btnColorBlue" class="es-color-btn blue">푸른색</button>
+                        <button id="btnColorBoth" class="es-color-btn">둘 다</button>
+                    </div>
+
+                    <div class="es-slider">
+                        <label>검출 민감도 <span id="emSensVal">15</span></label>
+                        <input type="range" id="emSensitivity" min="6" max="30" value="15">
+                    </div>
+                    <div class="es-slider">
+                        <label>라벨 영역 제외 <span id="emLabelVal">12%</span></label>
+                        <input type="range" id="emLabelHeight" min="0" max="30" value="12">
+                    </div>
+                    <div class="es-slider">
+                        <label>최소 점 크기 <span id="emMinAreaVal">2</span></label>
+                        <input type="range" id="emMinArea" min="1" max="10" value="2">
+                    </div>
+
+                    <button id="btnRedetect" class="es-primary-btn">재검출</button>
+                    <button id="btnRestoreDefaults" class="es-secondary-btn">자동값 복원</button>
+
+                    <div class="es-eyebrow section-gap">SAMPLE META</div>
+                    <div class="es-meta-grid">
+                        <div><label>Type</label><input id="emType" type="text"></div>
+                        <div><label>Lot No</label><input id="emLot" type="text"></div>
+                        <div class="span2"><label>Bacteria</label><input id="emBacteria" type="text"></div>
+                        <div><label>No.</label><input id="emNo" type="text"></div>
+                        <div><label>Dilution</label><input id="emDilute" type="text"></div>
+                    </div>
+                    <button id="btnRunOcr" class="es-secondary-btn">라벨 OCR 실행</button>
+
+                    <div class="es-eyebrow section-gap">OCR RAW · 인쇄 | 수기</div>
+                    <div class="ocr-raw-box" id="emOcrRaw">-</div>
+
+                    <button id="btnCommitClose" class="es-commit-btn">기록하고 닫기</button>
+                    <button id="btnExportSingleImage" class="es-secondary-btn">이 이미지 PNG로 저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 외부 라이브러리 CDN (인터넷 연결 필요) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <!-- 앱 코드 (모든 모듈을 하나로 합침 -> file:// 더블클릭 실행 가능) -->
+    <script>
+
+/* ===== js/state.js ===== */
+// 앱 전역 상태
+const state = {
+    records: [],       // {id, filename, canvas, type, lot, bacteria, no, dilute, rotation, colonies, autoColonies,
+                        //  labelHeightRatio, sensitivity, minArea, colorMode, selected, needsReview,
+                        //  rawHandwriting, rawPrinted, historyPast, historyFuture}
+    activeIndex: null,  // 메인 화면(읽기 전용) 사진뷰어에 표시 중인 레코드 인덱스
+    editIndex: null,    // Colony Editor 모달에서 편집 중인 레코드 인덱스
+    viewer: null,        // SimpleViewer 인스턴스 (메인 화면, 읽기 전용)
+    editor: null         // ColonyEditor 인스턴스 (수정 모달)
+};
+window.PetricoreState = state;
+
+let nextId = 1;
+function makeId() {
+    return nextId++;
+}
+
+
+/* ===== js/detector.js ===== */
+/**
+ * 콜로니(반점) 자동 검출 모듈 - 색상 구분(붉은색/푸른색) 지원판
+ *
+ * 각 콜로니 객체는 {x, y, radius, color: 'red'|'blue'} 형태로 반환됩니다.
+ * colorMode: 'red' | 'blue' | 'both' 에 따라 어떤 색상을 검출할지 결정합니다.
+ */
+
+function toCanvas(src) {
+    if (src instanceof HTMLCanvasElement) return src;
+    const c = document.createElement('canvas');
+    c.width = src.naturalWidth || src.width;
+    c.height = src.naturalHeight || src.height;
+    c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+    return c;
+}
+
+function connectedComponents(mask, w, h, minArea = 1) {
+    const visited = new Uint8Array(w * h);
+    const stack = new Int32Array(w * h);
+    const comps = [];
+
+    for (let start = 0; start < w * h; start++) {
+        if (!mask[start] || visited[start]) continue;
+        let sp = 0;
+        stack[sp++] = start;
+        visited[start] = 1;
+        let minX = w, minY = h, maxX = 0, maxY = 0, sumX = 0, sumY = 0, area = 0;
+
+        while (sp > 0) {
+            const idx = stack[--sp];
+            const x = idx % w, y = (idx / w) | 0;
+            area++; sumX += x; sumY += y;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+
+            if (x > 0 && mask[idx - 1] && !visited[idx - 1]) { visited[idx - 1] = 1; stack[sp++] = idx - 1; }
+            if (x < w - 1 && mask[idx + 1] && !visited[idx + 1]) { visited[idx + 1] = 1; stack[sp++] = idx + 1; }
+            if (y > 0 && mask[idx - w] && !visited[idx - w]) { visited[idx - w] = 1; stack[sp++] = idx - w; }
+            if (y < h - 1 && mask[idx + w] && !visited[idx + w]) { visited[idx + w] = 1; stack[sp++] = idx + w; }
+        }
+        if (area >= minArea) {
+            comps.push({ cx: sumX / area, cy: sumY / area, area, minX, minY, maxX, maxY });
+        }
+    }
+    return comps;
+}
+
+function erode(mask, w, h, radius) {
+    const out = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            if (!mask[y * w + x]) continue;
+            let keep = true;
+            for (let dy = -radius; dy <= radius && keep; dy++) {
+                const ny = y + dy;
+                if (ny < 0 || ny >= h) { keep = false; break; }
+                for (let dx = -radius; dx <= radius; dx++) {
+                    const nx = x + dx;
+                    if (nx < 0 || nx >= w || !mask[ny * w + nx]) { keep = false; break; }
+                }
+            }
+            out[y * w + x] = keep ? 1 : 0;
+        }
+    }
+    return out;
+}
+
+function splitBlob(mask, w, h, comp, targetCount) {
+    const pad = 3;
+    const bx = Math.max(0, comp.minX - pad);
+    const by = Math.max(0, comp.minY - pad);
+    const bw = Math.min(w, comp.maxX + pad + 1) - bx;
+    const bh = Math.min(h, comp.maxY + pad + 1) - by;
+
+    const sub = new Uint8Array(bw * bh);
+    for (let y = 0; y < bh; y++) {
+        for (let x = 0; x < bw; x++) {
+            sub[y * bw + x] = mask[(y + by) * w + (x + bx)] ? 1 : 0;
+        }
+    }
+
+    for (let k = 1; k <= 6; k++) {
+        const eroded = erode(sub, bw, bh, k);
+        const subComps = connectedComponents(eroded, bw, bh, 2);
+        if (subComps.length >= targetCount || (subComps.length >= 2 && k === 6)) {
+            const r = Math.max(3, Math.sqrt(comp.area / Math.max(subComps.length, 1) / Math.PI));
+            return subComps.map(c => ({ x: c.cx + bx, y: c.cy + by, radius: r }));
+        }
+    }
+    return [{ x: comp.cx, y: comp.cy, radius: Math.max(3, Math.sqrt(comp.area / Math.PI)) }];
+}
+
+function buildMask(data, w, h, labelPx, gate, channel) {
+    const mask = new Uint8Array(w * h);
+    const gate2 = Math.max(4, gate - 5);
+    for (let y = labelPx; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4;
+            const R = data[i], G = data[i + 1], B = data[i + 2];
+            let hit = false;
+            if (channel === 'red') {
+                hit = (R - G) > gate && (R - B) > gate2 && R < 235;
+            } else {
+                hit = (B - G) > gate && (B - R) > gate2 && B < 235;
+            }
+            if (hit) mask[y * w + x] = 1;
+        }
+    }
+    return mask;
+}
+
+function detectFromMask(mask, w, h, minArea, splitMergedBlobs, color) {
+    let comps = connectedComponents(mask, w, h, minArea);
+    if (comps.length === 0) return [];
+
+    const areas = comps.map(c => c.area).sort((a, b) => a - b);
+    const median = areas[Math.floor(areas.length / 2)] || 1;
+
+    const colonies = [];
+    comps.forEach(c => {
+        if (splitMergedBlobs && c.area > median * 1.7 && c.area > 30) {
+            const est = Math.max(2, Math.round(c.area / median));
+            splitBlob(mask, w, h, c, est).forEach(p => colonies.push({ ...p, color }));
+        } else {
+            colonies.push({ x: c.cx, y: c.cy, radius: Math.max(3, Math.sqrt(c.area / Math.PI)), color });
+        }
+    });
+    return colonies;
+}
+
+/**
+ * @param {HTMLImageElement|HTMLCanvasElement} imageSource
+ * @param {Object} options
+ *   - sensitivity: 숫자가 낮을수록 더 많이 검출 (기본 15)
+ *   - labelHeightRatio: 상단 라벨 제외 비율 (기본 0.12)
+ *   - minArea: 최소 픽셀 면적 (기본 2)
+ *   - splitMergedBlobs: 뭉친 덩어리 재분리 여부 (기본 true)
+ *   - colorMode: 'red' | 'blue' | 'both' (기본 'red')
+ * @returns {Array<{x:number,y:number,radius:number,color:'red'|'blue'}>}
+ */
+function detectColonies(imageSource, options = {}) {
+    const {
+        sensitivity = 15,
+        labelHeightRatio = 0.12,
+        minArea = 2,
+        splitMergedBlobs = true,
+        colorMode = 'red'
+    } = options;
+
+    const canvas = toCanvas(imageSource);
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const w = canvas.width, h = canvas.height;
+    if (w === 0 || h === 0) return [];
+
+    const { data } = ctx.getImageData(0, 0, w, h);
+    const labelPx = Math.round(h * labelHeightRatio);
+
+    let colonies = [];
+    if (colorMode === 'red' || colorMode === 'both') {
+        const redMask = buildMask(data, w, h, labelPx, sensitivity, 'red');
+        colonies = colonies.concat(detectFromMask(redMask, w, h, minArea, splitMergedBlobs, 'red'));
+    }
+    if (colorMode === 'blue' || colorMode === 'both') {
+        const blueMask = buildMask(data, w, h, labelPx, sensitivity, 'blue');
+        colonies = colonies.concat(detectFromMask(blueMask, w, h, minArea, splitMergedBlobs, 'blue'));
+    }
+    return colonies;
+}
+
+function rotateCanvas90(sourceCanvas) {
+    const out = document.createElement('canvas');
+    out.width = sourceCanvas.height;
+    out.height = sourceCanvas.width;
+    const ctx = out.getContext('2d');
+    ctx.translate(out.width / 2, out.height / 2);
+    ctx.rotate(Math.PI / 2);
+    ctx.drawImage(sourceCanvas, -sourceCanvas.width / 2, -sourceCanvas.height / 2);
+    return out;
+}
+
+// 시계방향 90도 회전 시 좌표 변환: (x,y) in (W x H) -> (H-y, x) in (H x W)
+function rotatePoint90(x, y, oldWidth, oldHeight) {
+    return { x: oldHeight - y, y: x };
+}
+
+
+
+/* ===== js/panelSplitter.js ===== */
+/**
+ * 한 페이지(또는 한 장의 사진)에 여러 개의 Petrifilm 사진이 스캔되어 있는 경우
+ * 이를 자동으로 낱장 이미지로 분할합니다.
+ *
+ * v2까지의 방식(팽창 후 연결성분 분석)은 플레이트 사이에 "넉넉한 흰 여백"이
+ * 있을 때만 잘 동작했습니다. 실제로는 스캔/사진 합성 시 플레이트끼리 격자선이
+ * 거의 맞닿아 있거나, 인접 플레이트의 격자 패턴이 이어져 보이는 경우가 많아서
+ * (예: 2026-08-04 업로드 사진들) 완전히 실패(전체를 1장으로 인식)하는 문제가
+ * 있었습니다.
+ *
+ * 개선된 방식:
+ *  1) 행(row) 분리: 페이지 전체 폭 기준으로 내용이 거의 없는 가로 띠를 찾아
+ *     먼저 위/아래 행 그룹으로 나눕니다 (여기는 보통 진짜 흰 여백이라 안정적).
+ *  2) 각 행 내부에서 열(column) 분리:
+ *     a) 세로 격자선(진한 픽셀)이 일정 간격(주기)으로 반복되는 패턴을 찾고,
+ *        그 간격에서 통계적으로 벗어나는 지점(비정상적으로 좁거나 넓은 틈)을
+ *        "플레이트 경계"로 판단합니다. 이는 격자선이 서로 맞닿아 있어도
+ *        동작합니다.
+ *     b) 격자 패턴을 찾지 못하면(격자가 흐릿한 사진 등) 기존의 저밀도 여백
+ *        탐지 방식으로 대체합니다.
+ *  3) 같은 페이지의 여러 행 중 가장 많은 경계를 찾은 행을 기준으로 삼아,
+ *     경계를 더 적게 찾은 다른 행에도 같은 경계를 적용해봅니다. 단, 그
+ *     결과로 생기는 조각에 실제 내용이 있는지(밀도) 검증해서, 실제로
+ *     행마다 배치가 다른 경우(예: 3장+2장 구성)에는 잘못 적용되지 않도록
+ *     막았습니다.
+ */
+
+// 3M Petrifilm 낱장 플레이트의 격자 칸 수(가로 7.5칸 x 세로 9.5칸)를 기준으로 한
+// 표준 가로:세로 비율. (2026-08-31 스캔 샘플 기준으로 확정)
+const PLATE_GRID_COLS = 7.5;
+const PLATE_GRID_ROWS = 9.5;
+const PLATE_TARGET_RATIO = PLATE_GRID_ROWS / PLATE_GRID_COLS; // ≈ 1.267
+
+function median(arr) {
+    const s = [...arr].sort((a, b) => a - b);
+    const mid = Math.floor(s.length / 2);
+    return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+// ---- 저밀도(흰 여백) 구간 탐지 ----
+function findLowDensityGaps(density, thresh, minGap) {
+    const ranges = [];
+    let start = null;
+    for (let i = 0; i < density.length; i++) {
+        const below = density[i] <= thresh;
+        if (below && start === null) start = i;
+        else if (!below && start !== null) {
+            if (i - start >= minGap) ranges.push([start, i]);
+            start = null;
+        }
+    }
+    if (start !== null && density.length - start >= minGap) ranges.push([start, density.length]);
+    return ranges;
+}
+
+function segmentsFromGaps(gapRanges, totalLen, minSeg) {
+    const segs = [];
+    let prevEnd = 0;
+    for (const [s, e] of gapRanges) {
+        if (s - prevEnd >= minSeg) segs.push([prevEnd, s]);
+        prevEnd = e;
+    }
+    if (totalLen - prevEnd >= minSeg) segs.push([prevEnd, totalLen]);
+    return segs;
+}
+
+// ---- 구분선(얇은 가로줄) 기반 경계 탐지 ----
+// 플레이트끼리 흰 여백 없이 얇은 구분선(스캔 테두리, 자, 인쇄된 줄 등)으로만
+// 나뉘어 있는 경우, findLowDensityGaps(저밀도=흰 여백 탐지)로는 경계를 전혀
+// 찾지 못합니다. 오히려 그 지점은 전체 폭에 걸친 어두운 선이라 밀도가
+// "낮아지는" 게 아니라 국소적으로 "튀어 오르는" 형태이기 때문입니다.
+// 그래서 주변 평균(baseline) 대비 밀도가 확 튀는 얇은 띠를 찾아 별도로
+// 경계 후보로 반환합니다.
+function findDividerLineBoundaries(density, totalLen) {
+    const n = density.length;
+    if (n < 20) return [];
+
+    const windowSize = Math.max(10, Math.round(totalLen * 0.03));
+    const prefix = new Float64Array(n + 1);
+    for (let i = 0; i < n; i++) prefix[i + 1] = prefix[i] + density[i];
+    const baseline = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+        const lo = Math.max(0, i - windowSize);
+        const hi = Math.min(n, i + windowSize + 1);
+        baseline[i] = (prefix[hi] - prefix[lo]) / (hi - lo);
+    }
+
+    const maxLineWidth = Math.max(3, Math.round(totalLen * 0.02));
+    const edgeMargin = totalLen * 0.03;
+    const boundaries = [];
+    let i = 0;
+    while (i < n) {
+        if (density[i] > 0.5 && density[i] > baseline[i] * 1.6) {
+            let j = i;
+            while (j < n && density[j] > 0.5 && density[j] > baseline[j] * 1.4) j++;
+            const width = j - i;
+            if (width <= maxLineWidth && i > edgeMargin && j < totalLen - edgeMargin) {
+                boundaries.push((i + j) / 2);
+            }
+            i = j;
+        } else {
+            i++;
+        }
+    }
+    return boundaries;
+}
+
+// ---- 격자선 주기성 기반 경계 탐지 (특정 임계값 기준) ----
+// 특정 임계값에서 "가는 선(격자선 후보)" 구간들을 찾는 공용 헬퍼
+function findLineSegments(density, lineThresh) {
+    const high = density.map(d => d > lineThresh);
+    const segs = [];
+    let start = null;
+    for (let i = 0; i < high.length; i++) {
+        if (high[i] && start === null) start = i;
+        else if (!high[i] && start !== null) { segs.push([start, i]); start = null; }
+    }
+    if (start !== null) segs.push([start, high.length]);
+    return segs;
+}
+
+function periodicityBoundariesAtThreshold(density, totalLen, lineThresh, sens = 0.09) {
+    const segs = findLineSegments(density, lineThresh);
+    if (segs.length < 4) return { boundaries: [], med: null, segCount: segs.length, cv: Infinity };
+
+    const centers = segs.map(([s, e]) => (s + e) / 2);
+    const widths = segs.map(([s, e]) => e - s);
+    const gaps = [];
+    for (let i = 0; i < centers.length - 1; i++) gaps.push(centers[i + 1] - centers[i]);
+    const med = median(gaps);
+    if (med <= 0) return { boundaries: [], med: null, segCount: segs.length, cv: Infinity };
+
+    // 세그먼트가 "얇은 격자선"이 아니라 넓게 퍼진 콜로니 얼룩(예: 확산성 균주)이면
+    // 폭이 간격(주기)에 맞먹을 정도로 두꺼워집니다. 이런 경우 주기성 분석 자체가
+    // 신뢰할 수 없으므로 무효 처리합니다 (호출 쪽에서 다른 임계값/방식으로 대체).
+    const medWidth = median(widths);
+    if (medWidth > med * 0.4) return { boundaries: [], med: null, segCount: segs.length, cv: Infinity };
+
+    const mad = median(gaps.map(g => Math.abs(g - med))) || 0.5;
+    const cv = mad / med; // 주기 일관성 지표 (낮을수록 진짜 격자 패턴일 가능성이 높음)
+    const primaryThresh = Math.max(4 * mad, med * sens, 2.0);
+    const neighborThresh = med * 0.5;
+
+    const n = gaps.length;
+    let boundaries = [];
+    for (let i = 0; i < n; i++) {
+        const dev = gaps[i] - med;
+        if (Math.abs(dev) < primaryThresh) continue;
+        const prevOk = i - 1 >= 0 && Math.abs(gaps[i - 1] - med) < neighborThresh;
+        const nextOk = i + 1 < n && Math.abs(gaps[i + 1] - med) < neighborThresh;
+        if (prevOk && nextOk) boundaries.push((centers[i] + centers[i + 1]) / 2);
+    }
+
+    boundaries.sort((a, b) => a - b);
+    const merged = [];
+    for (const b of boundaries) {
+        if (merged.length && b - merged[merged.length - 1] < med * 0.5) {
+            merged[merged.length - 1] = (merged[merged.length - 1] + b) / 2;
+        } else {
+            merged.push(b);
+        }
+    }
+    return { boundaries: merged, med, segCount: segs.length, cv };
+}
+
+// 격자선의 진하기(대비)는 사진마다 다르므로, 고정된 임계값 하나로는
+// 옅은 격자를 가진 사진에서 격자선을 아예 못 찾아 분할에 실패하는 경우가
+// 있었습니다. 여러 임계값을 시도해서 가장 "그럴듯한"(격자 패턴이 뚜렷하고
+// 일정한) 결과를 채택하도록 개선했습니다.
+function periodicityBoundaries(density, totalLen, sens = 0.09) {
+    const candidates = [0.7, 0.55, 0.4, 0.28];
+    let best = null;
+    for (const t of candidates) {
+        const result = periodicityBoundariesAtThreshold(density, totalLen, t, sens);
+        if (result.segCount < 4) continue;
+        if (!best || result.cv < best.cv) best = result;
+    }
+    return best || { boundaries: [], med: null };
+}
+
+function segsFromBoundaries(boundaries, totalLen, minSeg) {
+    const cuts = [0, ...boundaries.slice().sort((a, b) => a - b), totalLen];
+    const out = [];
+    for (let i = 0; i < cuts.length - 1; i++) {
+        const a = cuts[i], b = cuts[i + 1];
+        if (b - a >= minSeg) out.push([Math.round(a), Math.round(b)]);
+    }
+    return out;
+}
+
+// 열 분리 과정에서 실제 낱장 하나보다 지나치게 좁은(=세로로 지나치게 긴
+// 비율의) 조각이 생기면, 격자선 하나를 플레이트 경계로 잘못 인식한
+// 경우일 가능성이 높습니다. 이런 조각은 버리지 않고 인접 조각과 합쳐서
+// 낱장 하나로 복원합니다.
+function mergeNarrowSegments(segs, rowHeight, targetRatio, tooNarrowFactor = 1.7) {
+    if (segs.length < 2 || !rowHeight) return segs;
+    const result = [];
+    let i = 0;
+    while (i < segs.length) {
+        let [x0, x1] = segs[i];
+        while (i + 1 < segs.length && rowHeight / Math.max(1, x1 - x0) > targetRatio * tooNarrowFactor) {
+            x1 = segs[i + 1][1];
+            i++;
+        }
+        result.push([x0, x1]);
+        i++;
+    }
+    // 마지막 조각이 여전히 너무 좁으면 바로 앞 조각과 합침
+    if (result.length >= 2) {
+        const last = result[result.length - 1];
+        if (rowHeight / Math.max(1, last[1] - last[0]) > targetRatio * tooNarrowFactor) {
+            const prev = result[result.length - 2];
+            result[result.length - 2] = [prev[0], last[1]];
+            result.pop();
+        }
+    }
+    return result;
+}
+
+// 병합 의심 구간에서 실제 격자선 개수를 세어, 알려진 "낱장당 세로줄 개수"
+// (보통 7~8개)의 배수인지 확인합니다. 배수라면 실제 격자선 사이 빈틈을
+// 기준으로 정밀하게 잘라줍니다 (균등 분할보다 훨씬 정확함).
+function findBestLineSegments(density) {
+    const candidates = [0.7, 0.55, 0.4, 0.28];
+    let best = null;
+    for (const t of candidates) {
+        const segs = findLineSegments(density, t);
+        if (segs.length < 4) continue;
+        const centers = segs.map(([s, e]) => (s + e) / 2);
+        const widths = segs.map(([s, e]) => e - s);
+        const gaps = [];
+        for (let i = 0; i < centers.length - 1; i++) gaps.push(centers[i + 1] - centers[i]);
+        const med = median(gaps);
+        if (med <= 0) continue;
+        const medWidth = median(widths);
+        if (medWidth > med * 0.4) continue; // 두꺼운 얼룩은 격자선이 아님
+        const mad = median(gaps.map(g => Math.abs(g - med))) || 0.5;
+        const cv = mad / med;
+        if (!best || cv < best.cv) best = { segs, centers, cv };
+    }
+    return best;
+}
+
+// linesPerPlateOptions(보통 7~8개) 중 실제 라인 개수와 가장 잘 맞아떨어지는
+// 값을 골라, 몇 장이 합쳐진 것인지와 정확한 절단 지점을 반환합니다.
+function lineCountMergeSplit(centers, x0, x1, linesPerPlateOptions = [7, 8]) {
+    const total = centers.length;
+    let bestFit = null;
+    for (const lpp of linesPerPlateOptions) {
+        const nPlates = Math.round(total / lpp);
+        if (nPlates < 2) continue;
+        const remainder = Math.abs(total - nPlates * lpp);
+        if (remainder > lpp * 0.35) continue; // 너무 안 맞으면 후보에서 제외
+        if (!bestFit || remainder < bestFit.remainder) bestFit = { lpp, nPlates, remainder };
+    }
+    if (!bestFit) return null;
+
+    const { nPlates } = bestFit;
+    const cuts = [x0];
+    for (let k = 1; k < nPlates; k++) {
+        const idx = Math.round((k * total) / nPlates);
+        const leftCenter = centers[Math.max(0, idx - 1)];
+        const rightCenter = centers[Math.min(total - 1, idx)];
+        cuts.push(Math.round(x0 + (leftCenter + rightCenter) / 2));
+    }
+    cuts.push(x1);
+
+    const out = [];
+    for (let i = 0; i < cuts.length - 1; i++) out.push([cuts[i], cuts[i + 1]]);
+    return out;
+}
+
+function splitAxis(density, totalLen, minSegFrac = 0.05, usePeriodicity = true) {
+    const minSeg = Math.max(20, Math.round(totalLen * minSegFrac));
+    let boundaries = [];
+    let segs = [[0, totalLen]];
+
+    if (usePeriodicity) {
+        const result = periodicityBoundaries(density, totalLen);
+        boundaries = result.boundaries;
+        segs = boundaries.length ? segsFromBoundaries(boundaries, totalLen, minSeg) : [[0, totalLen]];
+    }
+
+    if (segs.length <= 1) {
+        const gaps = findLowDensityGaps(density, 0.03, Math.max(6, Math.round(totalLen * 0.015)));
+        const segs2 = segmentsFromGaps(gaps, totalLen, minSeg);
+        if (segs2.length > 1) segs = segs2;
+    }
+    return { segs, boundaries };
+}
+
+function columnDensity(mask, w, y0, y1) {
+    const h = y1 - y0;
+    const density = new Float64Array(w);
+    for (let x = 0; x < w; x++) {
+        let sum = 0;
+        for (let y = y0; y < y1; y++) sum += mask[y * w + x];
+        density[x] = sum / h;
+    }
+    return density;
+}
+
+function rowDensity(mask, w, h, x0, x1) {
+    const bw = x1 - x0;
+    const density = new Float64Array(h);
+    for (let y = 0; y < h; y++) {
+        let sum = 0;
+        for (let x = x0; x < x1; x++) sum += mask[y * w + x];
+        density[y] = sum / bw;
+    }
+    return density;
+}
+
+function cropCanvas(sourceCanvas, x0, y0, x1, y1, pad = 4) {
+    const w = sourceCanvas.width, h = sourceCanvas.height;
+    const cx0 = Math.max(0, x0 - pad), cy0 = Math.max(0, y0 - pad);
+    const cx1 = Math.min(w, x1 + pad), cy1 = Math.min(h, y1 + pad);
+    const cw = cx1 - cx0, ch = cy1 - cy0;
+    const out = document.createElement('canvas');
+    out.width = cw; out.height = ch;
+    out.getContext('2d').drawImage(sourceCanvas, cx0, cy0, cw, ch, 0, 0, cw, ch);
+    return out;
+}
+
+// 1차로 잘라낸 조각에 여전히 남아있는 빈 여백(흰 배경)을 실제 콘텐츠 기준으로
+// 한 번 더 타이트하게 잘라냅니다. 행/열 분리 단계의 경계가 완벽히 딱 맞지
+// 않아서 생기는 여백을 최종적으로 정리하는 후처리입니다.
+// 적분영상 기반 고속 팽창 (그리드/글자 사이의 작은 틈을 메워 하나의 덩어리로 만듦)
+function dilateMask(mask, w, h, radius) {
+    const integral = new Int32Array((w + 1) * (h + 1));
+    for (let y = 0; y < h; y++) {
+        let rowSum = 0;
+        const rowBase = (y + 1) * (w + 1);
+        const prevRowBase = y * (w + 1);
+        for (let x = 0; x < w; x++) {
+            rowSum += mask[y * w + x];
+            integral[rowBase + x + 1] = integral[prevRowBase + x + 1] + rowSum;
+        }
+    }
+    const out = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) {
+        const y0 = Math.max(0, y - radius), y1 = Math.min(h - 1, y + radius);
+        for (let x = 0; x < w; x++) {
+            const x0 = Math.max(0, x - radius), x1 = Math.min(w - 1, x + radius);
+            const sum = integral[(y1 + 1) * (w + 1) + (x1 + 1)]
+                      - integral[y0 * (w + 1) + (x1 + 1)]
+                      - integral[(y1 + 1) * (w + 1) + x0]
+                      + integral[y0 * (w + 1) + x0];
+            out[y * w + x] = sum > 0 ? 1 : 0;
+        }
+    }
+    return out;
+}
+
+// 실제 플레이트 내용(격자+라벨+콜로니)만 타이트하게 잘라냅니다.
+// 단순히 "가장 어두운 픽셀들의 전체 bounding box"를 쓰면, 스캔 노이즈나
+// 먼지 자국 같은 아주 작은 티끌 하나 때문에 여백까지 통째로 포함되는
+// 문제가 있었습니다 (예: 왼쪽 끝에 점 하나만 있어도 그 지점까지 다 자름).
+// 그래서 약간 팽창시켜 연결 성분을 구한 뒤, 가장 큰 덩어리(=실제 플레이트)의
+// 범위만 사용하도록 개선했습니다.
+function trimToContent(canvas, pad = 10, whiteThreshold = 246) {
+    const w = canvas.width, h = canvas.height;
+    if (w < 20 || h < 20) return canvas;
+    const ctx = canvas.getContext('2d');
+    const { data } = ctx.getImageData(0, 0, w, h);
+
+    const mask = new Uint8Array(w * h);
+    for (let p = 0; p < w * h; p++) {
+        const i = p * 4;
+        const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        mask[p] = gray < whiteThreshold ? 1 : 0;
+    }
+
+    const radius = Math.max(6, Math.round(Math.min(w, h) * 0.02));
+    const dilated = dilateMask(mask, w, h, radius);
+    const minArea = w * h * 0.003; // 전체 면적의 0.3% 미만 덩어리는 티끌로 간주
+    const comps = connectedComponents(dilated, w, h, 1).filter(c => c.area >= minArea);
+
+    if (comps.length === 0) return canvas; // 콘텐츠를 못 찾았으면 원본 그대로 반환
+
+    // 가장 큰 덩어리 = 실제 플레이트(격자+콜로니). 격자선은 서로 맞닿아 있어
+    // 하나의 연결 성분으로 잡히므로, 이 덩어리의 범위는 이미 원(콜로니 밀집구역)
+    // 뿐 아니라 격자칸 전체를 포함합니다.
+    let biggest = comps[0];
+    for (const c of comps) if (c.area > biggest.area) biggest = c;
+
+    // 상단 손글씨 라벨은 격자와 살짝 떨어져 있어 별도의 연결 성분으로 잡히는
+    // 경우가 많습니다. 그대로 두면 "가장 큰 덩어리"에서 제외되어 라벨이
+    // 잘려나가므로, 격자 바로 위(격자 높이의 40% 이내)에 있고 가로로 겹치는
+    // 성분은 라벨로 간주해 크롭 범위에 포함시킵니다.
+    let top = biggest.minY;
+    const plateHeight = biggest.maxY - biggest.minY;
+    const labelSearchMargin = Math.max(20, plateHeight * 0.4);
+    for (const c of comps) {
+        if (c === biggest) continue;
+        const above = c.maxY <= biggest.minY && (biggest.minY - c.maxY) <= labelSearchMargin;
+        const overlapsX = c.maxX >= biggest.minX && c.minX <= biggest.maxX;
+        if (above && overlapsX) top = Math.min(top, c.minY);
+    }
+
+    const x0 = Math.max(0, biggest.minX - pad), y0 = Math.max(0, top - pad);
+    const x1 = Math.min(w, biggest.maxX + pad + 1), y1 = Math.min(h, biggest.maxY + pad + 1);
+    const cw = x1 - x0, ch = y1 - y0;
+    if (cw >= w - 1 && ch >= h - 1) return canvas;
+
+    const out = document.createElement('canvas');
+    out.width = cw; out.height = ch;
+    out.getContext('2d').drawImage(canvas, x0, y0, cw, ch, 0, 0, cw, ch);
+    return out;
+}
+
+// 낱장 플레이트 사진의 실측 가로:세로 비율에 맞춰 최종 크기를 보정합니다.
+// (여백을 잘라낸 뒤에도 촬영 각도 등으로 비율이 살짝 어긋나는 것을 보정)
+// 부족한 쪽만 흰 배경으로 살짝 채워서 맞추므로, 이미 여백을 제거한 상태를
+// 다시 흐트러뜨리지 않습니다 (실제 콘텐츠를 잘라내지 않음).
+function conformToAspectRatio(canvas, targetRatio = PLATE_TARGET_RATIO) {
+    const w = canvas.width, h = canvas.height;
+    if (w === 0 || h === 0) return canvas;
+    const currentRatio = h / w;
+    let newW = w, newH = h;
+
+    if (currentRatio < targetRatio) {
+        newH = Math.round(w * targetRatio);
+    } else if (currentRatio > targetRatio * 1.02) {
+        newW = Math.round(h / targetRatio);
+    }
+    if (newW === w && newH === h) return canvas;
+
+    const out = document.createElement('canvas');
+    out.width = newW; out.height = newH;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, newW, newH);
+    ctx.drawImage(canvas, Math.round((newW - w) / 2), Math.round((newH - h) / 2));
+    return out;
+}
+
+/**
+ * @param {HTMLCanvasElement} canvas 원본(페이지 전체) 캔버스
+ * @param {'small'|'normal'|'off'} sizeHint 분할 민감도 (off = 분할 안 함)
+ * @returns {HTMLCanvasElement[]} 분할된 낱장 캔버스 배열 (읽는 순서: 위->아래, 좌->우)
+ */
+function splitPanels(canvas, sizeHint = 'normal') {
+    if (sizeHint === 'off') return [canvas];
+
+    const w = canvas.width, h = canvas.height;
+    const ctx = canvas.getContext('2d');
+    const { data } = ctx.getImageData(0, 0, w, h);
+
+    const whiteThreshold = 246;
+    const mask = new Uint8Array(w * h);
+    for (let p = 0; p < w * h; p++) {
+        const i = p * 4;
+        const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        mask[p] = gray < whiteThreshold ? 1 : 0;
+    }
+
+    // 이미지 가장자리(스캔 테두리/노이즈)는 분석에서 제외
+    const border = Math.max(6, Math.round(Math.min(w, h) * 0.015));
+    if (w - 2 * border < 40 || h - 2 * border < 40) return [canvas];
+
+    // 1) 행 분리 (페이지 전체 폭 기준)
+    const rDensity = rowDensity(mask, w, h, border, w - border);
+    const { segs: rowSegsInner } = splitAxis(rDensity, h - 2 * border, 0.05, false);
+    let rowSegs = rowSegsInner.map(([y0, y1]) => [y0 + border, y1 + border]);
+
+    // 1.5) 흰 여백이 아니라 얇은 구분선으로만 나뉜 경우(예: 정렬용 가로줄) 대비 fallback.
+    // 저밀도 갭 기반 분리가 실패했을 때(=한 덩어리로만 인식됐을 때)만 시도합니다.
+    if (rowSegs.length <= 1) {
+        const dividerBoundaries = findDividerLineBoundaries(rDensity, h - 2 * border);
+        if (dividerBoundaries.length > 0) {
+            const minSeg = Math.max(20, Math.round((h - 2 * border) * 0.05));
+            const dividerSegs = segsFromBoundaries(dividerBoundaries, h - 2 * border, minSeg)
+                .map(([y0, y1]) => [y0 + border, y1 + border]);
+            if (dividerSegs.length > rowSegs.length) rowSegs = dividerSegs;
+        }
+    }
+
+    if (rowSegs.length === 0) return [canvas];
+
+    // 2) 각 행 내부에서 열 분리
+    const rowResults = rowSegs.map(([y0, y1]) => {
+        const cDensity = columnDensity(mask, w, y0, y1);
+        const innerDensity = cDensity.slice(border, w - border);
+        const { segs, boundaries } = splitAxis(innerDensity, w - 2 * border, 0.05);
+        const absSegs = segs.map(([x0, x1]) => [x0 + border, x1 + border]);
+        return { y0, y1, segs: absSegs, boundaries, density: cDensity };
+    });
+
+    // 3) 경계를 가장 많이 찾은 행을 기준으로 다른 행에도 적용 시도 (내용 밀도로 검증)
+    let best = rowResults[0];
+    for (const r of rowResults) if (r.segs.length > best.segs.length) best = r;
+
+    if (best.segs.length > 1) {
+        const minSeg = Math.max(20, Math.round((w - 2 * border) * 0.05));
+        for (const r of rowResults) {
+            if (r.segs.length < best.segs.length) {
+                const candidate = segsFromBoundaries(best.boundaries, w - 2 * border, minSeg)
+                    .map(([x0, x1]) => [x0 + border, x1 + border]);
+                if (candidate.length > r.segs.length) {
+                    const densities = candidate.map(([x0, x1]) => {
+                        let sum = 0;
+                        for (let x = x0; x < x1; x++) sum += r.density[x];
+                        return sum / (x1 - x0);
+                    });
+                    if (densities.every(d => d >= 0.08)) {
+                        r.segs = candidate;
+                    }
+                }
+            }
+        }
+    }
+
+    // 3.4) 너무 좁게(=낱장 하나보다 세로로 지나치게 긴 비율로) 잘린 조각은
+    // 격자선을 플레이트 경계로 착각한 결과이므로 인접 조각과 합쳐 복원합니다.
+    for (const r of rowResults) {
+        r.segs = mergeNarrowSegments(r.segs, r.y1 - r.y0, PLATE_TARGET_RATIO);
+    }
+
+    // 3.5) 안전장치: 실제로 잘라내고 여백을 트림한 "실측 비율"을 기준으로
+    // 낱장 플레이트의 표준 가로:세로 비율(격자 7.5칸x9.5칸 기준, 1:PLATE_TARGET_RATIO)과 비교합니다. 트림 전
+    // 대략적인 영역 기준으로는 라벨/여백 때문에 비율이 들쭉날쭉해서 오탐이
+    // 많았기 때문에, 실제 콘텐츠를 트림한 뒤의 비율로 판단하도록 했습니다.
+    // 너무 납작하면(=가로로 여러 장이 붙어 하나로 잡힌 경우) 우선 실제
+    // 격자선 개수(낱장당 7~8줄)를 세어 정확한 절단 지점을 찾고, 그게
+    // 여의치 않으면 예상 장수만큼 균등 재분할합니다.
+    const panels = [];
+    for (const r of rowResults) {
+        for (const [x0, x1] of r.segs) {
+            const cropped = cropCanvas(canvas, x0, r.y0, x1, r.y1);
+            const trimmed = trimToContent(cropped);
+            const ratio = trimmed.height / Math.max(1, trimmed.width);
+
+            if (ratio > 0 && ratio < PLATE_TARGET_RATIO / 1.7) {
+                let subSegs = null;
+
+                const lineInfo = findBestLineSegments(r.density.slice(x0, x1));
+                if (lineInfo) {
+                    subSegs = lineCountMergeSplit(lineInfo.centers, x0, x1);
+                }
+                if (!subSegs) {
+                    const n = Math.max(2, Math.round(PLATE_TARGET_RATIO / ratio));
+                    const step = (x1 - x0) / n;
+                    subSegs = [];
+                    for (let k = 0; k < n; k++) {
+                        subSegs.push([Math.round(x0 + k * step), Math.round(x0 + (k + 1) * step)]);
+                    }
+                }
+
+                for (const [sx0, sx1] of subSegs) {
+                    const subCropped = cropCanvas(canvas, sx0, r.y0, sx1, r.y1);
+                    const subTrimmed = trimToContent(subCropped);
+                    panels.push(conformToAspectRatio(subTrimmed, PLATE_TARGET_RATIO));
+                }
+            } else {
+                panels.push(conformToAspectRatio(trimmed, PLATE_TARGET_RATIO));
+            }
+        }
+    }
+
+    // 아무것도 못 찾았거나 너무 잘게 쪼개졌으면(오탐) 원본 그대로 반환
+    if (panels.length === 0) return [canvas];
+    if (panels.length > 40) return [canvas];
+
+    return panels;
+}
+
+
+/* ===== js/ocr.js ===== */
+/**
+ * Tesseract.js를 이용한 상단 라벨 OCR
+ *
+ * 이번 개선 사항 (텍스트 인식 정확도 향상):
+ *  - 손글씨용 워커 / 인쇄체용 워커를 분리해서 각각에 맞는 PSM(페이지 분할 모드)과
+ *    허용 문자셋(whitelist)을 따로 지정 (같은 워커를 동시에 다른 설정으로 쓰면
+ *    설정이 서로 덮어써지는 문제가 있어 워커 자체를 분리했습니다)
+ *  - OCR에 넣기 전에 그레이스케일 + 대비 강화 + 이진화(흑백화) 전처리를 추가해서
+ *    옅은 격자선/얼룩 같은 배경 노이즈를 제거하고 글자만 또렷하게 남김
+ *  - 크롭 영역 업스케일 배율을 높여서 (특히 손글씨) 작은 글자도 더 크게 인식
+ *
+ * v1의 문제점(계속 유지되는 개선 배경):
+ *  1) main.js 어디에서도 실제로 호출되지 않아 OCR 결과가 전혀 반영되지 않았음
+ *  2) 이미지 전체를 그대로 OCR에 넣어서 그래프 용지/콜로니까지 노이즈로 들어감
+ *  3) 손글씨(필기체)와 인쇄체를 한 번에 인식시켜 정확도가 낮았음
+ *  4) No/Dilute를 "숫자 아무거나 첫 매치"로 잡아서 실제 규칙(BC 26 -> No=2, Dilute=6)과 다름
+ *
+ * 규칙:
+ *   Type      = "Petricore/Petrifilm" 다음에 오는 인쇄 글자 (예: AC)
+ *   Lot No    = Petricore 줄 바로 아래 인쇄 글자
+ *   Bacteria  = 손글씨의 문자 부분 (예: BC)
+ *   No.       = 손글씨 숫자 중 앞 숫자
+ *   Dilute    = 손글씨 숫자 중 뒷 숫자
+ *
+ * 주의: 필기체 인식은 OCR 엔진의 한계상 100% 정확하지 않습니다.
+ * 그래서 결과에는 항상 rawHandwriting / rawPrinted 원문도 같이 담아 반환하며,
+ * 테이블/Colony Editor에서 바로 수정할 수 있게 만들었습니다.
+ */
+
+let handWorker = null;
+let printedWorker = null;
+
+async function getHandWorker() {
+    if (!handWorker) {
+        handWorker = await Tesseract.createWorker('eng');
+        // 손글씨: 한 줄짜리 짧은 텍스트, 문자+숫자+대시만 허용해서 오인식 억제
+        await handWorker.setParameters({
+            tessedit_pageseg_mode: '7', // 한 줄로 취급
+            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- '
+        });
+    }
+    return handWorker;
+}
+
+async function getPrintedWorker() {
+    if (!printedWorker) {
+        printedWorker = await Tesseract.createWorker('eng');
+        // 인쇄체: 여러 줄(제품명 + Lot No)로 구성된 블록
+        await printedWorker.setParameters({
+            tessedit_pageseg_mode: '6' // 균일한 텍스트 블록
+        });
+    }
+    return printedWorker;
+}
+
+function cropRegion(canvas, xRatio, yRatio, wRatio, hRatio) {
+    const w = canvas.width, h = canvas.height;
+    const x = Math.round(w * xRatio), y = Math.round(h * yRatio);
+    const cw = Math.max(1, Math.round(w * wRatio));
+    const ch = Math.max(1, Math.round(h * hRatio));
+
+    const out = document.createElement('canvas');
+    // 작은 영역은 더 큰 배율로 확대해서 인식률을 높임
+    const scale = cw < 250 ? 5 : cw < 400 ? 4 : 2;
+    out.width = cw * scale;
+    out.height = ch * scale;
+    const ctx = out.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(canvas, x, y, cw, ch, 0, 0, out.width, out.height);
+    return out;
+}
+
+// 그레이스케일 + 대비 강화 + 이진화: 옅은 격자선/얼룩 노이즈를 제거하고
+// 글자만 또렷한 흑백 이미지로 만들어 OCR 인식률을 높입니다.
+function preprocessForOcr(canvas) {
+    const w = canvas.width, h = canvas.height;
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+
+    // 1) 그레이스케일 값 배열 계산 + 최소/최대값 파악 (대비 강화용)
+    const gray = new Float32Array(w * h);
+    let min = 255, max = 0;
+    for (let p = 0; p < w * h; p++) {
+        const i = p * 4;
+        const g = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+        gray[p] = g;
+        if (g < min) min = g;
+        if (g > max) max = g;
+    }
+    const range = Math.max(1, max - min);
+
+    // 2) 오츠(Otsu)와 유사한 방식 대신, 어두운 쪽 하위 35% 지점을 이진화 임계값으로 사용
+    //    (손글씨/인쇄 글자는 항상 배경보다 어둡다는 전제)
+    const stretched = new Uint8ClampedArray(w * h);
+    for (let p = 0; p < w * h; p++) {
+        stretched[p] = ((gray[p] - min) / range) * 255;
+    }
+    const sorted = Array.from(stretched).sort((a, b) => a - b);
+    const threshold = sorted[Math.floor(sorted.length * 0.35)];
+
+    for (let p = 0; p < w * h; p++) {
+        const v = stretched[p] < threshold ? 0 : 255;
+        const i = p * 4;
+        data[i] = data[i + 1] = data[i + 2] = v;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+}
+
+/**
+ * @param {HTMLCanvasElement} panelCanvas 낱장(1개 플레이트) 캔버스
+ * @param {number} labelHeightRatio 상단 라벨 높이 비율 (0~1)
+ */
+async function parsePetrifilmOCR(panelCanvas, labelHeightRatio = 0.12) {
+    try {
+        const [hw, pw] = await Promise.all([getHandWorker(), getPrintedWorker()]);
+
+        // 왼쪽 45% = 손글씨(균주/희석배수), 오른쪽 55% = 인쇄체(Type/Lot No)
+        const handCanvas = preprocessForOcr(cropRegion(panelCanvas, 0.0, 0.0, 0.45, labelHeightRatio));
+        const printedCanvas = preprocessForOcr(cropRegion(panelCanvas, 0.45, 0.0, 0.55, labelHeightRatio));
+
+        const [handRet, printedRet] = await Promise.all([
+            hw.recognize(handCanvas),
+            pw.recognize(printedCanvas)
+        ]);
+
+        const handText = (handRet.data.text || '').trim();
+        const printedText = (printedRet.data.text || '').trim();
+
+        const parsed = parseFields(handText, printedText);
+        return { ...parsed, rawHandwriting: handText, rawPrinted: printedText };
+    } catch (error) {
+        console.error('OCR 처리 실패:', error);
+        return getDefaultMetadata();
+    }
+}
+
+function parseFields(handText, printedText) {
+    const printedClean = printedText.toUpperCase();
+
+    // Type: "Petricore/Petrifilm" 다음 토큰
+    let type = '';
+    const typeMatch = printedClean.match(/PETRI\w*\s+([A-Z]{1,4})/);
+    if (typeMatch) {
+        type = typeMatch[1];
+    } else {
+        const knownType = printedClean.match(/\b(AC|EC|YM|SA|CC)\b/);
+        if (knownType) type = knownType[1];
+    }
+
+    // Lot No: 영문+숫자 6자리 이상 조합 (Petricore 줄 아래 위치)
+    let lot = '';
+    const lotMatch = printedClean.match(/[A-Z0-9]{6,}/g);
+    if (lotMatch) {
+        const candidate = lotMatch.find(s => !/^PETRI/.test(s));
+        lot = candidate || lotMatch[lotMatch.length - 1];
+    }
+
+    // 손글씨: 문자부분 = Bacteria, 숫자부분 앞자리 = No, 뒷자리 = Dilute
+    const letterMatch = handText.toUpperCase().match(/[A-Z]{1,4}/);
+    const bacteria = letterMatch ? letterMatch[0] : '';
+
+    const digits = (handText.match(/\d/g) || []).join('');
+    let no = '', dilute = '';
+    if (digits.length >= 2) {
+        no = digits[0];
+        dilute = digits[digits.length - 1];
+    } else if (digits.length === 1) {
+        dilute = digits;
+    }
+
+    return {
+        type: type || 'AC',
+        lot: lot || '',
+        bacteria: bacteria || 'BC',
+        no,
+        dilute
+    };
+}
+
+function getDefaultMetadata() {
+    return {
+        type: 'AC',
+        lot: '',
+        bacteria: 'BC',
+        no: '',
+        dilute: '',
+        rawHandwriting: '',
+        rawPrinted: ''
+    };
+}
+
+async function terminateOCR() {
+    if (handWorker) { await handWorker.terminate(); handWorker = null; }
+    if (printedWorker) { await printedWorker.terminate(); printedWorker = null; }
+}
+
+
+/* ===== js/pdfLoader.js ===== */
+/**
+ * PDF.js를 이용해 PDF의 각 페이지를 캔버스로 렌더링합니다.
+ * v1은 PDF.js를 CDN으로 불러오기만 하고 실제로 전혀 사용하지 않아
+ * "PDF 선택" 버튼이 있어도 PDF 업로드 시 아무 일도 일어나지 않았습니다.
+ */
+
+let workerConfigured = false;
+function ensureWorker() {
+    if (workerConfigured) return;
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        workerConfigured = true;
+    }
+}
+
+/**
+ * @param {File} file
+ * @param {number} scale 렌더링 해상도 배율 (높을수록 선명하지만 느림)
+ * @returns {Promise<HTMLCanvasElement[]>} 페이지별 캔버스 배열
+ */
+async function pdfFileToCanvases(file, scale = 2.5) {
+    if (typeof pdfjsLib === 'undefined') {
+        throw new Error('PDF.js 라이브러리가 로드되지 않았습니다. 인터넷 연결을 확인해주세요.');
+    }
+    ensureWorker();
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const canvases = [];
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        canvases.push(canvas);
+    }
+    return canvases;
+}
+
+
+/* ===== js/simpleViewer.js ===== */
+/**
+ * 메인 화면 우측 "사진 뷰어" (읽기 전용)
+ *
+ * "보기" 버튼을 누르면 나타나며, 자동 인식된 콜로니가 표시된 사진만 보여줍니다.
+ * 점 추가/삭제/초기화 같은 편집 기능은 없습니다 (편집은 "수정" 버튼 -> Colony Editor 모달에서).
+ * 마우스 휠로 확대/축소는 "보는" 기능이라 그대로 유지했습니다.
+ */
+class SimpleViewer {
+    constructor(canvasId, wrapperId) {
+        this.canvas = document.getElementById(canvasId);
+        this.wrapper = document.getElementById(wrapperId);
+        this.ctx = this.canvas.getContext('2d');
+        this.record = null;
+        this.zoom = 1;
+
+        this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
+    }
+
+    show(record) {
+        this.record = record;
+        this.zoom = 1;
+        this.canvas.style.transform = 'scale(1)';
+        this.canvas.style.transformOrigin = 'center center';
+        this.initCanvasSize();
+        this.redraw();
+    }
+
+    clear() {
+        this.record = null;
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    initCanvasSize() {
+        const maxWidth = this.wrapper.clientWidth - 24;
+        const maxHeight = this.wrapper.clientHeight - 24;
+        const src = this.record.canvas;
+        let width = src.width, height = src.height;
+        const ratio = Math.min(maxWidth / width, maxHeight / height, 1);
+        width *= ratio; height *= ratio;
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.baseScale = width / src.width;
+    }
+
+    redraw() {
+        if (!this.record) return;
+        const src = this.record.canvas;
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.drawImage(src, 0, 0, this.canvas.width, this.canvas.height);
+
+        this.record.colonies.forEach(c => {
+            const cx = c.x * this.baseScale;
+            const cy = c.y * this.baseScale;
+            const cr = Math.max(c.radius * this.baseScale, 3);
+            this.ctx.beginPath();
+            this.ctx.arc(cx, cy, cr, 0, Math.PI * 2);
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeStyle = c.color === 'blue' ? '#38BDF8' : '#F9A8D4';
+            this.ctx.stroke();
+        });
+    }
+
+    handleWheel(e) {
+        if (!this.record) return;
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+        const newZoom = Math.min(4, Math.max(1, this.zoom * delta));
+        const rect = this.canvas.getBoundingClientRect();
+        const originX = ((e.clientX - rect.left) / rect.width) * 100;
+        const originY = ((e.clientY - rect.top) / rect.height) * 100;
+        this.canvas.style.transformOrigin = `${originX}% ${originY}%`;
+        this.zoom = newZoom;
+        this.canvas.style.transform = `scale(${this.zoom})`;
+    }
+}
+
+
+/* ===== js/editor.js ===== */
+/**
+ * Colony Editor 모달
+ *
+ * "수정" 버튼을 눌렀을 때 뜨는 전체 기능 편집기. 참고 이미지(COLONY EDITOR)의
+ * 기능을 그대로 구현했습니다:
+ *  - 고해상도 캔버스 (항상 원본 해상도에서 다시 그리므로 휠로 확대해도 흐려지지 않음)
+ *  - 마우스 드래그로 사진 이동(패닝), 휠로 확대/축소(커서 위치 기준)
+ *  - 추가 / 삭제 / 이동 모드 + 되돌리기(Undo) / 다시 실행(Redo)
+ *  - Auto Detect: 붉은색/푸른색/둘 다 색상 모드, 검출 민감도 · 라벨 영역 제외 ·
+ *    최소 점 크기 슬라이더, 재검출 / 자동값 복원
+ *  - Sample Meta 입력 + 라벨 OCR 실행 + OCR RAW 원문 표시
+ *  - 이전/다음 탐색, 번호/밀도/격자 표시 토글, 확대율 버튼 + 맞춤
+ *  - CFU를 붉은색/푸른색 개수로 분리 표시 + CFU/mL 환산 + 적정범위(25-250) 표시
+ */
+
+const SUP_MAP = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻' };
+function toSuperscript(n) {
+    return String(n).split('').map(ch => SUP_MAP[ch] || ch).join('');
+}
+function formatConcentration(total, diluteExp) {
+    const d = Number(diluteExp);
+    if (!isFinite(d) || total <= 0) return '-';
+    const value = total * Math.pow(10, d);
+    if (!isFinite(value) || value <= 0) return '-';
+    const exp = Math.floor(Math.log10(value));
+    const mantissa = value / Math.pow(10, exp);
+    return `${mantissa.toFixed(1)}×10${toSuperscript(exp)}`;
+}
+
+class ColonyEditor {
+    constructor(canvasId, wrapperId) {
+        this.canvas = document.getElementById(canvasId);
+        this.wrapper = document.getElementById(wrapperId);
+        this.ctx = this.canvas.getContext('2d');
+        this.record = null;
+        this.mode = 'view'; // 'view' | 'add' | 'delete' | 'move'
+        this.scale = 1;
+        this.fitScale = 1;
+        this.center = { x: 0, y: 0 };
+        this.showNumbers = false;
+        this.showDensity = false;
+        this.showGrid = false;
+
+        this._drag = null;
+        this._movingColonyIdx = null;
+
+        this.canvas.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
+        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        window.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+
+        this.resizeObserver = new ResizeObserver(() => { if (this.record) { this.fitToView(); this.redraw(); } });
+        this.resizeObserver.observe(this.wrapper);
+    }
+
+    open(record) {
+        this.record = record;
+        this.mode = 'view';
+        this.fitToView();
+        this.redraw();
+    }
+
+    close() {
+        this.record = null;
+    }
+
+    fitToView() {
+        const w = this.wrapper.clientWidth;
+        const h = this.wrapper.clientHeight;
+        this.canvas.width = w;
+        this.canvas.height = h;
+        const src = this.record.canvas;
+        this.fitScale = Math.min(w / src.width, h / src.height);
+        this.scale = this.fitScale;
+        this.center = { x: src.width / 2, y: src.height / 2 };
+    }
+
+    zoomPercent() {
+        return Math.round((this.scale / this.fitScale) * 100);
+    }
+
+    setZoomPercent(pct) {
+        this.scale = this.fitScale * (pct / 100);
+        this.clampCenter();
+        this.redraw();
+        this.onZoomChange && this.onZoomChange(this.zoomPercent());
+    }
+
+    clampCenter() {
+        const src = this.record.canvas;
+        this.center.x = Math.min(Math.max(this.center.x, 0), src.width);
+        this.center.y = Math.min(Math.max(this.center.y, 0), src.height);
+    }
+
+    setMode(mode) {
+        this.mode = mode;
+        const cursors = { add: 'crosshair', delete: 'crosshair', move: 'grab', view: 'grab' };
+        this.canvas.style.cursor = cursors[mode] || 'default';
+    }
+
+    // ---------------- 좌표 변환 ----------------
+    screenToSource(clientX, clientY) {
+        const rect = this.canvas.getBoundingClientRect();
+        const sxCanvas = clientX - rect.left;
+        const syCanvas = clientY - rect.top;
+        const sw = this.canvas.width / this.scale;
+        const sh = this.canvas.height / this.scale;
+        const originX = this.center.x - sw / 2;
+        const originY = this.center.y - sh / 2;
+        return { x: originX + sxCanvas / this.scale, y: originY + syCanvas / this.scale };
+    }
+
+    // ---------------- 렌더링 ----------------
+    redraw() {
+        if (!this.record) return;
+        const src = this.record.canvas;
+        const ctx = this.ctx;
+        const cw = this.canvas.width, ch = this.canvas.height;
+        const sw = cw / this.scale, sh = ch / this.scale;
+        const sx = this.center.x - sw / 2, sy = this.center.y - sh / 2;
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.fillStyle = '#0b1418';
+        ctx.fillRect(0, 0, cw, ch);
+        ctx.drawImage(src, sx, sy, sw, sh, 0, 0, cw, ch);
+
+        const toDst = (x, y) => ({ x: (x - sx) * this.scale, y: (y - sy) * this.scale });
+
+        if (this.showGrid) this.drawGrid(sx, sy, sw, sh);
+        if (this.showDensity) this.drawDensity(sx, sy, sw, sh);
+
+        this.record.colonies.forEach((c, idx) => {
+            const p = toDst(c.x, c.y);
+            const r = Math.max(c.radius * this.scale, 4);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = c.color === 'blue' ? '#38BDF8' : '#F9A8D4';
+            ctx.stroke();
+            if (this.showNumbers) {
+                ctx.font = '11px sans-serif';
+                ctx.fillStyle = c.color === 'blue' ? '#38BDF8' : '#F9A8D4';
+                ctx.fillText(String(idx + 1), p.x + r + 2, p.y - r);
+            }
+        });
+    }
+
+    drawGrid(sx, sy, sw, sh) {
+        const ctx = this.ctx;
+        const src = this.record.canvas;
+        const step = src.width / 8;
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.lineWidth = 1;
+        for (let gx = 0; gx <= src.width; gx += step) {
+            const dx = (gx - sx) * this.scale;
+            ctx.beginPath(); ctx.moveTo(dx, 0); ctx.lineTo(dx, this.canvas.height); ctx.stroke();
+        }
+        for (let gy = 0; gy <= src.height; gy += step) {
+            const dy = (gy - sy) * this.scale;
+            ctx.beginPath(); ctx.moveTo(0, dy); ctx.lineTo(this.canvas.width, dy); ctx.stroke();
+        }
+    }
+
+    drawDensity(sx, sy, sw, sh) {
+        const ctx = this.ctx;
+        const src = this.record.canvas;
+        const cols = 6, rows = 6;
+        const cellW = src.width / cols, cellH = src.height / rows;
+        const grid = Array.from({ length: rows }, () => new Array(cols).fill(0));
+        this.record.colonies.forEach(c => {
+            const cx = Math.min(cols - 1, Math.max(0, Math.floor(c.x / cellW)));
+            const cy = Math.min(rows - 1, Math.max(0, Math.floor(c.y / cellH)));
+            grid[cy][cx]++;
+        });
+        const max = Math.max(1, ...grid.flat());
+        for (let ry = 0; ry < rows; ry++) {
+            for (let rx = 0; rx < cols; rx++) {
+                const count = grid[ry][rx];
+                if (count === 0) continue;
+                const alpha = 0.15 + 0.45 * (count / max);
+                const x0 = rx * cellW, y0 = ry * cellH;
+                const p0 = { x: (x0 - sx) * this.scale, y: (y0 - sy) * this.scale };
+                ctx.fillStyle = `rgba(45, 212, 191, ${alpha})`;
+                ctx.fillRect(p0.x, p0.y, cellW * this.scale, cellH * this.scale);
+            }
+        }
+    }
+
+    // ---------------- 이력 관리 (Undo/Redo) ----------------
+    pushHistory() {
+        if (!this.record) return;
+        if (!this.record.historyPast) this.record.historyPast = [];
+        this.record.historyPast.push(JSON.parse(JSON.stringify(this.record.colonies)));
+        if (this.record.historyPast.length > 30) this.record.historyPast.shift();
+        this.record.historyFuture = [];
+    }
+
+    undo() {
+        const r = this.record;
+        if (!r || !r.historyPast || r.historyPast.length === 0) return;
+        r.historyFuture = r.historyFuture || [];
+        r.historyFuture.push(JSON.parse(JSON.stringify(r.colonies)));
+        r.colonies = r.historyPast.pop();
+        this.afterMutate();
+    }
+
+    redo() {
+        const r = this.record;
+        if (!r || !r.historyFuture || r.historyFuture.length === 0) return;
+        r.historyPast = r.historyPast || [];
+        r.historyPast.push(JSON.parse(JSON.stringify(r.colonies)));
+        r.colonies = r.historyFuture.pop();
+        this.afterMutate();
+    }
+
+    afterMutate() {
+        this.redraw();
+        this.onCountChange && this.onCountChange();
+    }
+
+    // ---------------- 마우스 상호작용 ----------------
+    handleWheel(e) {
+        if (!this.record) return;
+        e.preventDefault();
+        const before = this.screenToSource(e.clientX, e.clientY);
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        this.scale = Math.min(this.fitScale * 8, Math.max(this.fitScale * 0.4, this.scale * factor));
+        const after = this.screenToSource(e.clientX, e.clientY);
+        this.center.x += before.x - after.x;
+        this.center.y += before.y - after.y;
+        this.clampCenter();
+        this.redraw();
+        this.onZoomChange && this.onZoomChange(this.zoomPercent());
+    }
+
+    findNearestColony(pt) {
+        let best = -1, bestDist = Infinity;
+        this.record.colonies.forEach((c, idx) => {
+            const d = Math.hypot(c.x - pt.x, c.y - pt.y);
+            const threshold = Math.max(c.radius * 2.2, 14);
+            if (d <= threshold && d < bestDist) { bestDist = d; best = idx; }
+        });
+        return best;
+    }
+
+    handleMouseDown(e) {
+        if (!this.record) return;
+        const pt = this.screenToSource(e.clientX, e.clientY);
+        this._drag = { startClientX: e.clientX, startClientY: e.clientY, startCenter: { ...this.center }, moved: false, startPt: pt };
+
+        if (this.mode === 'move') {
+            const idx = this.findNearestColony(pt);
+            this._movingColonyIdx = idx;
+            if (idx !== -1) this.pushHistory();
+        }
+        this.canvas.style.cursor = 'grabbing';
+    }
+
+    handleMouseMove(e) {
+        if (!this._drag || !this.record) return;
+        const dxScreen = e.clientX - this._drag.startClientX;
+        const dyScreen = e.clientY - this._drag.startClientY;
+        if (Math.hypot(dxScreen, dyScreen) > 3) this._drag.moved = true;
+        if (!this._drag.moved) return;
+
+        if (this.mode === 'move' && this._movingColonyIdx !== null && this._movingColonyIdx !== -1) {
+            const pt = this.screenToSource(e.clientX, e.clientY);
+            this.record.colonies[this._movingColonyIdx].x = pt.x;
+            this.record.colonies[this._movingColonyIdx].y = pt.y;
+            this.redraw();
+        } else {
+            // 화면 패닝 (사진 이동)
+            this.center.x = this._drag.startCenter.x - dxScreen / this.scale;
+            this.center.y = this._drag.startCenter.y - dyScreen / this.scale;
+            this.clampCenter();
+            this.redraw();
+        }
+    }
+
+    handleMouseUp(e) {
+        if (!this._drag || !this.record) { this._drag = null; return; }
+        const wasClick = !this._drag.moved;
+        const clickPt = this._drag.startPt;
+
+        if (wasClick) {
+            if (this.mode === 'add') {
+                this.pushHistory();
+                const color = this.record.colorMode === 'blue' ? 'blue' : 'red';
+                this.record.colonies.push({ x: clickPt.x, y: clickPt.y, radius: 5, color });
+                this.afterMutate();
+            } else if (this.mode === 'delete') {
+                const idx = this.findNearestColony(clickPt);
+                if (idx !== -1) {
+                    this.pushHistory();
+                    this.record.colonies.splice(idx, 1);
+                    this.afterMutate();
+                }
+            }
+        } else if (this.mode === 'move' && this._movingColonyIdx !== null && this._movingColonyIdx !== -1) {
+            this.onCountChange && this.onCountChange();
+        }
+
+        this._movingColonyIdx = null;
+        this._drag = null;
+        this.canvas.style.cursor = this.mode === 'view' || this.mode === 'move' ? 'grab' : 'crosshair';
+    }
+}
+
+
+
+/* ===== js/table.js ===== */
+
+/**
+ * 2구역 데이터 테이블 렌더링
+ *  - Status 열 제거
+ *  - No 열 (record.no, 편집 가능)
+ *  - CFU를 붉은색/푸른색 개수로 분리해 2개 열(CFU-R / CFU-B)로 표시
+ *  - "보기"와 "삭제" 사이에 "수정" 버튼 (Colony Editor 모달을 엽니다)
+ *  - 한 번에 20행씩 페이지네이션
+ */
+const PAGE_SIZE = 20;
+let currentPage = 1;
+let lastHandlers = null;
+
+function resetPage() {
+    currentPage = 1;
+}
+
+function renderTable(handlers) {
+    lastHandlers = handlers;
+    const { onView, onEdit, onDelete, onToggleSelect, onToggleSelectAll } = handlers;
+    const allFiltered = getFilteredRecords();
+
+    const totalItems = allFiltered.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIdx = (currentPage - 1) * PAGE_SIZE;
+    const dataToRender = allFiltered.slice(startIdx, startIdx + PAGE_SIZE);
+
+    const tableBody = document.getElementById('tableBody');
+    tableBody.innerHTML = '';
+
+    if (dataToRender.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="9" class="empty-message">등록된 데이터가 없습니다. 위에서 파일을 업로드해주세요.</td></tr>`;
+    } else {
+        dataToRender.forEach((record) => {
+            const realIndex = state.records.indexOf(record);
+            const tr = document.createElement('tr');
+            if (record.selected) tr.classList.add('selected');
+            if (realIndex === state.activeIndex) tr.classList.add('active-row');
+
+            const editableCell = (field) => {
+                const needsReview = record.needsReview && record.needsReview[field];
+                return `<td class="editable-cell${needsReview ? ' needs-review' : ''}" contenteditable="true" data-id="${record.id}" data-field="${field}">${escapeHtml(String(record[field] ?? ''))}</td>`;
+            };
+
+            const redCount = record.colonies.filter(c => c.color !== 'blue').length;
+            const blueCount = record.colonies.filter(c => c.color === 'blue').length;
+
+            tr.innerHTML = `
+                <td><input type="checkbox" class="row-check" data-index="${realIndex}" ${record.selected ? 'checked' : ''}></td>
+                ${editableCell('type')}
+                ${editableCell('lot')}
+                ${editableCell('bacteria')}
+                ${editableCell('no')}
+                ${editableCell('dilute')}
+                <td class="cfu-red">${redCount}</td>
+                <td class="cfu-blue">${blueCount}</td>
+                <td>
+                    <button class="view-btn${realIndex === state.activeIndex ? ' active' : ''}" data-index="${realIndex}">보기</button>
+                    <button class="edit-btn" data-index="${realIndex}">수정</button>
+                    <button class="delete-row-btn" data-index="${realIndex}">삭제</button>
+                </td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    tableBody.querySelectorAll('.editable-cell').forEach(cell => {
+        cell.addEventListener('blur', (e) => {
+            const id = e.target.getAttribute('data-id');
+            const field = e.target.getAttribute('data-field');
+            const record = state.records.find(r => String(r.id) === String(id));
+            if (record) {
+                record[field] = e.target.innerText.trim();
+                if (record.needsReview) record.needsReview[field] = false;
+                e.target.classList.remove('needs-review');
+            }
+        });
+    });
+
+    tableBody.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => onView(parseInt(e.target.getAttribute('data-index'), 10)));
+    });
+    tableBody.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => onEdit(parseInt(e.target.getAttribute('data-index'), 10)));
+    });
+    tableBody.querySelectorAll('.delete-row-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => onDelete(parseInt(e.target.getAttribute('data-index'), 10)));
+    });
+    tableBody.querySelectorAll('.row-check').forEach(chk => {
+        chk.addEventListener('change', (e) => onToggleSelect(parseInt(e.target.getAttribute('data-index'), 10), e.target.checked));
+    });
+
+    updateSelectionUI();
+    renderPaginationBar(totalItems, totalPages);
+
+    const selectAllChk = document.getElementById('selectAllCheckbox');
+    if (selectAllChk) selectAllChk.onchange = (e) => onToggleSelectAll(e.target.checked);
+}
+
+function renderPaginationBar(totalItems, totalPages) {
+    const info = document.getElementById('paginationInfo');
+    const indicator = document.getElementById('pageIndicator');
+    const prevBtn = document.getElementById('btnPrevPage');
+    const nextBtn = document.getElementById('btnNextPage');
+    if (!info || !indicator || !prevBtn || !nextBtn) return;
+
+    const startNum = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+    const endNum = Math.min(totalItems, currentPage * PAGE_SIZE);
+    info.textContent = totalItems === 0 ? '0건' : `총 ${totalItems}건 중 ${startNum}-${endNum}건`;
+    indicator.textContent = `${currentPage} / ${totalPages}`;
+    prevBtn.disabled = currentPage <= 1;
+    nextBtn.disabled = currentPage >= totalPages;
+
+    prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; if (lastHandlers) renderTable(lastHandlers); } };
+    nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; if (lastHandlers) renderTable(lastHandlers); } };
+}
+
+function updateSelectionUI() {
+    const count = state.records.filter(r => r.selected).length;
+    const hint = document.getElementById('selectionHint');
+    if (hint) hint.textContent = count > 0 ? `${count}개 선택됨` : '선택된 항목 없음';
+    document.querySelectorAll('.bulk-actions button').forEach(b => { b.disabled = count === 0; });
+}
+
+function getFilteredRecords() {
+    const keyword = (document.getElementById('searchInput').value || '').toLowerCase();
+    const filterType = document.getElementById('filterType').value;
+    const filtered = state.records.filter(record => {
+        const haystack = `${record.lot} ${record.filename} ${record.bacteria} ${record.no}${record.dilute}`.toLowerCase();
+        const matchKeyword = keyword === '' || haystack.includes(keyword);
+        const matchType = filterType === '' || record.type === filterType;
+        return matchKeyword && matchType;
+    });
+    // 최신 데이터가 위로 오도록 내림차순(DESC) 정렬 (id는 업로드 순서대로 증가)
+    return filtered.slice().sort((a, b) => b.id - a.id);
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+
+/* ===== js/exporter.js ===== */
+/**
+ * Excel / 개별 이미지 PNG / ZIP 일괄 내보내기
+ * - PDF 보고서 기능은 요청에 따라 제거했습니다.
+ * - Excel 저장은 Type, Lot No, Bacteria, No., Dilute, CFU 만 포함합니다 (File 제외).
+ * - Excel 저장 / ZIP 저장은 체크박스로 선택된 데이터에 대해서만 동작합니다.
+ */
+
+function getSelected() {
+    return state.records.filter(r => r.selected);
+}
+
+function exportToExcel() {
+    const selected = getSelected();
+    if (selected.length === 0) {
+        alert('선택된 데이터가 없습니다. 표에서 체크박스를 먼저 선택해주세요.');
+        return;
+    }
+    if (typeof XLSX === 'undefined') {
+        alert('엑셀 저장 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.');
+        return;
+    }
+    const exportData = selected.map(r => {
+        const redCount = r.colonies.filter(c => c.color !== 'blue').length;
+        const blueCount = r.colonies.filter(c => c.color === 'blue').length;
+        return {
+            Type: r.type,
+            'Lot No': r.lot,
+            Bacteria: r.bacteria,
+            'No.': r.no,
+            Dilute: r.dilute,
+            'CFU(Red)': redCount,
+            'CFU(Blue)': blueCount,
+            CFU: r.colonies.length
+        };
+    });
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Colony Results');
+    XLSX.writeFile(workbook, `Petricore_Results_${Date.now()}.xlsx`);
+}
+
+// 콜로니 표시가 그려진 캔버스를 만들어서 반환 (붉은색/푸른색 구분)
+function renderAnnotatedCanvas(record) {
+    const src = record.canvas;
+    const out = document.createElement('canvas');
+    out.width = src.width;
+    out.height = src.height;
+    const ctx = out.getContext('2d');
+    ctx.drawImage(src, 0, 0);
+
+    ctx.lineWidth = Math.max(2, src.width * 0.003);
+    record.colonies.forEach(c => {
+        ctx.strokeStyle = c.color === 'blue' ? '#2563eb' : '#ff0000';
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, Math.max(c.radius, 5), 0, Math.PI * 2);
+        ctx.stroke();
+    });
+
+    const redCount = record.colonies.filter(c => c.color !== 'blue').length;
+    const blueCount = record.colonies.filter(c => c.color === 'blue').length;
+    ctx.font = `${Math.max(14, Math.round(src.width * 0.028))}px sans-serif`;
+    ctx.fillStyle = '#ff0000';
+    const label = `${record.bacteria}${record.no}-${record.dilute}  R:${redCount} B:${blueCount} CFU:${record.colonies.length}`;
+    ctx.fillText(label, 8, out.height - 10);
+
+    return out;
+}
+
+function exportSingleImage(record) {
+    const canvas = renderAnnotatedCanvas(record);
+    canvas.toBlob(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${record.bacteria}${record.no}-${record.dilute}_CFU${record.colonies.length}.png`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }, 'image/png');
+}
+
+async function exportZip() {
+    const selected = getSelected();
+    if (selected.length === 0) {
+        alert('선택된 데이터가 없습니다. 표에서 체크박스를 먼저 선택해주세요.');
+        return;
+    }
+    if (typeof JSZip === 'undefined') {
+        alert('JSZip 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.');
+        return;
+    }
+    const zip = new JSZip();
+    for (const record of selected) {
+        const canvas = renderAnnotatedCanvas(record);
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        const name = `${record.bacteria}${record.no}-${record.dilute}_CFU${record.colonies.length}_${record.id}.png`;
+        zip.file(name, blob);
+    }
+    const content = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(content);
+    a.download = `Petricore_Images_${Date.now()}.zip`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+
+function deleteSelected() {
+    const count = state.records.filter(r => r.selected).length;
+    if (count === 0) {
+        alert('선택된 데이터가 없습니다. 표에서 체크박스를 먼저 선택해주세요.');
+        return false;
+    }
+    if (!confirm(`선택한 ${count}개 데이터를 삭제할까요?`)) return false;
+    state.records = state.records.filter(r => !r.selected);
+    return true;
+}
+
+
+/* ===== js/main.js ===== */
+
+
+
+
+
+
+
+
+
+const DEFAULTS = { sensitivity: 15, labelHeightRatio: 0.12, minArea: 2, colorMode: 'red' };
+
+document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+
+    state.viewer = new SimpleViewer('viewerCanvas', 'viewerCanvasWrapper');
+
+    state.editor = new ColonyEditor('editorCanvas', 'editorCanvasWrapper');
+    state.editor.onCountChange = () => { updateEditorCfuDisplay(); refreshTable(); };
+    state.editor.onZoomChange = (pct) => { document.getElementById('emZoomVal').textContent = pct + '%'; };
+
+    initEventListeners();
+    refreshTable();
+
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(syncPanelHeights, 150);
+    });
+});
+
+function initTheme() {
+    const btn = document.getElementById('btnThemeToggle');
+    let saved = null;
+    try { saved = localStorage.getItem('petricore-theme'); } catch (e) { /* 저장소 접근 불가 시 무시 */ }
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = saved || (prefersDark ? 'dark' : 'light');
+    applyTheme(theme);
+
+    btn.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+        try { localStorage.setItem('petricore-theme', next); } catch (e) { /* 무시 */ }
+    });
+}
+
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.getElementById('btnThemeToggle').textContent = '☀️';
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('btnThemeToggle').textContent = '🌙';
+    }
+}
+
+function refreshTable() {
+    renderTable({
+        onView: openViewer,
+        onEdit: openEditor,
+        onDelete: deleteRecord,
+        onToggleSelect: toggleSelect,
+        onToggleSelectAll: toggleSelectAll
+    });
+    updateStatsRow();
+    syncPanelHeights();
+}
+
+/**
+ * 결과란(좌측) 테이블 영역을 정확히 20행 높이로 고정하고,
+ * 사진 뷰어(우측) 패널을 "1페이지 20건이 모두 채워졌을 때"의
+ * 결과란 전체 높이와 동일하게 맞춘다.
+ *  - 실제 렌더링된 행/헤더 높이를 측정해서 계산하므로
+ *    폰트·테마가 바뀌어도 항상 정확히 맞는다.
+ *  - 20행을 초과하는 데이터는 (페이지네이션과 별개로) table-responsive의
+ *    overflow-y: auto 로 스크롤 처리된다.
+ */
+function measureRowMetrics() {
+    const table = document.getElementById('dataTable');
+    const thead = table ? table.querySelector('thead') : null;
+    const tbody = document.getElementById('tableBody');
+    if (!thead || !tbody) return null;
+
+    const theadHeight = thead.getBoundingClientRect().height;
+
+    let sampleRow = tbody.querySelector('tr');
+    let tempRow = null;
+
+    // 데이터가 없거나(빈 상태 메시지 행) 측정용 행이 없으면
+    // 실제 행과 동일한 구조의 임시 행을 만들어 높이만 잰다.
+    if (!sampleRow || sampleRow.querySelector('.empty-message')) {
+        tempRow = document.createElement('tr');
+        tempRow.innerHTML = `
+            <td><input type="checkbox"></td>
+            <td class="editable-cell">AC</td>
+            <td class="editable-cell">L-0000</td>
+            <td class="editable-cell">Bacteria</td>
+            <td class="editable-cell">1</td>
+            <td class="editable-cell">10</td>
+            <td class="cfu-red">0</td>
+            <td class="cfu-blue">0</td>
+            <td>
+                <button class="view-btn">보기</button>
+                <button class="edit-btn">수정</button>
+                <button class="delete-row-btn">삭제</button>
+            </td>
+        `;
+        tempRow.style.visibility = 'hidden';
+        tbody.appendChild(tempRow);
+        sampleRow = tempRow;
+    }
+
+    const rowHeight = sampleRow.getBoundingClientRect().height;
+
+    if (tempRow) tbody.removeChild(tempRow);
+
+    if (!theadHeight || !rowHeight) return null;
+    return { theadHeight, rowHeight };
+}
+
+function syncPanelHeights() {
+    const metrics = measureRowMetrics();
+    if (!metrics) return;
+
+    const targetTableHeight = metrics.theadHeight + metrics.rowHeight * PAGE_SIZE;
+
+    const tableResponsive = document.querySelector('.table-responsive');
+    if (tableResponsive) {
+        tableResponsive.style.height = `${targetTableHeight}px`;
+        tableResponsive.style.maxHeight = `${targetTableHeight}px`;
+    }
+
+    // table-responsive 높이가 반영된 다음 프레임에 결과란(table-panel)의
+    // 전체 높이를 재서 사진 뷰어(viewer-panel)에 그대로 적용한다.
+    requestAnimationFrame(() => {
+        const tablePanel = document.querySelector('.table-panel');
+        const viewerPanel = document.querySelector('.viewer-panel');
+        if (!tablePanel || !viewerPanel) return;
+
+        const targetPanelHeight = tablePanel.getBoundingClientRect().height;
+        viewerPanel.style.height = `${targetPanelHeight}px`;
+        viewerPanel.style.minHeight = `${targetPanelHeight}px`;
+    });
+}
+
+function updateStatsRow() {
+    const total = state.records.length;
+    const selected = state.records.filter(r => r.selected).length;
+    let red = 0, blue = 0;
+    state.records.forEach(r => {
+        r.colonies.forEach(c => { if (c.color === 'blue') blue++; else red++; });
+    });
+    const elTotal = document.getElementById('statTotal');
+    const elSelected = document.getElementById('statSelected');
+    const elCfu = document.getElementById('statCfu');
+    if (elTotal) elTotal.textContent = total;
+    if (elSelected) elSelected.textContent = selected;
+    if (elCfu) elCfu.textContent = `${red} / ${blue}`;
+}
+
+function initEventListeners() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const btnSelectFile = document.getElementById('btnSelectFile');
+
+    ['dragenter', 'dragover'].forEach(evt => dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); }));
+    ['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); }));
+    dropZone.addEventListener('drop', (e) => { if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files); });
+
+    btnSelectFile.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) handleFiles(e.target.files);
+        fileInput.value = '';
+    });
+
+    document.getElementById('searchInput').addEventListener('input', () => { resetPage(); refreshTable(); });
+    document.getElementById('filterType').addEventListener('change', () => { resetPage(); refreshTable(); });
+
+    document.getElementById('btnExportExcel').addEventListener('click', exportToExcel);
+    document.getElementById('btnExportZip').addEventListener('click', exportZip);
+    document.getElementById('btnDeleteSelected').addEventListener('click', () => {
+        const activeRecord = state.records[state.activeIndex];
+        const editRecord = state.records[state.editIndex];
+        if (deleteSelected()) {
+            if (activeRecord && !state.records.includes(activeRecord)) { state.activeIndex = null; state.viewer.clear(); updateViewerEmptyState(); }
+            if (editRecord && !state.records.includes(editRecord)) closeEditor();
+            refreshTable();
+        }
+    });
+
+    initEditorEventListeners();
+}
+
+// ---------------------------------------------------------------
+// 파일 업로드 처리
+// ---------------------------------------------------------------
+async function handleFiles(fileList) {
+    const files = Array.from(fileList);
+    const statusEl = document.getElementById('uploadStatus');
+    const progressTrack = document.getElementById('uploadProgressTrack');
+    const progressFill = document.getElementById('uploadProgressFill');
+    document.getElementById('dropZone').classList.add('compact');
+
+    let done = 0;
+    statusEl.textContent = `처리 중... (0/${files.length})`;
+    progressTrack.classList.add('active');
+    progressFill.style.width = '0%';
+
+    for (const file of files) {
+        try {
+            if (file.type === 'application/pdf') {
+                const pageCanvases = await pdfFileToCanvases(file);
+                for (let p = 0; p < pageCanvases.length; p++) {
+                    const panels = splitPanels(pageCanvases[p], 'normal');
+                    for (let i = 0; i < panels.length; i++) {
+                        await createRecordFromCanvas(panels[i], `${file.name} (p${p + 1}-${i + 1})`, window.__dryMediaType || 'AC', window.__dryMediaCustomType || '');
+                    }
+                }
+            } else if (file.type.startsWith('image/')) {
+                const canvas = await imageFileToCanvas(file);
+                const panels = splitPanels(canvas, 'normal');
+                for (let i = 0; i < panels.length; i++) {
+                    const suffix = panels.length > 1 ? ` (${i + 1}/${panels.length})` : '';
+                    await createRecordFromCanvas(panels[i], file.name + suffix, window.__dryMediaType || 'AC', window.__dryMediaCustomType || '');
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            alert(`${file.name} 처리 중 오류가 발생했습니다: ${err.message}`);
+        }
+        done++;
+        statusEl.textContent = `처리 중... (${done}/${files.length})`;
+        progressFill.style.width = `${Math.round((done / files.length) * 100)}%`;
+        refreshTable();
+    }
+    statusEl.textContent = `총 ${state.records.length}개 데이터 · 여러 장이 한 페이지에 스캔된 사진도 자동 분할됩니다`;
+    progressFill.style.width = '100%';
+    setTimeout(() => {
+        progressTrack.classList.remove('active');
+        progressFill.style.width = '0%';
+    }, 500);
+    refreshTable();
+}
+
+function imageFileToCanvas(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                canvas.getContext('2d').drawImage(img, 0, 0);
+                resolve(canvas);
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+async function createRecordFromCanvas(canvas, filename, dryType = window.__dryMediaType || 'AC', dryCustomType = window.__dryMediaCustomType || '') {
+    const record = {
+        id: makeId(),
+        filename,
+        canvas,
+        rotation: 0,
+        type: (dryType === 'other' ? 'other' : dryType), dryMediaType: dryType, dryMediaCustomType: dryCustomType, lot: '', bacteria: 'BC', no: '', dilute: '',
+        colonies: [], autoColonies: [],
+        historyPast: [], historyFuture: [],
+        sensitivity: DEFAULTS.sensitivity,
+        labelHeightRatio: DEFAULTS.labelHeightRatio,
+        minArea: DEFAULTS.minArea,
+        colorMode: DEFAULTS.colorMode,
+        selected: false,
+        needsReview: {},
+        rawHandwriting: '', rawPrinted: ''
+    };
+
+    const [ocrResult, colonies] = await Promise.all([
+        parsePetrifilmOCR(canvas, record.labelHeightRatio).catch(err => { console.warn('OCR 실패:', err); return null; }),
+        Promise.resolve(detectColonies(canvas, { sensitivity: record.sensitivity, labelHeightRatio: record.labelHeightRatio, minArea: record.minArea, colorMode: record.colorMode }))
+    ]);
+
+    if (ocrResult) {
+        record.type = (dryType === 'other' ? 'other' : dryType);
+        record.dryMediaType = dryType;
+        record.dryMediaCustomType = dryCustomType;
+        record.lot = ocrResult.lot || '';
+        record.bacteria = ocrResult.bacteria || 'BC';
+        record.no = ocrResult.no || '';
+        record.dilute = ocrResult.dilute || '';
+        record.rawHandwriting = ocrResult.rawHandwriting || '';
+        record.rawPrinted = ocrResult.rawPrinted || '';
+        record.needsReview = {
+            type: false, lot: !ocrResult.lot, bacteria: !ocrResult.bacteria,
+            no: !ocrResult.no, dilute: !ocrResult.dilute
+        };
+    } else {
+        record.needsReview = { type: true, lot: true, bacteria: true, no: true, dilute: true };
+    }
+
+    record.colonies = colonies;
+    record.autoColonies = JSON.parse(JSON.stringify(colonies));
+    state.records.push(record);
+}
+
+// ---------------------------------------------------------------
+// 메인 화면 사진 뷰어 (읽기 전용, "보기")
+// ---------------------------------------------------------------
+function openViewer(index) {
+    const record = state.records[index];
+    if (!record) return;
+    state.activeIndex = index;
+
+    document.getElementById('viewerTitle').innerHTML =
+        `<span class="dot"></span>${esc(record.bacteria)}${esc(String(record.no))}-${esc(String(record.dilute))} · ${esc(record.lot)}`;
+    const red = record.colonies.filter(c => c.color !== 'blue').length;
+    const blue = record.colonies.filter(c => c.color === 'blue').length;
+    document.querySelector('#viewerCfuMini .red b').textContent = red;
+    document.querySelector('#viewerCfuMini .blue b').textContent = blue;
+
+    state.viewer.show(record);
+    updateViewerEmptyState();
+    refreshTable();
+}
+
+function updateViewerEmptyState() {
+    document.getElementById('viewerEmpty').style.display = state.activeIndex === null ? 'flex' : 'none';
+}
+
+function deleteRecord(index) {
+    if (!confirm('이 데이터를 삭제할까요?')) return;
+    const wasActive = index === state.activeIndex;
+    const wasEditing = index === state.editIndex;
+    state.records.splice(index, 1);
+    if (wasActive) { state.activeIndex = null; state.viewer.clear(); updateViewerEmptyState(); }
+    if (wasEditing) closeEditor();
+    refreshTable();
+}
+
+function toggleSelect(index, checked) {
+    const record = state.records[index];
+    if (record) record.selected = checked;
+    updateSelectionUI();
+    refreshTable();
+}
+
+function toggleSelectAll(checked) {
+    state.records.forEach(r => { r.selected = checked; });
+    refreshTable();
+}
+
+// ---------------------------------------------------------------
+// Colony Editor 모달 ("수정")
+// ---------------------------------------------------------------
+function openEditor(index) {
+    const record = state.records[index];
+    if (!record) return;
+    state.editIndex = index;
+
+    document.getElementById('colonyEditorModal').style.display = 'flex';
+    state.editor.open(record);
+    setEditorMode('add');
+
+    populateEditorSidebar(record);
+    updateEditorNavCounter();
+    document.getElementById('emZoomVal').textContent = state.editor.zoomPercent() + '%';
+}
+
+function closeEditor() {
+    document.getElementById('colonyEditorModal').style.display = 'none';
+    const idx = state.editIndex;
+    state.editIndex = null;
+    state.editor.close();
+    // 같은 레코드가 메인 뷰어에도 열려있었다면 갱신
+    if (idx !== null && idx === state.activeIndex) openViewer(idx);
+    refreshTable();
+}
+
+function populateEditorSidebar(record) {
+    document.getElementById('emTitle').innerHTML =
+        `${esc(record.type)} · ${esc(record.bacteria)}${esc(String(record.no))} · 10${sup('-' + record.dilute)}`;
+    document.getElementById('emFilename').textContent = record.filename;
+
+    document.getElementById('emType').value = record.type;
+    document.getElementById('emLot').value = record.lot;
+    document.getElementById('emBacteria').value = record.bacteria;
+    document.getElementById('emNo').value = record.no;
+    document.getElementById('emDilute').value = record.dilute;
+
+    document.getElementById('emSensitivity').value = record.sensitivity;
+    document.getElementById('emSensVal').textContent = record.sensitivity;
+    document.getElementById('emLabelHeight').value = Math.round(record.labelHeightRatio * 100);
+    document.getElementById('emLabelVal').textContent = Math.round(record.labelHeightRatio * 100) + '%';
+    document.getElementById('emMinArea').value = record.minArea;
+    document.getElementById('emMinAreaVal').textContent = record.minArea;
+
+    setColorModeUI(record.colorMode);
+
+    const rawParts = [];
+    if (record.rawPrinted) rawParts.push(record.rawPrinted.replace(/\n/g, ' '));
+    if (record.rawHandwriting) rawParts.push(record.rawHandwriting.replace(/\n/g, ' '));
+    document.getElementById('emOcrRaw').textContent = rawParts.length ? rawParts.join(' | ') : '(OCR 결과 없음 - "라벨 OCR 실행"을 눌러보세요)';
+
+    updateEditorCfuDisplay();
+}
+
+function updateEditorCfuDisplay() {
+    const record = state.records[state.editIndex];
+    if (!record) return;
+    const red = record.colonies.filter(c => c.color !== 'blue').length;
+    const blue = record.colonies.filter(c => c.color === 'blue').length;
+    const total = red + blue;
+    document.getElementById('emCfuRed').textContent = red;
+    document.getElementById('emCfuBlue').textContent = blue;
+    document.getElementById('emConcentration').textContent = formatConcentration(total, record.dilute);
+
+    const pct = Math.min(100, (total / 300) * 100);
+    document.getElementById('emRangeFill').style.width = pct + '%';
+    const label = document.getElementById('emRangeLabel');
+    const inRange = total >= 25 && total <= 250;
+    label.textContent = inRange ? '적정 · 적정 25–250' : `범위 벗어남 (현재 ${total}) · 적정 25–250`;
+    label.classList.toggle('warn', !inRange);
+}
+
+function updateEditorNavCounter() {
+    const total = state.records.length;
+    const pos = state.editIndex + 1;
+    document.getElementById('emCounter').textContent = `${pos} / ${total}`;
+    document.getElementById('btnPrevRecord').disabled = state.editIndex <= 0;
+    document.getElementById('btnNextRecord').disabled = state.editIndex >= total - 1;
+}
+
+function setEditorMode(mode) {
+    state.editor.setMode(mode);
+    ['btnModeAdd', 'btnModeDelete', 'btnModeMove'].forEach(id => document.getElementById(id).classList.remove('active'));
+    const map = { add: 'btnModeAdd', delete: 'btnModeDelete', move: 'btnModeMove' };
+    if (map[mode]) document.getElementById(map[mode]).classList.add('active');
+}
+
+function setColorModeUI(mode) {
+    document.getElementById('btnColorRed').classList.toggle('active', mode === 'red');
+    document.getElementById('btnColorBlue').classList.toggle('active', mode === 'blue');
+    document.getElementById('btnColorBoth').classList.toggle('active', mode === 'both');
+}
+
+function initEditorEventListeners() {
+    document.getElementById('btnCloseEditor').addEventListener('click', closeEditor);
+    document.getElementById('colonyEditorModal').addEventListener('click', (e) => {
+        if (e.target.id === 'colonyEditorModal') closeEditor();
+    });
+    document.getElementById('btnCommitClose').addEventListener('click', closeEditor);
+
+    document.getElementById('btnModeAdd').addEventListener('click', () => setEditorMode('add'));
+    document.getElementById('btnModeDelete').addEventListener('click', () => setEditorMode('delete'));
+    document.getElementById('btnModeMove').addEventListener('click', () => setEditorMode('move'));
+    document.getElementById('btnUndo').addEventListener('click', () => state.editor.undo());
+    document.getElementById('btnRedo').addEventListener('click', () => state.editor.redo());
+
+    document.getElementById('btnColorRed').addEventListener('click', () => setRecordColorMode('red'));
+    document.getElementById('btnColorBlue').addEventListener('click', () => setRecordColorMode('blue'));
+    document.getElementById('btnColorBoth').addEventListener('click', () => setRecordColorMode('both'));
+
+    document.getElementById('emSensitivity').addEventListener('input', (e) => {
+        document.getElementById('emSensVal').textContent = e.target.value;
+        const r = state.records[state.editIndex]; if (r) r.sensitivity = parseInt(e.target.value, 10);
+    });
+    document.getElementById('emLabelHeight').addEventListener('input', (e) => {
+        document.getElementById('emLabelVal').textContent = e.target.value + '%';
+        const r = state.records[state.editIndex]; if (r) r.labelHeightRatio = parseInt(e.target.value, 10) / 100;
+    });
+    document.getElementById('emMinArea').addEventListener('input', (e) => {
+        document.getElementById('emMinAreaVal').textContent = e.target.value;
+        const r = state.records[state.editIndex]; if (r) r.minArea = parseInt(e.target.value, 10);
+    });
+
+    document.getElementById('btnRedetect').addEventListener('click', () => runDetection(false));
+    document.getElementById('btnRestoreDefaults').addEventListener('click', () => {
+        const r = state.records[state.editIndex]; if (!r) return;
+        r.sensitivity = DEFAULTS.sensitivity;
+        r.labelHeightRatio = DEFAULTS.labelHeightRatio;
+        r.minArea = DEFAULTS.minArea;
+        r.colorMode = DEFAULTS.colorMode;
+        document.getElementById('emSensitivity').value = r.sensitivity;
+        document.getElementById('emSensVal').textContent = r.sensitivity;
+        document.getElementById('emLabelHeight').value = Math.round(r.labelHeightRatio * 100);
+        document.getElementById('emLabelVal').textContent = Math.round(r.labelHeightRatio * 100) + '%';
+        document.getElementById('emMinArea').value = r.minArea;
+        document.getElementById('emMinAreaVal').textContent = r.minArea;
+        setColorModeUI(r.colorMode);
+        runDetection(true);
+    });
+
+    ['emType', 'emLot', 'emBacteria', 'emNo', 'emDilute'].forEach(id => {
+        document.getElementById(id).addEventListener('change', (e) => {
+            const r = state.records[state.editIndex]; if (!r) return;
+            const field = id.replace('em', '').toLowerCase();
+            r[field] = e.target.value.trim();
+            if (r.needsReview) r.needsReview[field] = false;
+            document.getElementById('emTitle').innerHTML = `${esc(r.type)} · ${esc(r.bacteria)}${esc(String(r.no))} · 10${sup('-' + r.dilute)}`;
+            updateEditorCfuDisplay();
+        });
+    });
+
+    document.getElementById('btnRunOcr').addEventListener('click', async () => {
+        const r = state.records[state.editIndex]; if (!r) return;
+        const btn = document.getElementById('btnRunOcr');
+        btn.disabled = true; btn.textContent = 'OCR 인식 중...';
+        try {
+            const result = await parsePetrifilmOCR(r.canvas, r.labelHeightRatio);
+            if (result) {
+                r.type = result.type || r.type;
+                r.lot = result.lot || r.lot;
+                r.bacteria = result.bacteria || r.bacteria;
+                r.no = result.no || r.no;
+                r.dilute = result.dilute || r.dilute;
+                r.rawHandwriting = result.rawHandwriting || '';
+                r.rawPrinted = result.rawPrinted || '';
+                r.needsReview = {};
+                populateEditorSidebar(r);
+                refreshTable();
+            }
+        } catch (err) {
+            alert('OCR 실행 중 오류가 발생했습니다: ' + err.message);
+        } finally {
+            btn.disabled = false; btn.textContent = '라벨 OCR 실행';
+        }
+    });
+
+    document.getElementById('btnExportSingleImage').addEventListener('click', () => {
+        const r = state.records[state.editIndex]; if (r) exportSingleImage(r);
+    });
+
+    document.getElementById('btnPrevRecord').addEventListener('click', () => navigateEditor(-1));
+    document.getElementById('btnNextRecord').addEventListener('click', () => navigateEditor(1));
+
+    document.getElementById('btnToggleNumbers').addEventListener('click', (e) => {
+        state.editor.showNumbers = !state.editor.showNumbers;
+        e.target.classList.toggle('active', state.editor.showNumbers);
+        state.editor.redraw();
+    });
+    document.getElementById('btnToggleDensity').addEventListener('click', (e) => {
+        state.editor.showDensity = !state.editor.showDensity;
+        e.target.classList.toggle('active', state.editor.showDensity);
+        state.editor.redraw();
+    });
+    document.getElementById('btnToggleGrid').addEventListener('click', (e) => {
+        state.editor.showGrid = !state.editor.showGrid;
+        e.target.classList.toggle('active', state.editor.showGrid);
+        state.editor.redraw();
+    });
+
+    document.getElementById('btnZoomIn').addEventListener('click', () => state.editor.setZoomPercent(Math.min(800, state.editor.zoomPercent() + 20)));
+    document.getElementById('btnZoomOut').addEventListener('click', () => state.editor.setZoomPercent(Math.max(40, state.editor.zoomPercent() - 20)));
+    document.getElementById('btnZoomFit').addEventListener('click', () => {
+        state.editor.fitToView();
+        state.editor.redraw();
+        document.getElementById('emZoomVal').textContent = '100%';
+    });
+
+    document.getElementById('btnRotateImage').addEventListener('click', () => rotateEditorImage());
+}
+
+function setRecordColorMode(mode) {
+    const r = state.records[state.editIndex]; if (!r) return;
+    r.colorMode = mode;
+    setColorModeUI(mode);
+}
+
+function runDetection(isRestore) {
+    const r = state.records[state.editIndex]; if (!r) return;
+    state.editor.pushHistory();
+    const colonies = detectColonies(r.canvas, {
+        sensitivity: r.sensitivity, labelHeightRatio: r.labelHeightRatio,
+        minArea: r.minArea, colorMode: r.colorMode
+    });
+    r.colonies = colonies;
+    if (isRestore) r.autoColonies = JSON.parse(JSON.stringify(colonies));
+    state.editor.redraw();
+    updateEditorCfuDisplay();
+    refreshTable();
+}
+
+function navigateEditor(delta) {
+    const newIndex = state.editIndex + delta;
+    if (newIndex < 0 || newIndex >= state.records.length) return;
+    openEditor(newIndex);
+}
+
+function rotateEditorImage() {
+    const r = state.records[state.editIndex]; if (!r) return;
+    state.editor.pushHistory();
+    const oldW = r.canvas.width, oldH = r.canvas.height;
+    r.canvas = rotateCanvas90(r.canvas);
+    r.rotation = (r.rotation + 90) % 360;
+    r.colonies = r.colonies.map(c => ({ ...c, ...rotatePoint90(c.x, c.y, oldW, oldH) }));
+    r.autoColonies = r.autoColonies.map(c => ({ ...c, ...rotatePoint90(c.x, c.y, oldW, oldH) }));
+
+    state.editor.open(r); // 캔버스 크기가 바뀌므로 다시 fit
+    updateEditorCfuDisplay();
+    refreshTable();
+    if (state.activeIndex === state.editIndex) state.viewer.show(r);
+}
+
+function esc(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+const SUP_MAP2 = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻' };
+function sup(n) {
+    return String(n).split('').map(ch => SUP_MAP2[ch] || ch).join('');
+}
+
+window.addEventListener('beforeunload', () => { terminateOCR(); });
+
+    </script>
+
+<script>
+(function(){
+  const PROFILES={tsa:{threshold:48,minArea:8,maxArea:1300,edge:4},pca:{threshold:34,minArea:6,maxArea:1200,edge:4},vrba:{threshold:39,minArea:5,maxArea:900,edge:4},tbx:{threshold:36,minArea:7,maxArea:1400,edge:4},sda:{threshold:31,minArea:45,maxArea:9000,edge:2},other:{threshold:45,minArea:10,maxArea:2500,edge:3}};
+  const S={type:'tsa',custom:'',source:null,name:'',auto:[],colonies:[],history:[],future:[],mode:'view',samples:[],model:null,datasetCount:0};
+  const $=id=>document.getElementById(id), clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  const DB_NAME='petricore-agar-dataset-v1', DB_STORE='samples';
+  let dbPromise=null;
+  function openDB(){if(dbPromise)return dbPromise;dbPromise=new Promise((resolve,reject)=>{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(DB_STORE))r.result.createObjectStore(DB_STORE,{keyPath:'id',autoIncrement:true})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});return dbPromise}
+  async function dbAdd(item){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readwrite');const r=tx.objectStore(DB_STORE).add(item);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+  async function dbGetAll(){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readonly');const r=tx.objectStore(DB_STORE).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
+  async function dbClear(){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readwrite');const r=tx.objectStore(DB_STORE).clear();r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+  function loadModel(){try{S.samples=JSON.parse(localStorage.getItem('petricore-agar-learning')||'[]');S.model=JSON.parse(localStorage.getItem('petricore-agar-model')||'null')}catch(e){S.samples=[];S.model=null}updateTrainingUI();refreshDatasetStats()}
+  function saveModel(){try{localStorage.setItem('petricore-agar-learning',JSON.stringify(S.samples.slice(-500)));if(S.model)localStorage.setItem('petricore-agar-model',JSON.stringify(S.model))}catch(e){}}
+  function showTab(tab){document.querySelectorAll('#appTabs .app-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.querySelectorAll('.petri-view').forEach(e=>e.style.display=tab==='petri'?'':'none');$('agarWorkspace').classList.toggle('active',tab==='agar');if(tab==='agar')setTimeout(draw,30)}
+  function labels(){$('agarSensVal').textContent=$('agarSensitivity').value;$('agarMinAreaVal').textContent=$('agarMinArea').value+' px';$('agarMaxAreaVal').textContent=$('agarMaxArea').value+' px';$('agarEdgeVal').textContent=$('agarEdge').value+'%'}
+  function chooseType(t){S.type=t;document.querySelectorAll('.agar-type-btn').forEach(b=>b.classList.toggle('active',b.dataset.agarType===t));const p=PROFILES[t]||PROFILES.other;$('agarSensitivity').value=p.threshold;$('agarMinArea').value=p.minArea;$('agarMaxArea').value=p.maxArea;$('agarEdge').value=p.edge;labels();if(t==='other')$('agarCustomType').focus();if(S.source)detect()}
+  function fileToCanvas(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const scale=Math.min(1,1800/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.naturalWidth*scale));c.height=Math.max(1,Math.round(img.naturalHeight*scale));c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c)};img.onerror=rej;img.src=e.target.result};r.onerror=rej;r.readAsDataURL(file)})}
+  async function loadFile(file){if(!file||!file.type.startsWith('image/'))return;S.name=file.name;$('agarFileName').textContent=file.name;S.source=await fileToCanvas(file);S.history=[];S.future=[];$('agarDetectBtn').disabled=false;$('agarResetBtn').disabled=false;$('agarSaveTrainingBtn').disabled=false;['agarEditBtn','agarAddBtn','agarDeleteBtn','agarMoveBtn','agarUndoBtn','agarRedoBtn'].forEach(id=>$(id).disabled=false);detect()}
+  function buildMask(c){const w=c.width,h=c.height,d=c.getContext('2d').getImageData(0,0,w,h).data,mask=new Uint8Array(w*h);let br=0,bg=0,bb=0,n=0;for(let gy=.2;gy<=.8;gy+=.12)for(let gx=.2;gx<=.8;gx+=.12){const x=Math.floor(w*gx),y=Math.floor(h*gy),i=(y*w+x)*4;br+=d[i];bg+=d[i+1];bb+=d[i+2];n++}br/=n;bg/=n;bb/=n;const th=clamp(24+(100-+$('agarSensitivity').value)*1.05,28,105),edge=Math.min(w,h)*+$('agarEdge').value/100;for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){if(x<edge||x>w-edge||y<edge||y>h-edge)continue;const i=(y*w+x)*4,dr=d[i]-br,dg=d[i+1]-bg,db=d[i+2]-bb,dist=Math.hypot(dr,dg,db),g=.299*d[i]+.587*d[i+1]+.114*d[i+2],local=(.299*d[i-4]+.587*d[i-3]+.114*d[i-2]+.299*d[i+4]+.587*d[i+5]+.114*d[i+6]+.299*d[i-w*4]+.587*d[i-w*4+1]+.114*d[i-w*4+2]+.299*d[i+w*4]+.587*d[i+w*4+1]+.114*d[i+w*4+2])/4;if(dist>th||Math.abs(g-local)>th*.34)mask[y*w+x]=1}return {mask,w,h}}
+  function components(m,w,h){const seen=new Uint8Array(w*h),out=[],minA=+$('agarMinArea').value,maxA=+$('agarMaxArea').value,qx=new Int32Array(Math.min(w*h,600000)),qy=new Int32Array(qx.length);for(let sy=1;sy<h-1;sy++)for(let sx=1;sx<w-1;sx++){let st=sy*w+sx;if(!m[st]||seen[st])continue;let hd=0,tl=0,area=0,sxsum=0,sysum=0,minx=sx,maxx=sx,miny=sy,maxy=sy;qx[tl]=sx;qy[tl]=sy;tl++;seen[st]=1;while(hd<tl){const x=qx[hd],y=qy[hd];hd++;area++;sxsum+=x;sysum+=y;minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);const ns=[[x-1,y],[x+1,y],[x,y-1],[x,y+1]];for(const z of ns){const nx=z[0],ny=z[1];if(nx<1||ny<1||nx>=w-1||ny>=h-1)continue;const k=ny*w+nx;if(m[k]&&!seen[k]){seen[k]=1;if(tl<qx.length){qx[tl]=nx;qy[tl]=ny;tl++}}}}if(area>=minA&&area<=maxA){const r=Math.max(2,Math.sqrt(area/Math.PI)),circ=area/(Math.PI*r*r);if(circ>.18)out.push({id:'a'+Math.random().toString(36).slice(2),x:sxsum/area,y:sysum/area,radius:r,area,manual:false,origin:'auto'})}}return out}
+  function stats(a){const mean=a.length?a.reduce((s,c)=>s+(c.area||Math.PI*c.radius*c.radius),0)/a.length:0;return {count:a.length,meanArea:mean}}
+  function applyModel(a){const m=S.model&&S.model[S.type];if(!m)return a;const cur=stats(a);if(!cur.meanArea||!m.meanArea)return a;const ratio=clamp(m.meanArea/cur.meanArea,.94,1.06);return a.filter(c=>{const area=(c.area||Math.PI*c.radius*c.radius)*ratio;return area>=m.minArea*.72&&area<=m.maxArea*1.35})}
+  function detect(){if(!S.source)return;const x=buildMask(S.source),a=applyModel(components(x.mask,x.w,x.h));S.auto=JSON.parse(JSON.stringify(a));S.colonies=JSON.parse(JSON.stringify(a));S.history=[];S.future=[];$('agarResultTitle').textContent=(S.custom||document.querySelector('.agar-type-btn.active')?.textContent.split('\n')[0]||'Agar')+' · 자동 계수 결과';$('agarResultMeta').textContent=S.name+' · '+x.w+'×'+x.h;draw();counts();updateEditButtons()}
+  function draw(){if(!S.source){$('agarEmpty').style.display='flex';return}$('agarEmpty').style.display='none';const wrap=$('agarCanvasWrap'),c=$('agarCanvas'),src=S.source,scale=Math.min((wrap.clientWidth-10)/src.width,(wrap.clientHeight-10)/src.height);c.width=src.width;c.height=src.height;c.style.width=Math.round(src.width*scale)+'px';c.style.height=Math.round(src.height*scale)+'px';const ctx=c.getContext('2d');ctx.drawImage(src,0,0);S.colonies.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x,p.y,Math.max(3,p.radius+2),0,Math.PI*2);ctx.lineWidth=2;ctx.strokeStyle=p.manual?'#F6C37B':'#8DD0E8';ctx.stroke();if(S.colonies.length<180){ctx.font='9px Consolas';ctx.fillStyle=ctx.strokeStyle;ctx.fillText(i+1,p.x+4,p.y-4)}})}
+  function counts(){const auto=S.auto.length,cur=S.colonies.length,remainingAuto=S.colonies.filter(c=>c.origin==='auto').length,add=S.colonies.filter(c=>c.origin==='manual').length,del=Math.max(0,auto-remainingAuto);$('agarAutoCount').textContent=auto;$('agarCurrentCount').textContent=cur;$('agarAddedCount').textContent=add;$('agarDeletedCount').textContent=del;updateTrainingUI()}
+  function snap(){S.history.push(JSON.stringify(S.colonies));if(S.history.length>50)S.history.shift();S.future=[];updateEditButtons()}
+  function undo(){if(!S.history.length)return;S.future.push(JSON.stringify(S.colonies));S.colonies=JSON.parse(S.history.pop());draw();counts();updateEditButtons()}
+  function redo(){if(!S.future.length)return;S.history.push(JSON.stringify(S.colonies));S.colonies=JSON.parse(S.future.pop());draw();counts();updateEditButtons()}
+  function point(e){const r=$('agarCanvas').getBoundingClientRect();return{x:(e.clientX-r.left)*S.source.width/r.width,y:(e.clientY-r.top)*S.source.height/r.height}}
+  function nearest(p){let ix=-1,d=1e9;S.colonies.forEach((c,i)=>{const z=Math.hypot(c.x-p.x,c.y-p.y);if(z<d){d=z;ix=i}});return {ix,d}}
+  function mode(m){S.mode=m;['agarEditBtn','agarAddBtn','agarDeleteBtn','agarMoveBtn'].forEach(id=>$(id).classList.remove('active'));const map={add:'agarAddBtn',delete:'agarDeleteBtn',move:'agarMoveBtn'};if(map[m])$(map[m]).classList.add('active');$('agarCanvas').style.cursor=m==='view'?'default':m==='move'?'grab':'crosshair'}
+  function updateEditButtons(){$('agarUndoBtn').disabled=!S.history.length;$('agarRedoBtn').disabled=!S.future.length}
+  function canvasToDataURL(){return S.source?S.source.toDataURL('image/jpeg',.94):null}
+  function labelLines(colonies,w,h){return colonies.map(c=>{const r=Math.max(3,c.radius||Math.sqrt((c.area||50)/Math.PI));const x1=clamp(c.x-r,0,w),y1=clamp(c.y-r,0,h),x2=clamp(c.x+r,0,w),y2=clamp(c.y+r,0,h);const cx=((x1+x2)/2/w).toFixed(6),cy=((y1+y2)/2/h).toFixed(6),bw=((x2-x1)/w).toFixed(6),bh=((y2-y1)/h).toFixed(6);return `0 ${cx} ${cy} ${bw} ${bh}`}).join('\n')}
+  async function saveSample(){if(!S.source)return;const type=S.type==='other'?(S.custom||'other'):S.type;const image=canvasToDataURL();const item={uid:'agar_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),type,filename:S.name||'agar.jpg',width:S.source.width,height:S.source.height,auto:stats(S.auto),current:stats(S.colonies),colonies:JSON.parse(JSON.stringify(S.colonies)),settings:{sensitivity:+$('agarSensitivity').value,minArea:+$('agarMinArea').value,maxArea:+$('agarMaxArea').value,edge:+$('agarEdge').value},image,label:labelLines(S.colonies,S.source.width,S.source.height),createdAt:new Date().toISOString()};try{await dbAdd(item);S.samples.push({type,auto:item.auto,current:item.current,minArea:item.settings.minArea,maxArea:item.settings.maxArea,at:Date.now()});saveModel();alert(`학습 데이터가 저장되었습니다.\n${type} · 정답 ${item.current.count}개\n원본 이미지와 콜로니 위치가 함께 저장되었습니다.`);refreshDatasetStats();updateTrainingUI()}catch(e){alert('학습 데이터 저장에 실패했습니다. 브라우저 저장공간을 확인해주세요.')}}
+  async function refreshDatasetStats(){try{const all=await dbGetAll();S.datasetCount=all.length;const total=all.reduce((n,x)=>n+(x.current?.count||x.colonies?.length||0),0),bytes=all.reduce((n,x)=>n+(x.image?.length||0),0);$('agarDatasetImages').textContent=all.length;$('agarDatasetColonies').textContent=total.toLocaleString();$('agarDatasetSize').textContent=(bytes/1024).toFixed(0)+' KB';const names={tsa:'TSA',pca:'PCA',vrba:'VRBA',tbx:'TBX',sda:'SDA',other:'기타'};const cnt={tsa:0,pca:0,vrba:0,tbx:0,sda:0,other:0};all.forEach(x=>{const k=Object.keys(names).includes(x.type)?x.type:'other';cnt[k]++});$('agarDatasetBreakdown').textContent=`TSA ${cnt.tsa} · PCA ${cnt.pca} · VRBA ${cnt.vrba} · TBX ${cnt.tbx} · SDA ${cnt.sda} · 기타 ${cnt.other}`}catch(e){}}
+  async function exportDataset(){if(!window.JSZip){alert('ZIP 모듈을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.');return}const all=await dbGetAll();if(!all.length){alert('저장된 학습 데이터가 없습니다. 먼저 결과를 수정한 뒤 학습 데이터로 저장해주세요.');return}const zip=new JSZip(),roots={train:zip.folder('images/train'),val:zip.folder('images/val'),test:zip.folder('images/test')},labelRoots={train:zip.folder('labels/train'),val:zip.folder('labels/val'),test:zip.folder('labels/test')};const meta=[];const shuffled=all.slice().sort((a,b)=>String(a.uid).localeCompare(String(b.uid)));for(let i=shuffled.length-1;i>0;i--){const j=(i*9301+49297)%(i+1);[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]}for(const [i,x] of shuffled.entries()){const base=String(i+1).padStart(5,'0')+'_'+(x.type||'other')+'_'+String(x.uid).slice(-5);const ratio=(i+1)/shuffled.length;const split=ratio<=.80?'train':ratio<=.90?'val':'test';const data=x.image.split(',')[1];roots[split].file(base+'.jpg',data,{base64:true});labelRoots[split].file(base+'.txt',x.label||'');meta.push({uid:x.uid,type:x.type,filename:x.filename,width:x.width,height:x.height,auto:x.auto,current:x.current,settings:x.settings,createdAt:x.createdAt,split})}zip.file('dataset.yaml',`path: .\ntrain: images/train\nval: images/val\ntest: images/test\nnames:\n  0: colony\n`);zip.file('metadata.json',JSON.stringify(meta,null,2));zip.file('README.txt','Petricore Agar Colony Dataset\n\nClass 0 = colony\nEach JPG has a matching YOLO TXT label.\nSplit: 80% train / 10% validation / 10% test.\nAgar type is stored in metadata.json and the filename, while the detector learns one class: colony.\n');const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Petricore_Agar_Training_Dataset_'+new Date().toISOString().slice(0,10)+'.zip';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+  async function clearDataset(){const all=await dbGetAll();if(!all.length){alert('삭제할 학습 데이터가 없습니다.');return}if(!confirm(`저장된 학습 데이터 ${all.length}건을 모두 삭제할까요?\n이 작업은 되돌릴 수 없습니다.`))return;await dbClear();S.samples=[];S.model=null;saveModel();refreshDatasetStats();updateTrainingUI();alert('학습 데이터와 브라우저 보정 모델을 삭제했습니다.')}
+  function train(){const list=S.samples.filter(s=>s.type===S.type);if(!list.length){alert('먼저 현재 결과를 학습 데이터로 저장해주세요.');return}const bar=$('agarTrainProgress');let n=0;$('agarTrainBtn').disabled=true;const t=setInterval(()=>{n+=20;bar.style.width=n+'%';if(n>=100){clearInterval(t);const meanArea=list.reduce((a,s)=>a+(s.current.meanArea||0),0)/list.length,ratio=list.reduce((a,s)=>a+s.current.count/Math.max(1,s.auto.count),0)/list.length;if(!S.model)S.model={};S.model[S.type]={meanArea,minArea:Math.max(2,Math.round(+$('agarMinArea').value*(ratio>.98?1:.94))),maxArea:+$('agarMaxArea').value,correctionRatio:ratio,samples:list.length};saveModel();$('agarTrainBtn').disabled=false;updateTrainingUI();if(S.source)detect();setTimeout(()=>bar.style.width='0',500)}},90)}
+  function updateTrainingUI(){const m=S.model&&S.model[S.type];$('agarTrainingCount').textContent=S.samples.length+' samples';$('agarHistory').innerHTML='<b>학습 상태:</b> '+(m?`${m.samples}개 수정 샘플 기반 보정 프로파일 적용 (현재 보정 ×${m.correctionRatio.toFixed(2)})`:'아직 브라우저 보정 학습 데이터가 없습니다.')} 
+  function reset(){S.source=null;S.name='';S.auto=[];S.colonies=[];S.history=[];S.future=[];$('agarFileName').textContent='아직 선택된 사진이 없습니다.';$('agarDetectBtn').disabled=true;$('agarResetBtn').disabled=true;$('agarSaveTrainingBtn').disabled=true;['agarEditBtn','agarAddBtn','agarDeleteBtn','agarMoveBtn'].forEach(id=>$(id).disabled=true);updateEditButtons();$('agarResultTitle').textContent='Agar Plate 결과';$('agarResultMeta').textContent='사진을 업로드하면 자동 계수할 수 있습니다.';$('agarEmpty').style.display='flex';$('agarCanvas').width=1;$('agarCanvas').height=1;counts();mode('view')}
+  document.addEventListener('DOMContentLoaded',()=>{
+    loadModel();labels();
+    document.querySelectorAll('#appTabs .app-tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+    document.querySelectorAll('.agar-type-btn').forEach(b=>b.addEventListener('click',()=>chooseType(b.dataset.agarType)));
+    $('agarCustomType').addEventListener('input',e=>{S.custom=e.target.value.trim();if(S.custom&&S.type!=='other')chooseType('other');});
+    $('agarDropZone').addEventListener('click',()=>$('agarFileInput').click());
+    $('agarFileInput').addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);e.target.value=''});
+    ['dragenter','dragover'].forEach(v=>$('agarDropZone').addEventListener(v,e=>{e.preventDefault();$('agarDropZone').classList.add('dragover')}));
+    ['dragleave','drop'].forEach(v=>$('agarDropZone').addEventListener(v,e=>{e.preventDefault();$('agarDropZone').classList.remove('dragover')}));
+    $('agarDropZone').addEventListener('drop',e=>{if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])});
+    ['agarSensitivity','agarMinArea','agarMaxArea','agarEdge'].forEach(id=>$(id).addEventListener('input',labels));
+    $('agarDetectBtn').addEventListener('click',detect);$('agarResetBtn').addEventListener('click',reset);$('agarSaveTrainingBtn').addEventListener('click',saveSample);$('agarTrainBtn').addEventListener('click',train);$('agarExportDatasetBtn').addEventListener('click',exportDataset);$('agarClearDatasetBtn').addEventListener('click',clearDataset);
+    $('agarEditBtn').addEventListener('click',()=>mode(S.mode==='view'?'add':'view'));$('agarAddBtn').addEventListener('click',()=>mode('add'));$('agarDeleteBtn').addEventListener('click',()=>mode('delete'));$('agarMoveBtn').addEventListener('click',()=>mode('move'));$('agarUndoBtn').addEventListener('click',undo);$('agarRedoBtn').addEventListener('click',redo);
+    let moving=-1;
+    $('agarCanvas').addEventListener('mousedown',e=>{if(S.mode!=='move'||!S.source)return;const p=point(e),n=nearest(p);if(n.ix>=0&&n.d<=Math.max(24,S.colonies[n.ix].radius*3)){snap();moving=n.ix;$('agarCanvas').style.cursor='grabbing'}});
+    window.addEventListener('mousemove',e=>{if(moving<0||!S.source)return;const p=point(e);S.colonies[moving].x=clamp(p.x,0,S.source.width);S.colonies[moving].y=clamp(p.y,0,S.source.height);draw()});
+    window.addEventListener('mouseup',()=>{if(moving>=0){moving=-1;$('agarCanvas').style.cursor='grab';counts();updateEditButtons()}});
+    $('agarCanvas').addEventListener('click',e=>{if(!S.source||S.mode==='move')return;const p=point(e);if(S.mode==='add'){snap();S.colonies.push({id:'m'+Math.random().toString(36).slice(2),x:p.x,y:p.y,radius:6,area:113,manual:true,origin:'manual'});draw();counts()}else if(S.mode==='delete'){const n=nearest(p);if(n.ix>=0&&n.d<=Math.max(18,S.colonies[n.ix].radius*3)){snap();S.colonies.splice(n.ix,1);draw();counts()}}});
+    window.addEventListener('resize',draw);chooseType('tsa');mode('view');counts();refreshDatasetStats();
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  const DB_NAME='petricore-drymedia-dataset-v1', DB_STORE='samples';
+  let dbPromise=null;
+  const $=id=>document.getElementById(id);
+  const TYPES=['AC','EC','CC','YM','EB','other'];
+  function openDB(){if(dbPromise)return dbPromise;dbPromise=new Promise((resolve,reject)=>{const r=indexedDB.open(DB_NAME,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(DB_STORE))r.result.createObjectStore(DB_STORE,{keyPath:'id',autoIncrement:true})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});return dbPromise}
+  async function dbAdd(item){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readwrite');const r=tx.objectStore(DB_STORE).add(item);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+  async function dbGetAll(){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readonly');const r=tx.objectStore(DB_STORE).getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})}
+  async function dbClear(){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(DB_STORE,'readwrite');const r=tx.objectStore(DB_STORE).clear();r.onsuccess=()=>res();r.onerror=()=>rej(r.error)})}
+  function labelLines(colonies,w,h){return (colonies||[]).map(c=>{const r=Math.max(3,c.radius||Math.sqrt((c.area||40)/Math.PI));const x1=Math.max(0,c.x-r),y1=Math.max(0,c.y-r),x2=Math.min(w,c.x+r),y2=Math.min(h,c.y+r);return `0 ${(((x1+x2)/2)/w).toFixed(6)} ${(((y1+y2)/2)/h).toFixed(6)} ${((x2-x1)/w).toFixed(6)} ${((y2-y1)/h).toFixed(6)}`}).join('\n')}
+  function canvasDataURL(canvas){try{return canvas.toDataURL('image/jpeg',.94)}catch(e){return null}}
+  function currentType(){const t=window.__dryMediaType||'AC';return t==='other'?(window.__dryMediaCustomType||'other'):t}
+  async function refresh(){try{const all=await dbGetAll();const total=all.reduce((n,x)=>n+(x.currentCount||x.colonies?.length||0),0),bytes=all.reduce((n,x)=>n+(x.image?.length||0),0);$('dryMediaDatasetCount').textContent=all.length+' samples';$('dryMediaDatasetImages').textContent=all.length;$('dryMediaDatasetColonies').textContent=total.toLocaleString();$('dryMediaDatasetSize').textContent=(bytes/1024).toFixed(0)+' KB';const c={AC:0,EC:0,CC:0,YM:0,EB:0,other:0};all.forEach(x=>c[TYPES.includes(x.type)?x.type:'other']++);$('dryMediaDatasetBreakdown').textContent=`AC ${c.AC} · EC ${c.EC} · CC ${c.CC} · YM ${c.YM} · EB ${c.EB} · other ${c.other}`}catch(e){console.warn(e)}}
+  async function saveCurrent(){const appState=window.PetricoreState;const idx=appState?.activeIndex;const record=idx!=null?appState.records[idx]:null;if(!record){alert('먼저 표에서 학습 데이터로 저장할 결과를 “보기”로 선택해주세요.');return}if(!record.canvas||!record.colonies?.length){alert('저장할 이미지 또는 콜로니 결과가 없습니다.');return}const type=record.dryMediaType||((record.type||'AC').toUpperCase());const image=canvasDataURL(record.canvas);if(!image){alert('원본 이미지 변환에 실패했습니다.');return}const item={uid:'dry_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),type:type==='other'?(record.dryMediaCustomType||record.type||'other'):type,filename:record.filename,width:record.canvas.width,height:record.canvas.height,autoCount:record.autoColonies?.length||0,currentCount:record.colonies.length,colonies:JSON.parse(JSON.stringify(record.colonies)),image,label:labelLines(record.colonies,record.canvas.width,record.canvas.height),settings:{sensitivity:record.sensitivity,minArea:record.minArea,labelHeightRatio:record.labelHeightRatio,colorMode:record.colorMode},metadata:{lot:record.lot,bacteria:record.bacteria,no:record.no,dilute:record.dilute},createdAt:new Date().toISOString()};try{await dbAdd(item);$('dryMediaDatasetStatus').textContent=`저장 완료 · ${item.type} · 정답 ${item.currentCount}개 · 원본 이미지와 위치 라벨을 함께 저장했습니다.`;await refresh();}catch(e){console.error(e);alert('학습 데이터 저장에 실패했습니다. 브라우저 저장공간을 확인해주세요.')}}
+  async function exportDataset(){if(!window.JSZip){alert('ZIP 모듈을 불러오지 못했습니다. 인터넷 연결 후 다시 시도해주세요.');return}const all=await dbGetAll();if(!all.length){alert('저장된 Dry media 학습 데이터가 없습니다.');return}const zip=new JSZip(),roots={train:zip.folder('images/train'),val:zip.folder('images/val'),test:zip.folder('images/test')},labs={train:zip.folder('labels/train'),val:zip.folder('labels/val'),test:zip.folder('labels/test')};const meta=[];const shuffled=all.slice();for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]}for(let i=0;i<shuffled.length;i++){const x=shuffled[i],split=i<Math.ceil(shuffled.length*.8)?'train':i<Math.ceil(shuffled.length*.9)?'val':'test',base=String(i+1).padStart(5,'0')+'_'+String(x.type||'other').replace(/[^a-zA-Z0-9_-]/g,'_');roots[split].file(base+'.jpg',x.image.split(',')[1],{base64:true});labs[split].file(base+'.txt',x.label||'');meta.push({uid:x.uid,type:x.type,filename:x.filename,width:x.width,height:x.height,autoCount:x.autoCount,currentCount:x.currentCount,metadata:x.metadata,split,createdAt:x.createdAt})}zip.file('dataset.yaml',`path: .\ntrain: images/train\nval: images/val\ntest: images/test\nnames:\n  0: colony\n`);zip.file('metadata.json',JSON.stringify(meta,null,2));zip.file('README.txt','Petricore Dry media Colony Dataset\n\nClass 0 = colony\nDry media type is stored in metadata.json and filename.\nSplit: 80% train / 10% validation / 10% test.\nAll labels were created from the user-confirmed colony positions.\n');const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Petricore_DryMedia_Training_Dataset_'+new Date().toISOString().slice(0,10)+'.zip';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+  async function clearDataset(){const all=await dbGetAll();if(!all.length){alert('삭제할 Dry media 학습 데이터가 없습니다.');return}if(!confirm(`저장된 Dry media 학습 데이터 ${all.length}건을 모두 삭제할까요?\n이 작업은 되돌릴 수 없습니다.`))return;await dbClear();refresh()}
+  function selectType(t){window.__dryMediaType=t;const custom=$('dryMediaCustomType')?.value.trim()||'';window.__dryMediaCustomType=custom;document.querySelectorAll('.drymedia-type-btn').forEach(b=>b.classList.toggle('active',b.dataset.dryType===t));$('dryMediaSelectedLabel').textContent=t==='other'?(custom||'other'):t;document.querySelectorAll('#filterType option').forEach(o=>{if(o.value==='')return;o.hidden=false});}
+  function init(){window.__dryMediaType='AC';window.__dryMediaCustomType='';document.querySelectorAll('.drymedia-type-btn').forEach(b=>b.addEventListener('click',()=>selectType(b.dataset.dryType)));$('dryMediaCustomType').addEventListener('input',e=>{window.__dryMediaCustomType=e.target.value.trim();if(window.__dryMediaType==='other')$('dryMediaSelectedLabel').textContent=window.__dryMediaCustomType||'other'});$('dryMediaSaveDatasetBtn').addEventListener('click',saveCurrent);$('dryMediaExportDatasetBtn').addEventListener('click',exportDataset);$('dryMediaClearDatasetBtn').addEventListener('click',clearDataset);refresh();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+
+<script>
+/* ===== Dry media film-shape / page segmentation dataset ===== */
+(function(){
+  const DB='petricore-drymedia-film-dataset-v1', STORE='pages';
+  const S={source:null,name:'',boxes:[],history:[],drawing:false,x0:0,y0:0,mode:'box'};
+  const $=id=>document.getElementById(id);
+  let dbp=null;
+  function openDB(){if(dbp)return dbp;dbp=new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE))r.result.createObjectStore(STORE,{keyPath:'id',autoIncrement:true})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});return dbp}
+  async function all(){const db=await openDB();return new Promise((res,rej)=>{const q=db.transaction(STORE,'readonly').objectStore(STORE).getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>rej(q.error)})}
+  async function add(item){const db=await openDB();return new Promise((res,rej)=>{const q=db.transaction(STORE,'readwrite').objectStore(STORE).add(item);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)})}
+  async function clearDB(){const db=await openDB();return new Promise((res,rej)=>{const q=db.transaction(STORE,'readwrite').objectStore(STORE).clear();q.onsuccess=()=>res();q.onerror=()=>rej(q.error)})}
+  function clone(a){return JSON.parse(JSON.stringify(a))}
+  function pushHistory(){S.history.push(clone(S.boxes));if(S.history.length>30)S.history.shift();updateButtons()}
+  function undo(){if(!S.history.length)return;S.boxes=S.history.pop();draw();updateButtons()}
+  function updateButtons(){const has=!!S.source;$('dryMediaFilmAutoBtn').disabled=!has;$('dryMediaFilmClearBtn').disabled=!has;$('dryMediaFilmBoxBtn').disabled=!has;$('dryMediaFilmUndoBtn').disabled=!S.history.length;$('dryMediaFilmSaveBtn').disabled=!has||!S.boxes.length}
+  function fitCanvas(){if(!S.source)return;const wrap=$('dryMediaFilmCanvasWrap');const maxW=Math.max(240,wrap.clientWidth-4),maxH=Math.max(240,wrap.clientHeight-4);const scale=Math.min(1,maxW/S.source.width,maxH/S.source.height);const c=$('dryMediaFilmCanvas');c.width=S.source.width;c.height=S.source.height;c.style.width=Math.round(S.source.width*scale)+'px';c.style.height=Math.round(S.source.height*scale)+'px';draw()}
+  function point(e){const c=$('dryMediaFilmCanvas'),r=c.getBoundingClientRect();return {x:(e.clientX-r.left)*c.width/r.width,y:(e.clientY-r.top)*c.height/r.height}}
+  function draw(){const c=$('dryMediaFilmCanvas');if(!c||!S.source)return;const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(S.source,0,0);const lw=Math.max(3,c.width*.003);S.boxes.forEach((b,i)=>{ctx.lineWidth=lw;ctx.strokeStyle='#62D3E8';ctx.fillStyle='rgba(98,211,232,.10)';ctx.strokeRect(b.x,b.y,b.w,b.h);ctx.fillRect(b.x,b.y,b.w,b.h);ctx.fillStyle='#62D3E8';ctx.fillRect(b.x,b.y,Math.max(26,c.width*.018),Math.max(20,c.height*.022));ctx.fillStyle='#0D2028';ctx.font=`700 ${Math.max(11,c.width*.012)}px sans-serif`;ctx.fillText(String(i+1),b.x+5,b.y+Math.max(14,c.height*.016));});updateList()}
+  function updateList(){const n=S.boxes.length;$('dryMediaFilmCurrentCount').textContent=`현재 필름 ${n}개`;$('dryMediaFilmList').innerHTML=S.boxes.map((b,i)=>`<div class="drymedia-film-row"><span>#${i+1} · ${Math.round(b.w)}×${Math.round(b.h)} px</span><button data-film-remove="${i}">삭제</button></div>`).join('');document.querySelectorAll('[data-film-remove]').forEach(btn=>btn.addEventListener('click',()=>{pushHistory();S.boxes.splice(+btn.dataset.filmRemove,1);draw();updateButtons()}));updateButtons()}
+  function normalizeBox(a,b){const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y);return {x,y,w,h,label:'film'}}
+  function autoPropose(){if(!S.source)return;pushHistory();const src=S.source,max=1000,sc=Math.min(1,max/Math.max(src.width,src.height)),w=Math.max(1,Math.round(src.width*sc)),h=Math.max(1,Math.round(src.height*sc));const cv=document.createElement('canvas');cv.width=w;cv.height=h;const ctx=cv.getContext('2d',{willReadFrequently:true});ctx.drawImage(src,0,0,w,h);const d=ctx.getImageData(0,0,w,h).data;const m=new Uint8Array(w*h);for(let i=0,p=0;p<w*h;p++,i+=4){const g=(d[i]+d[i+1]+d[i+2])/3;m[p]=g<248?1:0}
+    // Join outlines/text/grid inside each film so a whole film becomes one candidate.
+    let cur=m;for(let pass=0;pass<2;pass++){const out=new Uint8Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let on=0;for(let yy=Math.max(0,y-7);yy<=Math.min(h-1,y+7)&&!on;yy++)for(let xx=Math.max(0,x-7);xx<=Math.min(w-1,x+7);xx++)if(cur[yy*w+xx]){on=1;break}out[y*w+x]=on}cur=out}
+    const seen=new Uint8Array(w*h), comps=[];const qx=new Int32Array(w*h),qy=new Int32Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const k=y*w+x;if(!cur[k]||seen[k])continue;let head=0,tail=0,minX=x,maxX=x,minY=y,maxY=y,area=0;qx[tail]=x;qy[tail++]=y;seen[k]=1;while(head<tail){const xx=qx[head],yy=qy[head++];area++;if(xx<minX)minX=xx;if(xx>maxX)maxX=xx;if(yy<minY)minY=yy;if(yy>maxY)maxY=yy;const ns=[[xx+1,yy],[xx-1,yy],[xx,yy+1],[xx,yy-1]];for(const [nx,ny] of ns){if(nx<0||ny<0||nx>=w||ny>=h)continue;const nk=ny*w+nx;if(cur[nk]&&!seen[nk]){seen[nk]=1;qx[tail]=nx;qy[tail++]=ny}}}const bw=maxX-minX+1,bh=maxY-minY+1;const ar=bw*bh/(w*h);const ratio=bw/Math.max(1,bh);if(area>Math.max(1500,w*h*.006)&&ar>.012&&bw>w*.06&&bh>h*.06&&ratio>.18&&ratio<5.5)comps.push({x:minX/sc,y:minY/sc,w:bw/sc,h:bh/sc,area})}
+    comps.sort((a,b)=>b.area-a.area);const chosen=[];for(const b of comps){let overlap=false;for(const c of chosen){const ix=Math.max(0,Math.min(b.x+b.w,c.x+c.w)-Math.max(b.x,c.x)),iy=Math.max(0,Math.min(b.y+b.h,c.y+c.h)-Math.max(b.y,c.y));if(ix*iy/(b.w*b.h)<.35)continue;overlap=true;break}if(!overlap)chosen.push({x:b.x,y:b.y,w:b.w,h:b.h,label:'film'})}S.boxes=chosen;draw();$('dryMediaFilmStatus').innerHTML=`자동 후보 ${chosen.length}개를 만들었습니다. <b>후보를 반드시 확인·수정한 뒤 저장</b>하세요.`}
+  function loadFile(file){const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{S.source=img;S.name=file.name;S.boxes=[];S.history=[];$('dryMediaFilmFileName').textContent=file.name;$('dryMediaFilmEmpty').style.display='none';fitCanvas();updateButtons();$('dryMediaFilmStatus').innerHTML='원본 전체 사진이 준비되었습니다. <b>자동 후보</b>를 누르거나 필름마다 직접 박스를 지정하세요.'};img.src=rd.result};rd.readAsDataURL(file)}
+  function saveCurrent(){if(!S.source||!S.boxes.length)return;const type=window.__dryMediaType==='other'?(window.__dryMediaCustomType||'other'):(window.__dryMediaType||'AC');const item={uid:'film_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),type,filename:S.name,width:S.source.width,height:S.source.height,boxes:clone(S.boxes),image:S.source.src,createdAt:new Date().toISOString()};add(item).then(()=>{refreshDataset();$('dryMediaFilmStatus').innerHTML=`저장 완료 · ${type} · 필름 ${S.boxes.length}개. <b>이 데이터는 필름 검출/분할 AI 학습용</b>입니다.`}).catch(e=>{console.error(e);alert('필름 학습 데이터 저장에 실패했습니다.')})}
+  async function refreshDataset(){const a=await all();const boxes=a.reduce((n,x)=>n+(x.boxes?.length||0),0),bytes=a.reduce((n,x)=>n+(x.image?.length||0),0);$('dryMediaFilmDatasetCount').textContent=`${a.length} pages · ${boxes} films`;$('dryMediaFilmPages').textContent=a.length;$('dryMediaFilmBoxes').textContent=boxes;$('dryMediaFilmSize').textContent=(bytes/1024).toFixed(0)+' KB'}
+  function exportDataset(){all().then(async a=>{if(!a.length){alert('저장된 필름 학습 데이터가 없습니다.');return}if(!window.JSZip){alert('ZIP 모듈을 불러오지 못했습니다.');return}const zip=new JSZip(),ir={train:zip.folder('images/train'),val:zip.folder('images/val'),test:zip.folder('images/test')},lr={train:zip.folder('labels/train'),val:zip.folder('labels/val'),test:zip.folder('labels/test')};const meta=[];const shuffled=a.slice();for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]}for(let i=0;i<shuffled.length;i++){const x=shuffled[i],split=i<Math.ceil(shuffled.length*.8)?'train':i<Math.ceil(shuffled.length*.9)?'val':'test',base=String(i+1).padStart(5,'0')+'_'+String(x.type||'other').replace(/[^a-zA-Z0-9_-]/g,'_');ir[split].file(base+'.jpg',x.image.split(',')[1]||'',{base64:true});const label=(x.boxes||[]).map(b=>`0 ${((b.x+b.w/2)/x.width).toFixed(6)} ${((b.y+b.h/2)/x.height).toFixed(6)} ${(b.w/x.width).toFixed(6)} ${(b.h/x.height).toFixed(6)}`).join('\n');lr[split].file(base+'.txt',label);meta.push({uid:x.uid,type:x.type,filename:x.filename,width:x.width,height:x.height,filmCount:x.boxes?.length||0,split,createdAt:x.createdAt})}zip.file('dataset.yaml',`path: .\ntrain: images/train\nval: images/val\ntest: images/test\nnames:\n  0: film\n`);zip.file('metadata.json',JSON.stringify(meta,null,2));zip.file('README.txt','Petricore Dry media Film Detector Dataset\n\nClass 0 = film.\nEach label describes one complete Dry media film in the original full-page image.\nUse this model before colony detection: full photo -> film detection -> crop each film -> colony detector.\nLabels were created/confirmed by the user. Split: 80% train / 10% validation / 10% test.\n');const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});const aEl=document.createElement('a');aEl.href=URL.createObjectURL(blob);aEl.download='Petricore_DryMedia_Film_Detector_Dataset_'+new Date().toISOString().slice(0,10)+'.zip';aEl.click();setTimeout(()=>URL.revokeObjectURL(aEl.href),2000)}).catch(console.error)}
+  function init(){const input=$('dryMediaFilmFileInput');if(!input)return;input.addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);e.target.value='' });$('dryMediaFilmAutoBtn').addEventListener('click',autoPropose);$('dryMediaFilmClearBtn').addEventListener('click',()=>{if(!S.boxes.length)return;pushHistory();S.boxes=[];draw()});$('dryMediaFilmUndoBtn').addEventListener('click',undo);$('dryMediaFilmSaveBtn').addEventListener('click',saveCurrent);$('dryMediaFilmExportBtn').addEventListener('click',exportDataset);$('dryMediaFilmClearDatasetBtn').addEventListener('click',async()=>{const a=await all();if(!a.length){alert('삭제할 필름 학습 데이터가 없습니다.');return}if(confirm(`저장된 필름 학습 데이터 ${a.length}건을 모두 삭제할까요?`)){await clearDB();refreshDataset()}});
+    const c=$('dryMediaFilmCanvas');c.addEventListener('mousedown',e=>{if(!S.source||e.button!==0)return;const p=point(e);S.drawing=true;S.x0=p.x;S.y0=p.y;S.boxes.__preview={x:p.x,y:p.y,w:0,h:0}});window.addEventListener('mousemove',e=>{if(!S.drawing)return;const p=point(e);S.boxes.__preview=normalizeBox({x:S.x0,y:S.y0},p);draw();const b=S.boxes.__preview;const ctx=c.getContext('2d');ctx.strokeStyle='#F6C37B';ctx.lineWidth=Math.max(3,c.width*.003);ctx.setLineDash([10,7]);ctx.strokeRect(b.x,b.y,b.w,b.h);ctx.setLineDash([])});window.addEventListener('mouseup',e=>{if(!S.drawing)return;S.drawing=false;const p=point(e);const b=normalizeBox({x:S.x0,y:S.y0},p);delete S.boxes.__preview;if(b.w>20&&b.h>20){pushHistory();S.boxes.push(b)}draw()});
+    // Clicking a box selects/removes it with right click, useful for correcting automatic candidates.
+    c.addEventListener('contextmenu',e=>{e.preventDefault();if(!S.source)return;const p=point(e);for(let i=S.boxes.length-1;i>=0;i--){const b=S.boxes[i];if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){pushHistory();S.boxes.splice(i,1);draw();break}}});
+    window.addEventListener('resize',fitCanvas);refreshDataset();updateButtons();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+</body>
+</html>
