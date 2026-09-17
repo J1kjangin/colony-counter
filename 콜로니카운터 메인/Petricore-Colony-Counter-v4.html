@@ -134,6 +134,26 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .dz-btn { background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); padding: 9px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer; flex-shrink: 0; box-shadow: 0 6px 16px rgba(14,124,123,0.35); }
 .dz-btn:hover { background: var(--accent-dark); }
 
+/* ---------- 학습한 AI 모델 연결 ---------- */
+.ai-model-card { flex:0 0 auto; padding:11px 16px; }
+.ai-model-head { display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; }
+.ai-model-kicker { font:700 9px var(--mono); letter-spacing:.1em; color:var(--accent-dark); }
+.ai-model-head b { font-size:12px; }
+.ai-model-provider { margin-left:auto; font:700 9px var(--mono); color:var(--muted); }
+.ai-model-slots { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:9px; }
+.ai-model-slot { min-width:0; display:flex; flex-direction:column; gap:6px; padding:8px 9px; border:1px solid rgba(14,124,123,.18); background:rgba(255,255,255,.45); border-radius:var(--radius-sm); }
+.ai-model-slot-name { font-size:10px; font-weight:700; color:var(--ink); }
+.ai-model-slot-row { display:flex; gap:6px; align-items:center; }
+.ai-model-slot-row label { flex:1; min-width:0; text-align:center; padding:6px 7px; border:1px dashed rgba(14,124,123,.4); background:var(--accent-soft); color:var(--accent-dark); border-radius:7px; font-size:10px; font-weight:700; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ai-model-slot-row input[type=file] { display:none; }
+.ai-model-forget { flex:0 0 auto; padding:6px 8px; border:1px solid rgba(20,35,42,.12); background:rgba(20,35,42,.06); color:var(--muted); border-radius:7px; font-size:10px; font-weight:700; cursor:pointer; }
+.ai-model-forget:disabled { opacity:.45; cursor:default; }
+.ai-model-status { padding:5px 7px; border:1px solid rgba(20,35,42,.08); background:rgba(255,255,255,.5); border-radius:6px; font-size:9.5px; line-height:1.45; color:var(--muted); }
+.ai-model-status.ready { background:var(--accent-soft); border-color:rgba(14,124,123,.3); color:var(--accent-dark); }
+.ai-model-status.warn { background:var(--warn-soft); border-color:rgba(199,124,31,.35); color:#8A621D; }
+.ai-model-note { margin-top:7px; font-size:9px; line-height:1.4; color:var(--muted); }
+@media(max-width:900px) { .ai-model-slots { grid-template-columns:1fr; } }
+
 /* ---------- 데이터 테이블 구역 ---------- */
 .table-panel { padding: 14px 16px 10px 16px; }
 .table-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
@@ -431,6 +451,8 @@ body {
 }
 .left-col { min-width:0; min-height:0; gap:10px; }
 .dropzone { flex:0 0 auto; padding:clamp(9px, 1.2vh, 16px) clamp(12px, 1.3vw, 20px); }
+.ai-model-card { padding:clamp(8px, 1vh, 11px) clamp(12px, 1.3vw, 16px); }
+.ai-model-slots { margin-top:clamp(6px, .8vh, 9px); gap:clamp(6px, .6vw, 8px); }
 .dropzone .dz-text b { font-size:clamp(11px, .75vw, 13.5px); }
 .dropzone .dz-text span { font-size:clamp(9px, .62vw, 11px); }
 .table-panel { flex:1 1 auto; min-height:0; padding:10px 12px 8px; display:flex; flex-direction:column; }
@@ -562,6 +584,35 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
     <main class="main-split">
         <!-- 좌측: 위(업로드) / 아래(테이블) -->
         <div class="left-col">
+            <div class="panel ai-model-card">
+                <div class="ai-model-head">
+                    <span class="ai-model-kicker">TRAINED AI MODEL</span>
+                    <b>Dry media 학습 모델 연결</b>
+                    <span class="ai-model-provider" id="aiProvider-dryMedia">미연결</span>
+                </div>
+                <div class="ai-model-slots">
+                    <div class="ai-model-slot">
+                        <span class="ai-model-slot-name">① 필름 구역 검출</span>
+                        <div class="ai-model-slot-row">
+                            <label for="aiModelInput-dryMedia-film">＋ ONNX 불러오기</label>
+                            <input type="file" id="aiModelInput-dryMedia-film" accept=".onnx,application/octet-stream">
+                            <button type="button" class="ai-model-forget" id="aiModelForget-dryMedia-film" disabled>삭제</button>
+                        </div>
+                        <div class="ai-model-status" id="aiModelStatus-dryMedia-film">연결된 모델 없음</div>
+                    </div>
+                    <div class="ai-model-slot">
+                        <span class="ai-model-slot-name">② 콜로니 검출 (AC·EC·CC·EB·YM)</span>
+                        <div class="ai-model-slot-row">
+                            <label for="aiModelInput-dryMedia-colony">＋ ONNX 불러오기</label>
+                            <input type="file" id="aiModelInput-dryMedia-colony" accept=".onnx,application/octet-stream">
+                            <button type="button" class="ai-model-forget" id="aiModelForget-dryMedia-colony" disabled>삭제</button>
+                        </div>
+                        <div class="ai-model-status" id="aiModelStatus-dryMedia-colony">연결된 모델 없음</div>
+                    </div>
+                </div>
+                <div class="ai-model-note">Kaggle에서 학습한 ONNX를 한 번 불러오면 브라우저에 저장됩니다. 현재는 모델 연결까지만 동작하며, 업로드 사진 자동 검출 연결은 다음 단계입니다.</div>
+            </div>
+
             <div class="panel dropzone" id="dropZone">
                 <div class="dz-left">
                     <div class="dz-icon">⇪</div>
@@ -665,6 +716,35 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
     <section class="tab-view" id="agarView">
         <main class="agar-main-split">
             <div class="agar-left-col">
+                <div class="panel ai-model-card">
+                    <div class="ai-model-head">
+                        <span class="ai-model-kicker">TRAINED AI MODEL</span>
+                        <b>Agar plate 학습 모델 연결</b>
+                        <span class="ai-model-provider" id="aiProvider-agar">미연결</span>
+                    </div>
+                    <div class="ai-model-slots">
+                        <div class="ai-model-slot">
+                            <span class="ai-model-slot-name">① Plate 구역 검출</span>
+                            <div class="ai-model-slot-row">
+                                <label for="aiModelInput-agar-plate">＋ ONNX 불러오기</label>
+                                <input type="file" id="aiModelInput-agar-plate" accept=".onnx,application/octet-stream">
+                                <button type="button" class="ai-model-forget" id="aiModelForget-agar-plate" disabled>삭제</button>
+                            </div>
+                            <div class="ai-model-status" id="aiModelStatus-agar-plate">연결된 모델 없음</div>
+                        </div>
+                        <div class="ai-model-slot">
+                            <span class="ai-model-slot-name">② 콜로니 검출 (PCA·TSA·SDA·TBXA·VRBA)</span>
+                            <div class="ai-model-slot-row">
+                                <label for="aiModelInput-agar-colony">＋ ONNX 불러오기</label>
+                                <input type="file" id="aiModelInput-agar-colony" accept=".onnx,application/octet-stream">
+                                <button type="button" class="ai-model-forget" id="aiModelForget-agar-colony" disabled>삭제</button>
+                            </div>
+                            <div class="ai-model-status" id="aiModelStatus-agar-colony">연결된 모델 없음</div>
+                        </div>
+                    </div>
+                    <div class="ai-model-note">Kaggle에서 학습한 ONNX를 한 번 불러오면 브라우저에 저장됩니다. 현재는 모델 연결까지만 동작하며, 업로드 사진 자동 검출 연결은 다음 단계입니다.</div>
+                </div>
+
                 <div class="panel dropzone" id="agarDropZone"><div class="dz-left"><div class="dz-icon">⇪</div><div class="dz-text"><b>Agar plate 사진 · PDF를 드래그하거나 놓으세요</b><span id="agarUploadStatus">여러 장의 Agar plate 이미지도 자동으로 등록됩니다</span><div class="dz-progress-track" id="agarUploadProgressTrack"><div class="dz-progress-fill" id="agarUploadProgressFill"></div></div></div></div><button class="dz-btn" id="btnAgarSelectFile">+ 파일 추가</button><input type="file" id="agarFileInput" multiple accept="image/*,application/pdf" hidden></div>
                 <div class="panel agar-table-panel">
                     <div class="table-toolbar"><input type="text" id="agarSearchInput" class="search-box" placeholder="검색 (예: Lot No, Bacteria)..."><select id="agarFilterType" class="type-filter"><option value="">모든 Type</option><option value="PCA">PCA</option><option value="TSA">TSA</option><option value="SDA">SDA</option><option value="TBXA">TBXA</option><option value="VRBA">VRBA</option><option value="other">OTHER</option></select><span class="sort-badge">Sort: Descending (DESC)</span></div>
@@ -871,6 +951,7 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.29.0/dist/ort.min.js"></script>
 
     <!-- 앱 코드 (모든 모듈을 하나로 합침 -> file:// 더블클릭 실행 가능) -->
     <script>
@@ -3887,5 +3968,219 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
     </script>
+
+<script>
+/* ---------- 학습한 ONNX 모델 연결 (Dry media / Agar) ---------- */
+(() => {
+    const SIZE=640, CONF=0.25, IOU_THR=0.45;
+    const DB_NAME='petricore-v4-models', STORE='models';
+    // size: 모델을 export 한 imgsz 와 반드시 같아야 한다.
+    // agar 콜로니는 1920x1200 원본에서 16px 이라 640 으로 줄이면 5.3px 이 되어
+    // YOLO P3 헤드(stride 8) 한 칸보다 작아진다. 그래서 이 슬롯만 1280 으로 학습/추론한다.
+    const SLOTS=[
+        {dataset:'dryMedia', kind:'film',   classes:['film'], size:640},
+        {dataset:'dryMedia', kind:'colony', classes:['AC','EC','CC','EB','YM','other'], size:640},
+        {dataset:'agar',     kind:'plate',  classes:['plate'], size:640},
+        {dataset:'agar',     kind:'colony', classes:['PCA','TSA','SDA','TBXA','VRBA','other'], size:1280}
+    ];
+    const $=id=>document.getElementById(id);
+
+    if(window.ort){
+        // file:// 에서는 SharedArrayBuffer를 쓸 수 없어 멀티스레드 WASM이 실패한다.
+        ort.env.wasm.numThreads=1;
+        ort.env.wasm.wasmPaths='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.29.0/dist/';
+    }
+
+    function openDB(){
+        return new Promise((resolve,reject)=>{
+            const r=indexedDB.open(DB_NAME,1);
+            r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(STORE))r.result.createObjectStore(STORE);};
+            r.onsuccess=()=>resolve(r.result); r.onerror=()=>reject(r.error);
+        });
+    }
+    async function dbPut(key,value){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(value,key);tx.oncomplete=()=>{db.close();res();};tx.onerror=()=>{db.close();rej(tx.error);};});}
+    async function dbGet(key){const db=await openDB();return new Promise((res,rej)=>{const q=db.transaction(STORE,'readonly').objectStore(STORE).get(key);q.onsuccess=()=>{db.close();res(q.result||null);};q.onerror=()=>{db.close();rej(q.error);};});}
+    async function dbDelete(key){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(key);tx.oncomplete=()=>{db.close();res();};tx.onerror=()=>{db.close();rej(tx.error);};});}
+
+    const srcW=s=>s.naturalWidth||s.videoWidth||s.width;
+    const srcH=s=>s.naturalHeight||s.videoHeight||s.height;
+
+    function preprocess(source,size=SIZE){
+        const W=srcW(source), H=srcH(source);
+        const scale=Math.min(size/W,size/H);
+        const nw=Math.max(1,Math.round(W*scale)), nh=Math.max(1,Math.round(H*scale));
+        const padX=(size-nw)/2, padY=(size-nh)/2;
+        const t=document.createElement('canvas'); t.width=size; t.height=size;
+        const ctx=t.getContext('2d',{willReadFrequently:true});
+        ctx.fillStyle='#808080'; ctx.fillRect(0,0,size,size);
+        ctx.drawImage(source,0,0,W,H,padX,padY,nw,nh);
+        const rgba=ctx.getImageData(0,0,size,size).data, plane=size*size, data=new Float32Array(plane*3);
+        for(let i=0,p=0;i<rgba.length;i+=4,p++){data[p]=rgba[i]/255;data[plane+p]=rgba[i+1]/255;data[2*plane+p]=rgba[i+2]/255;}
+        return {tensor:new ort.Tensor('float32',data,[1,3,size,size]),scale,padX,padY,W,H};
+    }
+
+    function iou(a,b){
+        const x1=Math.max(a.x1,b.x1),y1=Math.max(a.y1,b.y1),x2=Math.min(a.x2,b.x2),y2=Math.min(a.y2,b.y2);
+        const inter=Math.max(0,x2-x1)*Math.max(0,y2-y1);
+        const aa=Math.max(0,a.x2-a.x1)*Math.max(0,a.y2-a.y1), ab=Math.max(0,b.x2-b.x1)*Math.max(0,b.y2-b.y1);
+        return inter/Math.max(1e-9,aa+ab-inter);
+    }
+    function nms(dets){
+        const keep=[];
+        for(const cls of new Set(dets.map(d=>d.cls))){
+            const a=dets.filter(d=>d.cls===cls).sort((x,y)=>y.score-x.score);
+            while(a.length){const best=a.shift();keep.push(best);for(let i=a.length-1;i>=0;i--)if(iou(best,a[i])>IOU_THR)a.splice(i,1);}
+        }
+        return keep;
+    }
+
+    function decode(output){
+        const dims=Array.from(output.dims||[]), data=output.data, out=[];
+        if(dims.length===3&&dims[2]===6){ // [1,N,6] = NMS까지 끝난 출력
+            for(let i=0;i<dims[1];i++){
+                const o=i*6, s=Number(data[o+4]);
+                if(s>=CONF) out.push({x1:Number(data[o]),y1:Number(data[o+1]),x2:Number(data[o+2]),y2:Number(data[o+3]),score:s,cls:Number(data[o+5])});
+            }
+            return out;
+        }
+        if(dims.length===3){ // [1,4+nc,N] (YOLOv8 기본) 또는 전치된 [1,N,4+nc]
+            const chFirst=dims[1]<=dims[2];
+            const rows=chFirst?dims[2]:dims[1], cols=chFirst?dims[1]:dims[2];
+            if(cols>=5){
+                const get=(r,c)=>chFirst?Number(data[c*rows+r]):Number(data[r*cols+c]);
+                for(let i=0;i<rows;i++){
+                    let bestCol=4, bestScore=get(i,4);
+                    for(let c=5;c<cols;c++){const v=get(i,c); if(v>bestScore){bestScore=v;bestCol=c;}}
+                    if(!(bestScore>=CONF)) continue;
+                    const cx=get(i,0),cy=get(i,1),w=get(i,2),h=get(i,3);
+                    out.push({x1:cx-w/2,y1:cy-h/2,x2:cx+w/2,y2:cy+h/2,score:bestScore,cls:bestCol-4});
+                }
+                return nms(out);
+            }
+        }
+        throw new Error('지원하지 않는 ONNX 출력 형식입니다: '+JSON.stringify(dims));
+    }
+
+    function toOriginal(d,p){
+        const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+        const x1=clamp((d.x1-p.padX)/p.scale,0,p.W), y1=clamp((d.y1-p.padY)/p.scale,0,p.H);
+        const x2=clamp((d.x2-p.padX)/p.scale,0,p.W), y2=clamp((d.y2-p.padY)/p.scale,0,p.H);
+        return {x1,y1,x2,y2,w:x2-x1,h:y2-y1,score:d.score,cls:d.cls};
+    }
+    function crop(source,b){
+        const pad=Math.max(3,Math.round(Math.min(b.w,b.h)*0.01));
+        const sx=Math.max(0,Math.floor(b.x1-pad)), sy=Math.max(0,Math.floor(b.y1-pad));
+        const ex=Math.min(srcW(source),Math.ceil(b.x2+pad)), ey=Math.min(srcH(source),Math.ceil(b.y2+pad));
+        const c=document.createElement('canvas'); c.width=Math.max(1,ex-sx); c.height=Math.max(1,ey-sy);
+        c.getContext('2d').drawImage(source,sx,sy,c.width,c.height,0,0,c.width,c.height);
+        return c;
+    }
+
+    function makeSlot(spec){
+        const key=`${spec.dataset}:${spec.kind}`;
+        const statusEl=$(`aiModelStatus-${spec.dataset}-${spec.kind}`);
+        const forgetBtn=$(`aiModelForget-${spec.dataset}-${spec.kind}`);
+        const input=$(`aiModelInput-${spec.dataset}-${spec.kind}`);
+        const providerEl=$(`aiProvider-${spec.dataset}`);
+        let session=null, bytes=null, name='', provider='';
+
+        const setStatus=(msg,kind='')=>{ if(statusEl){statusEl.textContent=msg; statusEl.className='ai-model-status'+(kind?` ${kind}`:'');} };
+        const setProvider=()=>{ if(providerEl&&provider) providerEl.textContent=provider; };
+
+        async function createSession(buf){
+            if(!window.ort) throw new Error('ONNX Runtime Web을 불러오지 못했습니다. 인터넷 연결을 확인해주세요.');
+            if(navigator.gpu){
+                try{
+                    const s=await ort.InferenceSession.create(buf,{executionProviders:['webgpu','wasm'],graphOptimizationLevel:'all'});
+                    provider='WebGPU'; setProvider(); return s;
+                }catch(e){ console.warn(`${key}: WebGPU 실패 → WASM으로 전환`,e); }
+            }
+            const s=await ort.InferenceSession.create(buf,{executionProviders:['wasm'],graphOptimizationLevel:'all'});
+            provider='WASM'; setProvider(); return s;
+        }
+
+        async function ensureSession(){
+            if(session) return session;
+            if(!bytes) throw new Error('연결된 모델이 없습니다.');
+            session=await createSession(bytes);
+            return session;
+        }
+
+        async function connect(buf,fileName,save){
+            setStatus('모델을 불러오는 중...');
+            try{
+                session=await createSession(buf);
+                bytes=buf; name=fileName;
+                if(save) await dbPut(key,{name:fileName,bytes:buf,savedAt:new Date().toISOString()});
+                if(forgetBtn) forgetBtn.disabled=false;
+                setStatus(`준비 완료 · ${fileName} · ${provider}`,'ready');
+            }catch(e){
+                console.error(`${key} 모델 로드 실패:`,e);
+                session=null; bytes=null;
+                setStatus(`로드 실패: ${e.message}`,'warn');
+                alert(`${fileName}을(를) 불러오지 못했습니다.\n\n${e.message}`);
+            }
+        }
+
+        async function forget(){
+            await dbDelete(key).catch(()=>{});
+            if(session?.release) await session.release().catch(()=>{});
+            session=null; bytes=null; name='';
+            if(forgetBtn) forgetBtn.disabled=true;
+            setStatus('연결된 모델 없음');
+        }
+
+        async function restore(){
+            try{
+                const saved=await dbGet(key);
+                if(!saved?.bytes) return;
+                bytes=saved.bytes; name=saved.name||'저장된 모델';
+                if(forgetBtn) forgetBtn.disabled=false;
+                setStatus(`저장됨 · ${name} · 첫 검출 시 로드`,'ready');
+            }catch(e){
+                console.warn(`${key} 복원 실패:`,e);
+                setStatus('저장된 모델을 불러오지 못했습니다. ONNX 파일을 다시 선택하세요.','warn');
+            }
+        }
+
+        async function detect(source){
+            const s=await ensureSession();
+            const p=preprocess(source,spec.size||SIZE);
+            const feeds={}; feeds[s.inputNames[0]]=p.tensor;
+            const outputs=await s.run(feeds);
+            return decode(outputs[s.outputNames[0]])
+                .map(d=>toOriginal(d,p))
+                .filter(b=>b.w>=4&&b.h>=4)
+                .map(b=>({...b,label:spec.classes[b.cls]||String(b.cls)}));
+        }
+
+        if(input) input.addEventListener('change',async e=>{
+            const f=e.target.files?.[0];
+            if(f) await connect(new Uint8Array(await f.arrayBuffer()),f.name,true);
+            e.target.value='';
+        });
+        if(forgetBtn) forgetBtn.addEventListener('click',forget);
+
+        restore();
+        return {
+            classes:spec.classes,
+            isReady:()=>!!bytes,
+            modelName:()=>name,
+            detect,
+            crop:(source,box)=>crop(source,box),
+            forget
+        };
+    }
+
+    function init(){
+        const api={};
+        for(const spec of SLOTS){
+            (api[spec.dataset]||(api[spec.dataset]={}))[spec.kind]=makeSlot(spec);
+        }
+        window.PetricoreAI=api;
+    }
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+</script>
 </body>
 </html>
