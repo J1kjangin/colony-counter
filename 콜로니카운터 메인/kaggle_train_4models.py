@@ -34,17 +34,33 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------- 1. 데이터 준비
 print("=" * 70)
-print("1. 입력 zip 탐색 및 압축 해제")
+print("1. 입력 데이터 탐색")
 print("=" * 70)
 
-zips = sorted(Path("/kaggle/input").rglob("*.zip"))
-if not zips:
-    raise SystemExit("/kaggle/input 에서 zip을 찾지 못했습니다. 우측 '+ Add Input'으로 데이터셋을 연결하세요.")
+INPUT = Path("/kaggle/input")
 
-for z in zips:
-    print(f"  발견: {z}  ({z.stat().st_size/1e6:.0f} MB)")
-    with zipfile.ZipFile(z) as zf:
-        zf.extractall(DATA)
+zips = sorted(INPUT.rglob("*.zip"))
+if zips:
+    for z in zips:
+        print(f"  zip 발견: {z}  ({z.stat().st_size/1e6:.0f} MB)")
+        with zipfile.ZipFile(z) as zf:
+            zf.extractall(DATA)
+else:
+    # Kaggle이 데이터셋 생성 시 zip을 자동으로 압축 해제해버리는 경우가 있음.
+    # 그 경우 /kaggle/input 안에 폴더 상태로 이미 존재 (단, 이 경로는 읽기 전용이라
+    # dataset.yaml을 직접 고칠 수 없으므로 쓰기 가능한 DATA로 복사한다).
+    found_any = False
+    for yml in INPUT.rglob("dataset.yaml"):
+        root = yml.parent
+        if not (root / "images" / "train").is_dir():
+            continue
+        found_any = True
+        dst = DATA / root.name
+        if not dst.exists():
+            shutil.copytree(root, dst)
+            print(f"  압축 해제된 상태로 발견 (복사함): {root.name}")
+    if not found_any:
+        raise SystemExit("/kaggle/input 에서 학습 데이터를 찾지 못했습니다. 우측 '+ Add Input'으로 데이터셋을 연결하세요.")
 
 # 각 detector 폴더를 찾아 dataset.yaml 의 path 를 절대경로로 교정
 # (원본 yaml 은 path: . 이라 Kaggle 에서 그대로 쓰면 이미지를 못 찾습니다)
