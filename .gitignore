@@ -3,3 +3,6 @@ node_modules/
 *.log
 Temp/
 .worktrees/
+이전버전/
+*.zip
+*.onnx
