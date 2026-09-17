@@ -351,7 +351,8 @@ tbody tr.active-row { outline: 2px solid var(--accent); outline-offset: -2px; }
 .learning-size-label input{width:58px;border:1px solid rgba(20,35,42,.12);border-radius:6px;padding:4px 5px;background:#fff;color:var(--ink);font:10px var(--mono)}
 .learning-export-help{font-size:9px;line-height:1.35;color:var(--muted);margin-top:2px}
 @media(max-width:820px){.learning-export-options{grid-template-columns:1fr 1fr}.learning-export-help{display:none}}
-.learning-actions{display:flex;flex-direction:column;gap:7px;border-top:1px solid rgba(20,35,42,.08);padding-top:14px}.learning-secondary{background:rgba(20,35,42,.07);color:var(--ink)}.learning-primary{background:#059669;color:#fff}.learning-export{background:#2563eb;color:#fff}.learning-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.learning-counts div{background:rgba(255,255,255,.42);border-radius:9px;padding:8px;text-align:center}.learning-counts span{display:block;font-size:9px;color:var(--muted)}.learning-counts b{font:700 17px var(--mono);color:var(--accent-dark)}
+.learning-actions{display:flex;flex-direction:column;gap:7px;border-top:1px solid rgba(20,35,42,.08);padding-top:14px}.learning-secondary{background:rgba(20,35,42,.07);color:var(--ink)}.learning-primary{background:#059669;color:#fff}.learning-export{background:#2563eb;color:#fff}.learning-export:disabled{opacity:.6;cursor:default}.learning-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.learning-counts div{background:rgba(255,255,255,.42);border-radius:9px;padding:8px;text-align:center}.learning-counts span{display:block;font-size:9px;color:var(--muted)}.learning-counts b{font:700 17px var(--mono);color:var(--accent-dark)}
+.learning-export-progress{display:none;flex-direction:column;gap:4px}.learning-export-progress.active{display:flex}.learning-export-progress-track{height:6px;border-radius:999px;background:rgba(20,35,42,.08);overflow:hidden}.learning-export-progress-bar{height:100%;width:0%;background:var(--accent);transition:width .15s ease}.learning-export-progress-text{font:10px var(--mono);color:var(--muted);text-align:right}
 .learning-workspace{min-height:650px;display:flex;flex-direction:column;overflow:hidden}.learning-work-header{padding:15px 18px;border-bottom:1px solid rgba(20,35,42,.08);display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.learning-work-header b{display:block;font-size:13px}.learning-work-header span:not(.learning-status){display:block;color:var(--muted);font-size:10.5px;margin-top:3px;line-height:1.45}.learning-status{font:10px var(--mono);background:rgba(14,124,123,.1);color:var(--accent-dark);border-radius:999px;padding:6px 9px;white-space:nowrap}.learning-canvas-wrap{position:relative;flex:1;min-height:500px;background:#101b20;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:12px}.learning-canvas-wrap canvas{display:block;max-width:100%;max-height:100%;box-shadow:0 10px 35px rgba(0,0,0,.35);cursor:crosshair}.learning-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#7c9198;font-size:12px}.learning-legend{padding:9px 14px;display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--muted);border-top:1px solid rgba(20,35,42,.08)}
 @media(max-width:1100px){.type-buttons{grid-template-columns:repeat(3,1fr)}.learning-layout{grid-template-columns:1fr}.learning-sidebar{order:2}.learning-workspace{order:1}.learning-workspace{min-height:550px}}
 @media(max-width:650px){.app-tabs{width:100%;margin-left:0}.app-tab{flex:1}.type-selector-head{align-items:flex-start;flex-direction:column}.type-buttons{grid-template-columns:repeat(2,1fr)}.type-selector-help{display:none}.learning-layout{padding:12px}.learning-canvas-wrap{min-height:420px}}
@@ -704,7 +705,13 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                     <input type="file" id="learningFileInput" accept="image/*" multiple hidden>
                     <div class="learning-file-name" id="learningFileName">이미지를 추가하면 여기에서 선택할 수 있습니다.</div>
                 </div>
-                <div class="learning-circle-info" id="learningCircleInfo">Agar plate는 이미지 위에서 <b>드래그하여 원형 Plate 영역</b>을 지정합니다. 시작점은 원의 중심, 끝점은 반지름으로 사용됩니다.</div><div id="learningColorSection" style="display:none"></div>
+                <div class="learning-circle-info" id="learningCircleInfo">Agar plate는 이미지 위에서 <b>드래그하여 원형 Plate 영역</b>을 지정합니다. 시작점은 원의 중심, 끝점은 반지름으로 사용됩니다.</div><div class="learning-section colony-color-section" id="learningColorSection" style="display:none">
+                    <label>콜로니 색상 라벨</label>
+                    <div class="learning-mode-row">
+                        <button class="learning-color active" data-learning-color="red">붉은색</button>
+                        <button class="learning-color" data-learning-color="blue">푸른색</button>
+                    </div>
+                </div>
                 <div class="learning-section">
                     <label>타입별 계수 기준 메모 <span class="memo-optional">(선택)</span></label>
                     <textarea id="learningMethodNote" class="learning-note" placeholder="예: 이 Type에서 포함/제외할 콜로니 기준, 크기·경계 조건 등을 직접 기록하세요."></textarea>
@@ -722,6 +729,10 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                     <button class="learning-secondary" id="btnLearningClear">표시 지우기</button>
                     <button class="learning-primary" id="btnLearningSave">학습 데이터 저장</button>
                     <button class="learning-export" id="btnLearningExport">AI 학습용 ZIP 내보내기</button>
+                    <div class="learning-export-progress" id="learningExportProgress">
+                        <div class="learning-export-progress-track"><div class="learning-export-progress-bar" id="learningExportProgressBar"></div></div>
+                        <span class="learning-export-progress-text" id="learningExportProgressText">저장 중... 0%</span>
+                    </div>
                 </div>
                 <div class="learning-counts">
                     <div><span>수집 샘플</span><b id="learningSampleCount">0</b></div>
@@ -2715,7 +2726,7 @@ function initTabsAndLearning() {
         btn.addEventListener('click', () => {
             learningState.mode = btn.dataset.learningMode;
             document.querySelectorAll('.learning-mode').forEach(b => b.classList.toggle('active', b === btn));
-            document.getElementById('learningColorSection').style.display = learningState.mode === 'colony' ? '' : 'none';
+            document.getElementById('learningColorSection').style.display = (learningState.mode === 'colony' && learningState.dataset === 'dryMedia') ? '' : 'none';
             document.getElementById('learningCanvasTitle').textContent = learningState.mode === 'film' ? '필름 분할 범위 표시' : '콜로니 계수 위치 표시';
             document.getElementById('learningCanvasHint').textContent = learningState.mode === 'film'
                 ? '이미지 위에서 드래그하여 필름 하나의 영역을 표시하세요. 여러 필름이면 반복해서 표시할 수 있습니다.'
@@ -3559,6 +3570,7 @@ function updateLearningModeUI(){
     el('learningCanvasHint').textContent=film?(agar?'이미지 위에서 중심을 클릭한 뒤 바깥쪽으로 드래그해 원형 Plate 영역을 지정하세요.':'이미지 위에서 드래그하여 필름 하나의 영역을 지정하세요. 여러 필름이면 반복할 수 있습니다.'):'실제 콜로니의 중심을 클릭해 표시하세요.';
     el('learningLegendArea').textContent=film?(agar?'⭕ Agar plate 영역':'🟦 필름 영역'):'● 콜로니 위치';
     el('learningLegendAction').textContent=film?'드래그: 구역 지정 / 클릭: 콜로니':'클릭: 콜로니';
+    el('learningColorSection').style.display=(!agar&&!film)?'':'none';
 }
 function updateLearningCounts(){
     el('learningFilmCount').textContent=learningState.dataset==='agar'?learningState.plateCircles.length:learningState.filmBoxes.length;
@@ -3681,9 +3693,28 @@ async function addYoloDataset(root, datasetName, samples, classes, mode, boxPx) 
 function datasetYaml(pathPrefix, names, taskDescription) {
     return `path: .\ntrain: images/train\nval: images/val\ntest: images/test\nnc: ${names.length}\nnames:\n${names.map((n,i)=>`  ${i}: ${n}`).join('\n')}\n\n# Petricore ${taskDescription}\n# YOLO object detection dataset\n`;
 }
+function setLearningExportProgress(percent,label){
+    const box=el('learningExportProgress'),bar=el('learningExportProgressBar'),text=el('learningExportProgressText');
+    if(!box) return;
+    if(percent==null){ box.classList.remove('active'); return; }
+    box.classList.add('active');
+    bar.style.width=`${Math.round(percent)}%`;
+    text.textContent=`${label||'저장 중...'} ${Math.round(percent)}%`;
+}
 async function exportLearningZip(){
     if(typeof JSZip==='undefined') return alert('ZIP 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.');
 
+    const btn=el('btnLearningExport');
+    if(btn) btn.disabled=true;
+    setLearningExportProgress(0,'준비 중...');
+    try{
+        await exportLearningZipInner();
+    } finally {
+        if(btn) btn.disabled=false;
+        setLearningExportProgress(null);
+    }
+}
+async function exportLearningZipInner(){
     const datasetName=learningState.dataset;
     const samples=Array.isArray(learningState.samplesByDataset?.[datasetName]) ? learningState.samplesByDataset[datasetName] : [];
     if(!samples.length){
@@ -3706,8 +3737,11 @@ async function exportLearningZip(){
     try{
         // Agar: plate 원형 → 외접 사각형 YOLO bbox
         // Dry media: film 사각형 → YOLO bbox
+        setLearningExportProgress(10,'라벨 변환 중...');
         plate=await addYoloDataset(plateRoot,datasetName,samples,['film'],'film',boxPx);
+        setLearningExportProgress(30,'라벨 변환 중...');
         colony=await addYoloDataset(colonyRoot,datasetName,samples,classes,'colony',boxPx);
+        setLearningExportProgress(40,'라벨 변환 중...');
     }catch(err){
         console.error('AI dataset export error:',err);
         return alert(`AI 학습용 ZIP 생성 중 오류가 발생했습니다.\n\n${err?.message||err}`);
@@ -3756,7 +3790,8 @@ async function exportLearningZip(){
     },null,2));
 
     try{
-        const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+        const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'},
+            meta=>setLearningExportProgress(40+meta.percent*0.6,'ZIP 압축 중...'));
         const url=URL.createObjectURL(blob);
         const a=document.createElement('a');
         a.href=url;
