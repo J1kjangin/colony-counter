@@ -453,6 +453,8 @@ body {
     padding:10px 0 0;
     gap:clamp(10px, 1.1vw, 18px);
     grid-template-columns:minmax(0, .93fr) minmax(0, 1fr);
+    /* start면 좌측 컬럼이 내용 높이가 되어 표 하단(페이지네이션)이 잘린다 */
+    align-items:stretch;
 }
 .left-col { min-width:0; min-height:0; gap:10px; }
 .dropzone { flex:0 0 auto; padding:clamp(9px, 1.2vh, 16px) clamp(12px, 1.3vw, 20px); }
@@ -513,7 +515,14 @@ body {
 
 /* 가로가 좁은 PC에서도 페이지 스크롤 없이 한 화면에 유지 */
 @media (max-width: 1100px) {
-    #dryMediaView .main-split { grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); }
+    /* 좁아지면 한 줄로 쌓는다. 쌓인 내용은 잘리지 않도록 탭 안에서 스크롤. */
+    #dryMediaView .main-split { grid-template-columns:minmax(0, 1fr); height:auto; overflow:visible; }
+    #agarView .agar-main-split { height:auto; overflow:visible; }
+    #dryMediaView.tab-view.active,
+    #agarView.tab-view.active { overflow:auto; }
+    #dryMediaView .left-col, #agarView .agar-left-col { overflow:visible; }
+    .table-panel, .agar-table-panel { min-height:300px; }
+    .viewer-panel, .agar-viewer-panel { min-height:340px; height:auto; }
     #learningView .learning-layout { grid-template-columns:minmax(230px, 30%) minmax(0, 1fr); }
     .type-buttons { grid-template-columns:repeat(6, minmax(0, 1fr)); }
 }
@@ -2008,7 +2017,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let resizeTimer = null;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => { syncPanelHeights(); resizeLearningCanvas(); redrawLearningCanvas(); }, 150);
+        resizeTimer = setTimeout(() => { resizeLearningCanvas(); redrawLearningCanvas(); }, 150);
     });
 });
 
@@ -2021,7 +2030,6 @@ function refreshTable() {
         onToggleSelectAll: toggleSelectAll
     });
     updateStatsRow();
-    syncPanelHeights();
 }
 
 /**
@@ -2033,74 +2041,6 @@ function refreshTable() {
  *  - 20행을 초과하는 데이터는 (페이지네이션과 별개로) table-responsive의
  *    overflow-y: auto 로 스크롤 처리된다.
  */
-function measureRowMetrics() {
-    const table = document.getElementById('dataTable');
-    const thead = table ? table.querySelector('thead') : null;
-    const tbody = document.getElementById('tableBody');
-    if (!thead || !tbody) return null;
-
-    const theadHeight = thead.getBoundingClientRect().height;
-
-    let sampleRow = tbody.querySelector('tr');
-    let tempRow = null;
-
-    // 데이터가 없거나(빈 상태 메시지 행) 측정용 행이 없으면
-    // 실제 행과 동일한 구조의 임시 행을 만들어 높이만 잰다.
-    if (!sampleRow || sampleRow.querySelector('.empty-message')) {
-        tempRow = document.createElement('tr');
-        tempRow.innerHTML = `
-            <td><input type="checkbox"></td>
-            <td class="editable-cell">AC</td>
-            <td class="editable-cell">L-0000</td>
-            <td class="editable-cell">Bacteria</td>
-            <td class="editable-cell">1</td>
-            <td class="editable-cell">10</td>
-            <td class="cfu-red">0</td>
-            <td class="cfu-blue">0</td>
-            <td>
-                <button class="view-btn">보기</button>
-                <button class="edit-btn">수정</button>
-                <button class="delete-row-btn">삭제</button>
-            </td>
-        `;
-        tempRow.style.visibility = 'hidden';
-        tbody.appendChild(tempRow);
-        sampleRow = tempRow;
-    }
-
-    const rowHeight = sampleRow.getBoundingClientRect().height;
-
-    if (tempRow) tbody.removeChild(tempRow);
-
-    if (!theadHeight || !rowHeight) return null;
-    return { theadHeight, rowHeight };
-}
-
-function syncPanelHeights() {
-    const metrics = measureRowMetrics();
-    if (!metrics) return;
-
-    const targetTableHeight = metrics.theadHeight + metrics.rowHeight * PAGE_SIZE;
-
-    const tableResponsive = document.querySelector('.table-responsive');
-    if (tableResponsive) {
-        tableResponsive.style.height = `${targetTableHeight}px`;
-        tableResponsive.style.maxHeight = `${targetTableHeight}px`;
-    }
-
-    // table-responsive 높이가 반영된 다음 프레임에 결과란(table-panel)의
-    // 전체 높이를 재서 사진 뷰어(viewer-panel)에 그대로 적용한다.
-    requestAnimationFrame(() => {
-        const tablePanel = document.querySelector('.table-panel');
-        const viewerPanel = document.querySelector('.viewer-panel');
-        if (!tablePanel || !viewerPanel) return;
-
-        const targetPanelHeight = tablePanel.getBoundingClientRect().height;
-        viewerPanel.style.height = `${targetPanelHeight}px`;
-        viewerPanel.style.minHeight = `${targetPanelHeight}px`;
-    });
-}
-
 function updateStatsRow() {
     const total = state.records.length;
     const selected = state.records.filter(r => r.selected).length;
@@ -2929,7 +2869,7 @@ function openAgarEditor(index){
 function refreshTable(){
     if(state.dataset==='agar'){ renderAgarTable(); return; }
     renderTable({onView:openViewer,onEdit:openEditor,onDelete:deleteRecord,onToggleSelect:toggleSelect,onToggleSelectAll:toggleSelectAll});
-    updateStatsRow(); syncPanelHeights();
+    updateStatsRow();
 }
 
 /* ----- Agar 업로드 ----- */
