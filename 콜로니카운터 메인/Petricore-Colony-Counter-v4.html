@@ -248,6 +248,8 @@ tbody tr.active-row { outline: 2px solid var(--accent); outline-offset: -2px; }
 .ec-btn { background: rgba(255,255,255,0.08); color: #DCE9E8; border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm); padding: 6px 11px; font-size: 11.5px; cursor: pointer; }
 .ec-btn:hover { background: rgba(255,255,255,0.16); }
 .ec-btn.toggle.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.es-ai-note:empty { display: none; }
+.es-ai-note { margin-top: 7px; padding: 6px 8px; border-radius: 7px; background: var(--warn-soft); border: 1px solid rgba(199,124,31,.35); color: #8A621D; font-size: 10px; line-height: 1.45; }
 .ec-grid-mm { display: none; align-items: center; gap: 4px; color: #DCE9E8; font-size: 11px; font-family: var(--mono); }
 .agar-editor-active .ec-grid-mm { display: inline-flex; }
 .ec-grid-mm input { width: 58px; padding: 5px 6px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.18); border-radius: 6px; font: 11px var(--mono); }
@@ -265,7 +267,7 @@ tbody tr.active-row { outline: 2px solid var(--accent); outline-offset: -2px; }
 .cfu-block b { font-size: 26px; font-family: var(--mono); }
 .cfu-block.red b { color: #F87171; }
 .cfu-block.blue b { color: #60A5FA; }
-.agar-single-count{display:none}.agar-editor-active .agar-single-count{display:block}.agar-editor-active .cfu-split{display:none}.agar-editor-active #btnColorRow{display:none}.agar-editor-active #colorModeRow{display:none}.agar-editor-active #btnColorRed,.agar-editor-active #btnColorBlue,.agar-editor-active #btnColorBoth{display:none}
+.agar-single-count{display:none}.agar-editor-active .agar-single-count{display:block}.agar-editor-active .cfu-split{display:none}.agar-editor-active #btnColorRow{display:none}.agar-editor-active #colorModeRow{display:none}.agar-editor-active #btnColorRed,.agar-editor-active #btnColorBlue{display:none}
 .cfu-conc { text-align: right; }
 .cfu-conc span { display: block; font-size: 9.5px; color: #8FA6A3; }
 .cfu-conc b { font-size: 14px; color: #E7F3F2; font-family: var(--mono); }
@@ -604,7 +606,7 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                         <div class="ai-model-status" id="aiModelStatus-dryMedia-film">연결된 모델 없음</div>
                     </div>
                     <div class="ai-model-slot">
-                        <span class="ai-model-slot-name">② 콜로니 검출 (AC·EC·CC·EB·YM)</span>
+                        <span class="ai-model-slot-name">② 콜로니 검출 (AC·EC·CC)</span>
                         <div class="ai-model-slot-row">
                             <label for="aiModelInput-dryMedia-colony">＋ ONNX 불러오기</label>
                             <input type="file" id="aiModelInput-dryMedia-colony" accept=".onnx,application/octet-stream">
@@ -613,7 +615,7 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                         <div class="ai-model-status" id="aiModelStatus-dryMedia-colony">연결된 모델 없음</div>
                     </div>
                 </div>
-                <div class="ai-model-note">Kaggle에서 학습한 ONNX를 한 번 불러오면 브라우저에 저장됩니다. 현재는 모델 연결까지만 동작하며, 업로드 사진 자동 검출 연결은 다음 단계입니다.</div>
+                <div class="ai-model-note">분할과 검출은 <b>오직 이 모델로만</b> 실행됩니다. 모델을 연결하지 않으면 사진이 분할·검출 없이 원본 그대로 등록됩니다. EB·YM은 학습 데이터가 없어 항상 0입니다.</div>
             </div>
 
             <div class="panel dropzone" id="dropZone">
@@ -621,7 +623,7 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                     <div class="dz-icon">⇪</div>
                     <div class="dz-text">
                         <b>사진 · PDF를 드래그하거나 놓으세요</b>
-                        <span id="uploadStatus">여러 장이 한 페이지에 스캔된 사진도 자동 분할됩니다</span>
+                        <span id="uploadStatus">위에서 AI 모델을 연결하면 필름 분할과 콜로니 검출이 실행됩니다</span>
                         <div class="dz-progress-track" id="uploadProgressTrack">
                             <div class="dz-progress-fill" id="uploadProgressFill"></div>
                         </div>
@@ -745,10 +747,10 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                             <div class="ai-model-status" id="aiModelStatus-agar-colony">연결된 모델 없음</div>
                         </div>
                     </div>
-                    <div class="ai-model-note">Kaggle에서 학습한 ONNX를 한 번 불러오면 브라우저에 저장됩니다. 현재는 모델 연결까지만 동작하며, 업로드 사진 자동 검출 연결은 다음 단계입니다.</div>
+                    <div class="ai-model-note">분할과 검출은 <b>오직 이 모델로만</b> 실행됩니다. 모델을 연결하지 않으면 사진이 분할·검출 없이 원본 그대로 등록됩니다. SDA는 학습 데이터가 없어 항상 0입니다.</div>
                 </div>
 
-                <div class="panel dropzone" id="agarDropZone"><div class="dz-left"><div class="dz-icon">⇪</div><div class="dz-text"><b>Agar plate 사진 · PDF를 드래그하거나 놓으세요</b><span id="agarUploadStatus">여러 장의 Agar plate 이미지도 자동으로 등록됩니다</span><div class="dz-progress-track" id="agarUploadProgressTrack"><div class="dz-progress-fill" id="agarUploadProgressFill"></div></div></div></div><button class="dz-btn" id="btnAgarSelectFile">+ 파일 추가</button><input type="file" id="agarFileInput" multiple accept="image/*,application/pdf" hidden></div>
+                <div class="panel dropzone" id="agarDropZone"><div class="dz-left"><div class="dz-icon">⇪</div><div class="dz-text"><b>Agar plate 사진 · PDF를 드래그하거나 놓으세요</b><span id="agarUploadStatus">위에서 AI 모델을 연결하면 plate 분할과 콜로니 검출이 실행됩니다</span><div class="dz-progress-track" id="agarUploadProgressTrack"><div class="dz-progress-fill" id="agarUploadProgressFill"></div></div></div></div><button class="dz-btn" id="btnAgarSelectFile">+ 파일 추가</button><input type="file" id="agarFileInput" multiple accept="image/*,application/pdf" hidden></div>
                 <div class="panel agar-table-panel">
                     <div class="table-toolbar"><input type="text" id="agarSearchInput" class="search-box" placeholder="검색 (예: Lot No, Bacteria)..."><select id="agarFilterType" class="type-filter"><option value="">모든 Type</option><option value="PCA">PCA</option><option value="TSA">TSA</option><option value="SDA">SDA</option><option value="TBXA">TBXA</option><option value="VRBA">VRBA</option><option value="other">OTHER</option></select><span class="sort-badge">Sort: Descending (DESC)</span></div>
                     <div class="bulk-actions"><span id="agarSelectionHint" class="bulk-hint">선택된 항목 없음</span><button id="btnAgarExportExcel" class="btn-excel" disabled>Excel 저장</button><button id="btnAgarExportZip" class="btn-zip" disabled>이미지 일괄 저장(ZIP)</button><button id="btnAgarDeleteSelected" class="btn-delete" disabled>삭제</button></div>
@@ -909,28 +911,19 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                         <button id="btnRedo" class="es-mode-btn secondary">다시 실행</button>
                     </div>
 
-                    <div class="es-eyebrow section-gap" id="colorModeLabel">AUTO DETECT</div>
+                    <div class="es-eyebrow section-gap" id="colorModeLabel">수동 추가 색상</div>
                     <div class="es-mode-row" id="colorModeRow">
                         <button id="btnColorRed" class="es-color-btn red active">붉은색</button>
                         <button id="btnColorBlue" class="es-color-btn blue">푸른색</button>
-                        <button id="btnColorBoth" class="es-color-btn">둘 다</button>
                     </div>
 
                     <div class="es-slider">
-                        <label>검출 민감도 <span id="emSensVal">15</span></label>
-                        <input type="range" id="emSensitivity" min="6" max="30" value="15">
-                    </div>
-                    <div class="es-slider">
-                        <label>라벨 영역 제외 <span id="emLabelVal">12%</span></label>
+                        <label>라벨 영역 제외 (OCR) <span id="emLabelVal">12%</span></label>
                         <input type="range" id="emLabelHeight" min="0" max="30" value="12">
                     </div>
-                    <div class="es-slider">
-                        <label>최소 점 크기 <span id="emMinAreaVal">2</span></label>
-                        <input type="range" id="emMinArea" min="1" max="10" value="2">
-                    </div>
 
-                    <button id="btnRedetect" class="es-primary-btn">재검출</button>
-                    <button id="btnRestoreDefaults" class="es-secondary-btn">자동값 복원</button>
+                    <button id="btnRedetect" class="es-primary-btn">AI 재검출</button>
+                    <div class="es-ai-note" id="emAiNote"></div>
 
                     <div class="es-eyebrow section-gap">SAMPLE META</div>
                     <div class="es-meta-grid">
@@ -981,177 +974,62 @@ function makeId() {
 }
 
 
-/* ===== js/detector.js ===== */
-/**
- * 콜로니(반점) 자동 검출 모듈 - 색상 구분(붉은색/푸른색) 지원판
- *
- * 각 콜로니 객체는 {x, y, radius, color: 'red'|'blue'} 형태로 반환됩니다.
- * colorMode: 'red' | 'blue' | 'both' 에 따라 어떤 색상을 검출할지 결정합니다.
- */
+/* ===== AI 전용 분할 · 검출 =====
+   연결된 ONNX 모델만 사용한다. 모델이 없으면 분할도 검출도 하지 않고
+   사진을 그대로 등록한다(규칙 기반 대체 동작 없음). */
 
-function toCanvas(src) {
-    if (src instanceof HTMLCanvasElement) return src;
-    const c = document.createElement('canvas');
-    c.width = src.naturalWidth || src.width;
-    c.height = src.naturalHeight || src.height;
-    c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
-    return c;
+const AI_NO_MODEL = 'AI 모델 미연결';
+
+// 학습 데이터에 라벨이 없는 타입. 모델이 절대 찾지 못하므로 0이 "진짜 0"이 아님을 알린다.
+const AI_UNTRAINED_TYPES = { dryMedia: ['EB', 'YM'], agar: ['SDA'] };
+function untrainedTypeReason(dataset, type) {
+    return (AI_UNTRAINED_TYPES[dataset] || []).includes(type)
+        ? `${type}는 학습 데이터가 없어 항상 0으로 나옵니다`
+        : '';
 }
 
-function connectedComponents(mask, w, h, minArea = 1) {
-    const visited = new Uint8Array(w * h);
-    const stack = new Int32Array(w * h);
-    const comps = [];
-
-    for (let start = 0; start < w * h; start++) {
-        if (!mask[start] || visited[start]) continue;
-        let sp = 0;
-        stack[sp++] = start;
-        visited[start] = 1;
-        let minX = w, minY = h, maxX = 0, maxY = 0, sumX = 0, sumY = 0, area = 0;
-
-        while (sp > 0) {
-            const idx = stack[--sp];
-            const x = idx % w, y = (idx / w) | 0;
-            area++; sumX += x; sumY += y;
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-
-            if (x > 0 && mask[idx - 1] && !visited[idx - 1]) { visited[idx - 1] = 1; stack[sp++] = idx - 1; }
-            if (x < w - 1 && mask[idx + 1] && !visited[idx + 1]) { visited[idx + 1] = 1; stack[sp++] = idx + 1; }
-            if (y > 0 && mask[idx - w] && !visited[idx - w]) { visited[idx - w] = 1; stack[sp++] = idx - w; }
-            if (y < h - 1 && mask[idx + w] && !visited[idx + w]) { visited[idx + w] = 1; stack[sp++] = idx + w; }
-        }
-        if (area >= minArea) {
-            comps.push({ cx: sumX / area, cy: sumY / area, area, minX, minY, maxX, maxY });
-        }
-    }
-    return comps;
+function aiSlot(dataset, kind) {
+    return (window.PetricoreAI && window.PetricoreAI[dataset] && window.PetricoreAI[dataset][kind]) || null;
 }
 
-function erode(mask, w, h, radius) {
-    const out = new Uint8Array(w * h);
-    for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-            if (!mask[y * w + x]) continue;
-            let keep = true;
-            for (let dy = -radius; dy <= radius && keep; dy++) {
-                const ny = y + dy;
-                if (ny < 0 || ny >= h) { keep = false; break; }
-                for (let dx = -radius; dx <= radius; dx++) {
-                    const nx = x + dx;
-                    if (nx < 0 || nx >= w || !mask[ny * w + nx]) { keep = false; break; }
-                }
-            }
-            out[y * w + x] = keep ? 1 : 0;
-        }
+// 구역(필름 / plate) 분할. 실패하면 원본 1장을 그대로 돌려준다.
+async function aiSplit(dataset, canvas) {
+    const slot = aiSlot(dataset, dataset === 'agar' ? 'plate' : 'film');
+    if (!slot || !slot.isReady()) return { panels: [canvas], reason: AI_NO_MODEL };
+    try {
+        const boxes = (await slot.detect(canvas)).sort((a, b) => {
+            const tol = Math.max(a.h, b.h) * 0.45;
+            return Math.abs(a.y1 - b.y1) > tol ? a.y1 - b.y1 : a.x1 - b.x1;
+        });
+        if (!boxes.length) return { panels: [canvas], reason: '구역 미검출' };
+        return { panels: boxes.map(b => slot.crop(canvas, b)), reason: '' };
+    } catch (err) {
+        console.error('AI 분할 실패:', err);
+        return { panels: [canvas], reason: `분할 오류: ${err.message}` };
     }
-    return out;
 }
 
-function splitBlob(mask, w, h, comp, targetCount) {
-    const pad = 3;
-    const bx = Math.max(0, comp.minX - pad);
-    const by = Math.max(0, comp.minY - pad);
-    const bw = Math.min(w, comp.maxX + pad + 1) - bx;
-    const bh = Math.min(h, comp.maxY + pad + 1) - by;
-
-    const sub = new Uint8Array(bw * bh);
-    for (let y = 0; y < bh; y++) {
-        for (let x = 0; x < bw; x++) {
-            sub[y * bw + x] = mask[(y + by) * w + (x + bx)] ? 1 : 0;
-        }
+// 콜로니 검출. 모델이 없으면 빈 배열 + 사유를 돌려준다.
+async function aiDetectColonies(dataset, canvas) {
+    const slot = aiSlot(dataset, 'colony');
+    if (!slot || !slot.isReady()) return { colonies: [], reason: AI_NO_MODEL };
+    try {
+        const boxes = await slot.detect(canvas);
+        const colonies = boxes.map(b => ({
+            x: (b.x1 + b.x2) / 2,
+            y: (b.y1 + b.y2) / 2,
+            radius: Math.max(2, Math.min(b.w, b.h) / 2),
+            widthPx: b.w,
+            heightPx: b.h,
+            label: b.label,
+            score: b.score,
+            color: 'red'
+        }));
+        return { colonies, reason: colonies.length ? '' : '콜로니 미검출' };
+    } catch (err) {
+        console.error('AI 검출 실패:', err);
+        return { colonies: [], reason: `검출 오류: ${err.message}` };
     }
-
-    for (let k = 1; k <= 6; k++) {
-        const eroded = erode(sub, bw, bh, k);
-        const subComps = connectedComponents(eroded, bw, bh, 2);
-        if (subComps.length >= targetCount || (subComps.length >= 2 && k === 6)) {
-            const areaPx = comp.area / Math.max(subComps.length, 1);
-            const r = Math.max(3, Math.sqrt(areaPx / Math.PI));
-            return subComps.map(c => ({ x: c.cx + bx, y: c.cy + by, radius: r, areaPx }));
-        }
-    }
-    return [{ x: comp.cx, y: comp.cy, radius: Math.max(3, Math.sqrt(comp.area / Math.PI)), areaPx: comp.area }];
-}
-
-function buildMask(data, w, h, labelPx, gate, channel) {
-    const mask = new Uint8Array(w * h);
-    const gate2 = Math.max(4, gate - 5);
-    for (let y = labelPx; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-            const i = (y * w + x) * 4;
-            const R = data[i], G = data[i + 1], B = data[i + 2];
-            let hit = false;
-            if (channel === 'red') {
-                hit = (R - G) > gate && (R - B) > gate2 && R < 235;
-            } else {
-                hit = (B - G) > gate && (B - R) > gate2 && B < 235;
-            }
-            if (hit) mask[y * w + x] = 1;
-        }
-    }
-    return mask;
-}
-
-function detectFromMask(mask, w, h, minArea, splitMergedBlobs, color) {
-    let comps = connectedComponents(mask, w, h, minArea);
-    if (comps.length === 0) return [];
-
-    const areas = comps.map(c => c.area).sort((a, b) => a - b);
-    const median = areas[Math.floor(areas.length / 2)] || 1;
-
-    const colonies = [];
-    comps.forEach(c => {
-        if (splitMergedBlobs && c.area > median * 1.7 && c.area > 30) {
-            const est = Math.max(2, Math.round(c.area / median));
-            splitBlob(mask, w, h, c, est).forEach(p => colonies.push({ ...p, color }));
-        } else {
-            colonies.push({ x: c.cx, y: c.cy, radius: Math.max(3, Math.sqrt(c.area / Math.PI)), areaPx: c.area, color });
-        }
-    });
-    return colonies;
-}
-
-/**
- * @param {HTMLImageElement|HTMLCanvasElement} imageSource
- * @param {Object} options
- *   - sensitivity: 숫자가 낮을수록 더 많이 검출 (기본 15)
- *   - labelHeightRatio: 상단 라벨 제외 비율 (기본 0.12)
- *   - minArea: 최소 픽셀 면적 (기본 2)
- *   - splitMergedBlobs: 뭉친 덩어리 재분리 여부 (기본 true)
- *   - colorMode: 'red' | 'blue' | 'both' (기본 'red')
- * @returns {Array<{x:number,y:number,radius:number,color:'red'|'blue'}>}
- */
-function detectColonies(imageSource, options = {}) {
-    const {
-        sensitivity = 15,
-        labelHeightRatio = 0.12,
-        minArea = 2,
-        splitMergedBlobs = true,
-        colorMode = 'red'
-    } = options;
-
-    const canvas = toCanvas(imageSource);
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const w = canvas.width, h = canvas.height;
-    if (w === 0 || h === 0) return [];
-
-    const { data } = ctx.getImageData(0, 0, w, h);
-    const labelPx = Math.round(h * labelHeightRatio);
-
-    let colonies = [];
-    if (colorMode === 'red' || colorMode === 'both') {
-        const redMask = buildMask(data, w, h, labelPx, sensitivity, 'red');
-        colonies = colonies.concat(detectFromMask(redMask, w, h, minArea, splitMergedBlobs, 'red'));
-    }
-    if (colorMode === 'blue' || colorMode === 'both') {
-        const blueMask = buildMask(data, w, h, labelPx, sensitivity, 'blue');
-        colonies = colonies.concat(detectFromMask(blueMask, w, h, minArea, splitMergedBlobs, 'blue'));
-    }
-    return colonies;
 }
 
 function rotateCanvas90(sourceCanvas) {
@@ -1170,575 +1048,6 @@ function rotatePoint90(x, y, oldWidth, oldHeight) {
     return { x: oldHeight - y, y: x };
 }
 
-
-
-/* ===== js/panelSplitter.js ===== */
-/**
- * 한 페이지(또는 한 장의 사진)에 여러 개의 Petrifilm 사진이 스캔되어 있는 경우
- * 이를 자동으로 낱장 이미지로 분할합니다.
- *
- * v2까지의 방식(팽창 후 연결성분 분석)은 플레이트 사이에 "넉넉한 흰 여백"이
- * 있을 때만 잘 동작했습니다. 실제로는 스캔/사진 합성 시 플레이트끼리 격자선이
- * 거의 맞닿아 있거나, 인접 플레이트의 격자 패턴이 이어져 보이는 경우가 많아서
- * (예: 2026-08-04 업로드 사진들) 완전히 실패(전체를 1장으로 인식)하는 문제가
- * 있었습니다.
- *
- * 개선된 방식:
- *  1) 행(row) 분리: 페이지 전체 폭 기준으로 내용이 거의 없는 가로 띠를 찾아
- *     먼저 위/아래 행 그룹으로 나눕니다 (여기는 보통 진짜 흰 여백이라 안정적).
- *  2) 각 행 내부에서 열(column) 분리:
- *     a) 세로 격자선(진한 픽셀)이 일정 간격(주기)으로 반복되는 패턴을 찾고,
- *        그 간격에서 통계적으로 벗어나는 지점(비정상적으로 좁거나 넓은 틈)을
- *        "플레이트 경계"로 판단합니다. 이는 격자선이 서로 맞닿아 있어도
- *        동작합니다.
- *     b) 격자 패턴을 찾지 못하면(격자가 흐릿한 사진 등) 기존의 저밀도 여백
- *        탐지 방식으로 대체합니다.
- *  3) 같은 페이지의 여러 행 중 가장 많은 경계를 찾은 행을 기준으로 삼아,
- *     경계를 더 적게 찾은 다른 행에도 같은 경계를 적용해봅니다. 단, 그
- *     결과로 생기는 조각에 실제 내용이 있는지(밀도) 검증해서, 실제로
- *     행마다 배치가 다른 경우(예: 3장+2장 구성)에는 잘못 적용되지 않도록
- *     막았습니다.
- */
-
-// 3M Petrifilm 낱장 플레이트의 격자 칸 수(가로 7.5칸 x 세로 9.5칸)를 기준으로 한
-// 표준 가로:세로 비율. (2026-08-31 스캔 샘플 기준으로 확정)
-const PLATE_GRID_COLS = 7.5;
-const PLATE_GRID_ROWS = 9.5;
-const PLATE_TARGET_RATIO = PLATE_GRID_ROWS / PLATE_GRID_COLS; // ≈ 1.267
-
-function median(arr) {
-    const s = [...arr].sort((a, b) => a - b);
-    const mid = Math.floor(s.length / 2);
-    return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
-}
-
-// ---- 저밀도(흰 여백) 구간 탐지 ----
-function findLowDensityGaps(density, thresh, minGap) {
-    const ranges = [];
-    let start = null;
-    for (let i = 0; i < density.length; i++) {
-        const below = density[i] <= thresh;
-        if (below && start === null) start = i;
-        else if (!below && start !== null) {
-            if (i - start >= minGap) ranges.push([start, i]);
-            start = null;
-        }
-    }
-    if (start !== null && density.length - start >= minGap) ranges.push([start, density.length]);
-    return ranges;
-}
-
-function segmentsFromGaps(gapRanges, totalLen, minSeg) {
-    const segs = [];
-    let prevEnd = 0;
-    for (const [s, e] of gapRanges) {
-        if (s - prevEnd >= minSeg) segs.push([prevEnd, s]);
-        prevEnd = e;
-    }
-    if (totalLen - prevEnd >= minSeg) segs.push([prevEnd, totalLen]);
-    return segs;
-}
-
-// ---- 구분선(얇은 가로줄) 기반 경계 탐지 ----
-// 플레이트끼리 흰 여백 없이 얇은 구분선(스캔 테두리, 자, 인쇄된 줄 등)으로만
-// 나뉘어 있는 경우, findLowDensityGaps(저밀도=흰 여백 탐지)로는 경계를 전혀
-// 찾지 못합니다. 오히려 그 지점은 전체 폭에 걸친 어두운 선이라 밀도가
-// "낮아지는" 게 아니라 국소적으로 "튀어 오르는" 형태이기 때문입니다.
-// 그래서 주변 평균(baseline) 대비 밀도가 확 튀는 얇은 띠를 찾아 별도로
-// 경계 후보로 반환합니다.
-function findDividerLineBoundaries(density, totalLen) {
-    const n = density.length;
-    if (n < 20) return [];
-
-    const windowSize = Math.max(10, Math.round(totalLen * 0.03));
-    const prefix = new Float64Array(n + 1);
-    for (let i = 0; i < n; i++) prefix[i + 1] = prefix[i] + density[i];
-    const baseline = new Float64Array(n);
-    for (let i = 0; i < n; i++) {
-        const lo = Math.max(0, i - windowSize);
-        const hi = Math.min(n, i + windowSize + 1);
-        baseline[i] = (prefix[hi] - prefix[lo]) / (hi - lo);
-    }
-
-    const maxLineWidth = Math.max(3, Math.round(totalLen * 0.02));
-    const edgeMargin = totalLen * 0.03;
-    const boundaries = [];
-    let i = 0;
-    while (i < n) {
-        if (density[i] > 0.5 && density[i] > baseline[i] * 1.6) {
-            let j = i;
-            while (j < n && density[j] > 0.5 && density[j] > baseline[j] * 1.4) j++;
-            const width = j - i;
-            if (width <= maxLineWidth && i > edgeMargin && j < totalLen - edgeMargin) {
-                boundaries.push((i + j) / 2);
-            }
-            i = j;
-        } else {
-            i++;
-        }
-    }
-    return boundaries;
-}
-
-// ---- 격자선 주기성 기반 경계 탐지 (특정 임계값 기준) ----
-// 특정 임계값에서 "가는 선(격자선 후보)" 구간들을 찾는 공용 헬퍼
-function findLineSegments(density, lineThresh) {
-    const high = density.map(d => d > lineThresh);
-    const segs = [];
-    let start = null;
-    for (let i = 0; i < high.length; i++) {
-        if (high[i] && start === null) start = i;
-        else if (!high[i] && start !== null) { segs.push([start, i]); start = null; }
-    }
-    if (start !== null) segs.push([start, high.length]);
-    return segs;
-}
-
-function periodicityBoundariesAtThreshold(density, totalLen, lineThresh, sens = 0.09) {
-    const segs = findLineSegments(density, lineThresh);
-    if (segs.length < 4) return { boundaries: [], med: null, segCount: segs.length, cv: Infinity };
-
-    const centers = segs.map(([s, e]) => (s + e) / 2);
-    const widths = segs.map(([s, e]) => e - s);
-    const gaps = [];
-    for (let i = 0; i < centers.length - 1; i++) gaps.push(centers[i + 1] - centers[i]);
-    const med = median(gaps);
-    if (med <= 0) return { boundaries: [], med: null, segCount: segs.length, cv: Infinity };
-
-    // 세그먼트가 "얇은 격자선"이 아니라 넓게 퍼진 콜로니 얼룩(예: 확산성 균주)이면
-    // 폭이 간격(주기)에 맞먹을 정도로 두꺼워집니다. 이런 경우 주기성 분석 자체가
-    // 신뢰할 수 없으므로 무효 처리합니다 (호출 쪽에서 다른 임계값/방식으로 대체).
-    const medWidth = median(widths);
-    if (medWidth > med * 0.4) return { boundaries: [], med: null, segCount: segs.length, cv: Infinity };
-
-    const mad = median(gaps.map(g => Math.abs(g - med))) || 0.5;
-    const cv = mad / med; // 주기 일관성 지표 (낮을수록 진짜 격자 패턴일 가능성이 높음)
-    const primaryThresh = Math.max(4 * mad, med * sens, 2.0);
-    const neighborThresh = med * 0.5;
-
-    const n = gaps.length;
-    let boundaries = [];
-    for (let i = 0; i < n; i++) {
-        const dev = gaps[i] - med;
-        if (Math.abs(dev) < primaryThresh) continue;
-        const prevOk = i - 1 >= 0 && Math.abs(gaps[i - 1] - med) < neighborThresh;
-        const nextOk = i + 1 < n && Math.abs(gaps[i + 1] - med) < neighborThresh;
-        if (prevOk && nextOk) boundaries.push((centers[i] + centers[i + 1]) / 2);
-    }
-
-    boundaries.sort((a, b) => a - b);
-    const merged = [];
-    for (const b of boundaries) {
-        if (merged.length && b - merged[merged.length - 1] < med * 0.5) {
-            merged[merged.length - 1] = (merged[merged.length - 1] + b) / 2;
-        } else {
-            merged.push(b);
-        }
-    }
-    return { boundaries: merged, med, segCount: segs.length, cv };
-}
-
-// 격자선의 진하기(대비)는 사진마다 다르므로, 고정된 임계값 하나로는
-// 옅은 격자를 가진 사진에서 격자선을 아예 못 찾아 분할에 실패하는 경우가
-// 있었습니다. 여러 임계값을 시도해서 가장 "그럴듯한"(격자 패턴이 뚜렷하고
-// 일정한) 결과를 채택하도록 개선했습니다.
-function periodicityBoundaries(density, totalLen, sens = 0.09) {
-    const candidates = [0.7, 0.55, 0.4, 0.28];
-    let best = null;
-    for (const t of candidates) {
-        const result = periodicityBoundariesAtThreshold(density, totalLen, t, sens);
-        if (result.segCount < 4) continue;
-        if (!best || result.cv < best.cv) best = result;
-    }
-    return best || { boundaries: [], med: null };
-}
-
-function segsFromBoundaries(boundaries, totalLen, minSeg) {
-    const cuts = [0, ...boundaries.slice().sort((a, b) => a - b), totalLen];
-    const out = [];
-    for (let i = 0; i < cuts.length - 1; i++) {
-        const a = cuts[i], b = cuts[i + 1];
-        if (b - a >= minSeg) out.push([Math.round(a), Math.round(b)]);
-    }
-    return out;
-}
-
-// 열 분리 과정에서 실제 낱장 하나보다 지나치게 좁은(=세로로 지나치게 긴
-// 비율의) 조각이 생기면, 격자선 하나를 플레이트 경계로 잘못 인식한
-// 경우일 가능성이 높습니다. 이런 조각은 버리지 않고 인접 조각과 합쳐서
-// 낱장 하나로 복원합니다.
-function mergeNarrowSegments(segs, rowHeight, targetRatio, tooNarrowFactor = 1.7) {
-    if (segs.length < 2 || !rowHeight) return segs;
-    const result = [];
-    let i = 0;
-    while (i < segs.length) {
-        let [x0, x1] = segs[i];
-        while (i + 1 < segs.length && rowHeight / Math.max(1, x1 - x0) > targetRatio * tooNarrowFactor) {
-            x1 = segs[i + 1][1];
-            i++;
-        }
-        result.push([x0, x1]);
-        i++;
-    }
-    // 마지막 조각이 여전히 너무 좁으면 바로 앞 조각과 합침
-    if (result.length >= 2) {
-        const last = result[result.length - 1];
-        if (rowHeight / Math.max(1, last[1] - last[0]) > targetRatio * tooNarrowFactor) {
-            const prev = result[result.length - 2];
-            result[result.length - 2] = [prev[0], last[1]];
-            result.pop();
-        }
-    }
-    return result;
-}
-
-// 병합 의심 구간에서 실제 격자선 개수를 세어, 알려진 "낱장당 세로줄 개수"
-// (보통 7~8개)의 배수인지 확인합니다. 배수라면 실제 격자선 사이 빈틈을
-// 기준으로 정밀하게 잘라줍니다 (균등 분할보다 훨씬 정확함).
-function findBestLineSegments(density) {
-    const candidates = [0.7, 0.55, 0.4, 0.28];
-    let best = null;
-    for (const t of candidates) {
-        const segs = findLineSegments(density, t);
-        if (segs.length < 4) continue;
-        const centers = segs.map(([s, e]) => (s + e) / 2);
-        const widths = segs.map(([s, e]) => e - s);
-        const gaps = [];
-        for (let i = 0; i < centers.length - 1; i++) gaps.push(centers[i + 1] - centers[i]);
-        const med = median(gaps);
-        if (med <= 0) continue;
-        const medWidth = median(widths);
-        if (medWidth > med * 0.4) continue; // 두꺼운 얼룩은 격자선이 아님
-        const mad = median(gaps.map(g => Math.abs(g - med))) || 0.5;
-        const cv = mad / med;
-        if (!best || cv < best.cv) best = { segs, centers, cv };
-    }
-    return best;
-}
-
-// linesPerPlateOptions(보통 7~8개) 중 실제 라인 개수와 가장 잘 맞아떨어지는
-// 값을 골라, 몇 장이 합쳐진 것인지와 정확한 절단 지점을 반환합니다.
-function lineCountMergeSplit(centers, x0, x1, linesPerPlateOptions = [7, 8]) {
-    const total = centers.length;
-    let bestFit = null;
-    for (const lpp of linesPerPlateOptions) {
-        const nPlates = Math.round(total / lpp);
-        if (nPlates < 2) continue;
-        const remainder = Math.abs(total - nPlates * lpp);
-        if (remainder > lpp * 0.35) continue; // 너무 안 맞으면 후보에서 제외
-        if (!bestFit || remainder < bestFit.remainder) bestFit = { lpp, nPlates, remainder };
-    }
-    if (!bestFit) return null;
-
-    const { nPlates } = bestFit;
-    const cuts = [x0];
-    for (let k = 1; k < nPlates; k++) {
-        const idx = Math.round((k * total) / nPlates);
-        const leftCenter = centers[Math.max(0, idx - 1)];
-        const rightCenter = centers[Math.min(total - 1, idx)];
-        cuts.push(Math.round(x0 + (leftCenter + rightCenter) / 2));
-    }
-    cuts.push(x1);
-
-    const out = [];
-    for (let i = 0; i < cuts.length - 1; i++) out.push([cuts[i], cuts[i + 1]]);
-    return out;
-}
-
-function splitAxis(density, totalLen, minSegFrac = 0.05, usePeriodicity = true) {
-    const minSeg = Math.max(20, Math.round(totalLen * minSegFrac));
-    let boundaries = [];
-    let segs = [[0, totalLen]];
-
-    if (usePeriodicity) {
-        const result = periodicityBoundaries(density, totalLen);
-        boundaries = result.boundaries;
-        segs = boundaries.length ? segsFromBoundaries(boundaries, totalLen, minSeg) : [[0, totalLen]];
-    }
-
-    if (segs.length <= 1) {
-        const gaps = findLowDensityGaps(density, 0.03, Math.max(6, Math.round(totalLen * 0.015)));
-        const segs2 = segmentsFromGaps(gaps, totalLen, minSeg);
-        if (segs2.length > 1) segs = segs2;
-    }
-    return { segs, boundaries };
-}
-
-function columnDensity(mask, w, y0, y1) {
-    const h = y1 - y0;
-    const density = new Float64Array(w);
-    for (let x = 0; x < w; x++) {
-        let sum = 0;
-        for (let y = y0; y < y1; y++) sum += mask[y * w + x];
-        density[x] = sum / h;
-    }
-    return density;
-}
-
-function rowDensity(mask, w, h, x0, x1) {
-    const bw = x1 - x0;
-    const density = new Float64Array(h);
-    for (let y = 0; y < h; y++) {
-        let sum = 0;
-        for (let x = x0; x < x1; x++) sum += mask[y * w + x];
-        density[y] = sum / bw;
-    }
-    return density;
-}
-
-function cropCanvas(sourceCanvas, x0, y0, x1, y1, pad = 4) {
-    const w = sourceCanvas.width, h = sourceCanvas.height;
-    const cx0 = Math.max(0, x0 - pad), cy0 = Math.max(0, y0 - pad);
-    const cx1 = Math.min(w, x1 + pad), cy1 = Math.min(h, y1 + pad);
-    const cw = cx1 - cx0, ch = cy1 - cy0;
-    const out = document.createElement('canvas');
-    out.width = cw; out.height = ch;
-    out.getContext('2d').drawImage(sourceCanvas, cx0, cy0, cw, ch, 0, 0, cw, ch);
-    return out;
-}
-
-// 1차로 잘라낸 조각에 여전히 남아있는 빈 여백(흰 배경)을 실제 콘텐츠 기준으로
-// 한 번 더 타이트하게 잘라냅니다. 행/열 분리 단계의 경계가 완벽히 딱 맞지
-// 않아서 생기는 여백을 최종적으로 정리하는 후처리입니다.
-// 적분영상 기반 고속 팽창 (그리드/글자 사이의 작은 틈을 메워 하나의 덩어리로 만듦)
-function dilateMask(mask, w, h, radius) {
-    const integral = new Int32Array((w + 1) * (h + 1));
-    for (let y = 0; y < h; y++) {
-        let rowSum = 0;
-        const rowBase = (y + 1) * (w + 1);
-        const prevRowBase = y * (w + 1);
-        for (let x = 0; x < w; x++) {
-            rowSum += mask[y * w + x];
-            integral[rowBase + x + 1] = integral[prevRowBase + x + 1] + rowSum;
-        }
-    }
-    const out = new Uint8Array(w * h);
-    for (let y = 0; y < h; y++) {
-        const y0 = Math.max(0, y - radius), y1 = Math.min(h - 1, y + radius);
-        for (let x = 0; x < w; x++) {
-            const x0 = Math.max(0, x - radius), x1 = Math.min(w - 1, x + radius);
-            const sum = integral[(y1 + 1) * (w + 1) + (x1 + 1)]
-                      - integral[y0 * (w + 1) + (x1 + 1)]
-                      - integral[(y1 + 1) * (w + 1) + x0]
-                      + integral[y0 * (w + 1) + x0];
-            out[y * w + x] = sum > 0 ? 1 : 0;
-        }
-    }
-    return out;
-}
-
-// 실제 플레이트 내용(격자+라벨+콜로니)만 타이트하게 잘라냅니다.
-// 단순히 "가장 어두운 픽셀들의 전체 bounding box"를 쓰면, 스캔 노이즈나
-// 먼지 자국 같은 아주 작은 티끌 하나 때문에 여백까지 통째로 포함되는
-// 문제가 있었습니다 (예: 왼쪽 끝에 점 하나만 있어도 그 지점까지 다 자름).
-// 그래서 약간 팽창시켜 연결 성분을 구한 뒤, 가장 큰 덩어리(=실제 플레이트)의
-// 범위만 사용하도록 개선했습니다.
-function trimToContent(canvas, pad = 10, whiteThreshold = 246) {
-    const w = canvas.width, h = canvas.height;
-    if (w < 20 || h < 20) return canvas;
-    const ctx = canvas.getContext('2d');
-    const { data } = ctx.getImageData(0, 0, w, h);
-
-    const mask = new Uint8Array(w * h);
-    for (let p = 0; p < w * h; p++) {
-        const i = p * 4;
-        const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        mask[p] = gray < whiteThreshold ? 1 : 0;
-    }
-
-    const radius = Math.max(6, Math.round(Math.min(w, h) * 0.02));
-    const dilated = dilateMask(mask, w, h, radius);
-    const minArea = w * h * 0.003; // 전체 면적의 0.3% 미만 덩어리는 티끌로 간주
-    const comps = connectedComponents(dilated, w, h, 1).filter(c => c.area >= minArea);
-
-    if (comps.length === 0) return canvas; // 콘텐츠를 못 찾았으면 원본 그대로 반환
-
-    // 가장 큰 덩어리 = 실제 플레이트(격자+콜로니). 격자선은 서로 맞닿아 있어
-    // 하나의 연결 성분으로 잡히므로, 이 덩어리의 범위는 이미 원(콜로니 밀집구역)
-    // 뿐 아니라 격자칸 전체를 포함합니다.
-    let biggest = comps[0];
-    for (const c of comps) if (c.area > biggest.area) biggest = c;
-
-    // 상단 손글씨 라벨은 격자와 살짝 떨어져 있어 별도의 연결 성분으로 잡히는
-    // 경우가 많습니다. 그대로 두면 "가장 큰 덩어리"에서 제외되어 라벨이
-    // 잘려나가므로, 격자 바로 위(격자 높이의 40% 이내)에 있고 가로로 겹치는
-    // 성분은 라벨로 간주해 크롭 범위에 포함시킵니다.
-    let top = biggest.minY;
-    const plateHeight = biggest.maxY - biggest.minY;
-    const labelSearchMargin = Math.max(20, plateHeight * 0.4);
-    for (const c of comps) {
-        if (c === biggest) continue;
-        const above = c.maxY <= biggest.minY && (biggest.minY - c.maxY) <= labelSearchMargin;
-        const overlapsX = c.maxX >= biggest.minX && c.minX <= biggest.maxX;
-        if (above && overlapsX) top = Math.min(top, c.minY);
-    }
-
-    const x0 = Math.max(0, biggest.minX - pad), y0 = Math.max(0, top - pad);
-    const x1 = Math.min(w, biggest.maxX + pad + 1), y1 = Math.min(h, biggest.maxY + pad + 1);
-    const cw = x1 - x0, ch = y1 - y0;
-    if (cw >= w - 1 && ch >= h - 1) return canvas;
-
-    const out = document.createElement('canvas');
-    out.width = cw; out.height = ch;
-    out.getContext('2d').drawImage(canvas, x0, y0, cw, ch, 0, 0, cw, ch);
-    return out;
-}
-
-// 낱장 플레이트 사진의 실측 가로:세로 비율에 맞춰 최종 크기를 보정합니다.
-// (여백을 잘라낸 뒤에도 촬영 각도 등으로 비율이 살짝 어긋나는 것을 보정)
-// 부족한 쪽만 흰 배경으로 살짝 채워서 맞추므로, 이미 여백을 제거한 상태를
-// 다시 흐트러뜨리지 않습니다 (실제 콘텐츠를 잘라내지 않음).
-function conformToAspectRatio(canvas, targetRatio = PLATE_TARGET_RATIO) {
-    const w = canvas.width, h = canvas.height;
-    if (w === 0 || h === 0) return canvas;
-    const currentRatio = h / w;
-    let newW = w, newH = h;
-
-    if (currentRatio < targetRatio) {
-        newH = Math.round(w * targetRatio);
-    } else if (currentRatio > targetRatio * 1.02) {
-        newW = Math.round(h / targetRatio);
-    }
-    if (newW === w && newH === h) return canvas;
-
-    const out = document.createElement('canvas');
-    out.width = newW; out.height = newH;
-    const ctx = out.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, newW, newH);
-    ctx.drawImage(canvas, Math.round((newW - w) / 2), Math.round((newH - h) / 2));
-    return out;
-}
-
-/**
- * @param {HTMLCanvasElement} canvas 원본(페이지 전체) 캔버스
- * @param {'small'|'normal'|'off'} sizeHint 분할 민감도 (off = 분할 안 함)
- * @returns {HTMLCanvasElement[]} 분할된 낱장 캔버스 배열 (읽는 순서: 위->아래, 좌->우)
- */
-function splitPanels(canvas, sizeHint = 'normal') {
-    if (sizeHint === 'off') return [canvas];
-
-    const w = canvas.width, h = canvas.height;
-    const ctx = canvas.getContext('2d');
-    const { data } = ctx.getImageData(0, 0, w, h);
-
-    const whiteThreshold = 246;
-    const mask = new Uint8Array(w * h);
-    for (let p = 0; p < w * h; p++) {
-        const i = p * 4;
-        const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        mask[p] = gray < whiteThreshold ? 1 : 0;
-    }
-
-    // 이미지 가장자리(스캔 테두리/노이즈)는 분석에서 제외
-    const border = Math.max(6, Math.round(Math.min(w, h) * 0.015));
-    if (w - 2 * border < 40 || h - 2 * border < 40) return [canvas];
-
-    // 1) 행 분리 (페이지 전체 폭 기준)
-    const rDensity = rowDensity(mask, w, h, border, w - border);
-    const { segs: rowSegsInner } = splitAxis(rDensity, h - 2 * border, 0.05, false);
-    let rowSegs = rowSegsInner.map(([y0, y1]) => [y0 + border, y1 + border]);
-
-    // 1.5) 흰 여백이 아니라 얇은 구분선으로만 나뉜 경우(예: 정렬용 가로줄) 대비 fallback.
-    // 저밀도 갭 기반 분리가 실패했을 때(=한 덩어리로만 인식됐을 때)만 시도합니다.
-    if (rowSegs.length <= 1) {
-        const dividerBoundaries = findDividerLineBoundaries(rDensity, h - 2 * border);
-        if (dividerBoundaries.length > 0) {
-            const minSeg = Math.max(20, Math.round((h - 2 * border) * 0.05));
-            const dividerSegs = segsFromBoundaries(dividerBoundaries, h - 2 * border, minSeg)
-                .map(([y0, y1]) => [y0 + border, y1 + border]);
-            if (dividerSegs.length > rowSegs.length) rowSegs = dividerSegs;
-        }
-    }
-
-    if (rowSegs.length === 0) return [canvas];
-
-    // 2) 각 행 내부에서 열 분리
-    const rowResults = rowSegs.map(([y0, y1]) => {
-        const cDensity = columnDensity(mask, w, y0, y1);
-        const innerDensity = cDensity.slice(border, w - border);
-        const { segs, boundaries } = splitAxis(innerDensity, w - 2 * border, 0.05);
-        const absSegs = segs.map(([x0, x1]) => [x0 + border, x1 + border]);
-        return { y0, y1, segs: absSegs, boundaries, density: cDensity };
-    });
-
-    // 3) 경계를 가장 많이 찾은 행을 기준으로 다른 행에도 적용 시도 (내용 밀도로 검증)
-    let best = rowResults[0];
-    for (const r of rowResults) if (r.segs.length > best.segs.length) best = r;
-
-    if (best.segs.length > 1) {
-        const minSeg = Math.max(20, Math.round((w - 2 * border) * 0.05));
-        for (const r of rowResults) {
-            if (r.segs.length < best.segs.length) {
-                const candidate = segsFromBoundaries(best.boundaries, w - 2 * border, minSeg)
-                    .map(([x0, x1]) => [x0 + border, x1 + border]);
-                if (candidate.length > r.segs.length) {
-                    const densities = candidate.map(([x0, x1]) => {
-                        let sum = 0;
-                        for (let x = x0; x < x1; x++) sum += r.density[x];
-                        return sum / (x1 - x0);
-                    });
-                    if (densities.every(d => d >= 0.08)) {
-                        r.segs = candidate;
-                    }
-                }
-            }
-        }
-    }
-
-    // 3.4) 너무 좁게(=낱장 하나보다 세로로 지나치게 긴 비율로) 잘린 조각은
-    // 격자선을 플레이트 경계로 착각한 결과이므로 인접 조각과 합쳐 복원합니다.
-    for (const r of rowResults) {
-        r.segs = mergeNarrowSegments(r.segs, r.y1 - r.y0, PLATE_TARGET_RATIO);
-    }
-
-    // 3.5) 안전장치: 실제로 잘라내고 여백을 트림한 "실측 비율"을 기준으로
-    // 낱장 플레이트의 표준 가로:세로 비율(격자 7.5칸x9.5칸 기준, 1:PLATE_TARGET_RATIO)과 비교합니다. 트림 전
-    // 대략적인 영역 기준으로는 라벨/여백 때문에 비율이 들쭉날쭉해서 오탐이
-    // 많았기 때문에, 실제 콘텐츠를 트림한 뒤의 비율로 판단하도록 했습니다.
-    // 너무 납작하면(=가로로 여러 장이 붙어 하나로 잡힌 경우) 우선 실제
-    // 격자선 개수(낱장당 7~8줄)를 세어 정확한 절단 지점을 찾고, 그게
-    // 여의치 않으면 예상 장수만큼 균등 재분할합니다.
-    const panels = [];
-    for (const r of rowResults) {
-        for (const [x0, x1] of r.segs) {
-            const cropped = cropCanvas(canvas, x0, r.y0, x1, r.y1);
-            const trimmed = trimToContent(cropped);
-            const ratio = trimmed.height / Math.max(1, trimmed.width);
-
-            if (ratio > 0 && ratio < PLATE_TARGET_RATIO / 1.7) {
-                let subSegs = null;
-
-                const lineInfo = findBestLineSegments(r.density.slice(x0, x1));
-                if (lineInfo) {
-                    subSegs = lineCountMergeSplit(lineInfo.centers, x0, x1);
-                }
-                if (!subSegs) {
-                    const n = Math.max(2, Math.round(PLATE_TARGET_RATIO / ratio));
-                    const step = (x1 - x0) / n;
-                    subSegs = [];
-                    for (let k = 0; k < n; k++) {
-                        subSegs.push([Math.round(x0 + k * step), Math.round(x0 + (k + 1) * step)]);
-                    }
-                }
-
-                for (const [sx0, sx1] of subSegs) {
-                    const subCropped = cropCanvas(canvas, sx0, r.y0, sx1, r.y1);
-                    const subTrimmed = trimToContent(subCropped);
-                    panels.push(conformToAspectRatio(subTrimmed, PLATE_TARGET_RATIO));
-                }
-            } else {
-                panels.push(conformToAspectRatio(trimmed, PLATE_TARGET_RATIO));
-            }
-        }
-    }
-
-    // 아무것도 못 찾았거나 너무 잘게 쪼개졌으면(오탐) 원본 그대로 반환
-    if (panels.length === 0) return [canvas];
-    if (panels.length > 40) return [canvas];
-
-    return panels;
-}
 
 
 /* ===== js/ocr.js ===== */
@@ -2683,7 +1992,7 @@ function deleteSelected() {
 
 
 
-const DEFAULTS = { sensitivity: 15, labelHeightRatio: 0.12, minArea: 2, colorMode: 'red' };
+const DEFAULTS = { labelHeightRatio: 0.12, colorMode: 'red' };
 
 document.addEventListener('DOMContentLoaded', () => {
     state.viewer = new SimpleViewer('viewerCanvas', 'viewerCanvasWrapper');
@@ -3045,6 +2354,7 @@ async function handleFiles(fileList) {
     document.getElementById('dropZone').classList.add('compact');
 
     let done = 0;
+    let lastReason = '';
     statusEl.textContent = `처리 중... (0/${files.length})`;
     progressTrack.classList.add('active');
     progressFill.style.width = '0%';
@@ -3054,17 +2364,19 @@ async function handleFiles(fileList) {
             if (file.type === 'application/pdf') {
                 const pageCanvases = await pdfFileToCanvases(file);
                 for (let p = 0; p < pageCanvases.length; p++) {
-                    const panels = splitPanels(pageCanvases[p], 'normal');
-                    for (let i = 0; i < panels.length; i++) {
-                        await createRecordFromCanvas(panels[i], `${file.name} (p${p + 1}-${i + 1})`);
+                    const split = await aiSplit('dryMedia', pageCanvases[p]);
+                    if (split.reason) lastReason = split.reason;
+                    for (let i = 0; i < split.panels.length; i++) {
+                        await createRecordFromCanvas(split.panels[i], `${file.name} (p${p + 1}-${i + 1})`);
                     }
                 }
             } else if (file.type.startsWith('image/')) {
                 const canvas = await imageFileToCanvas(file);
-                const panels = splitPanels(canvas, 'normal');
-                for (let i = 0; i < panels.length; i++) {
-                    const suffix = panels.length > 1 ? ` (${i + 1}/${panels.length})` : '';
-                    await createRecordFromCanvas(panels[i], file.name + suffix);
+                const split = await aiSplit('dryMedia', canvas);
+                if (split.reason) lastReason = split.reason;
+                for (let i = 0; i < split.panels.length; i++) {
+                    const suffix = split.panels.length > 1 ? ` (${i + 1}/${split.panels.length})` : '';
+                    await createRecordFromCanvas(split.panels[i], file.name + suffix);
                 }
             }
         } catch (err) {
@@ -3076,7 +2388,9 @@ async function handleFiles(fileList) {
         progressFill.style.width = `${Math.round((done / files.length) * 100)}%`;
         refreshTable();
     }
-    statusEl.textContent = `총 ${state.records.length}개 데이터 · 여러 장이 한 페이지에 스캔된 사진도 자동 분할됩니다`;
+    statusEl.textContent = lastReason
+        ? `총 ${state.records.length}개 데이터 · ${lastReason} · 원본 그대로 등록했습니다`
+        : `총 ${state.records.length}개 데이터 · AI 모델로 분할했습니다`;
     progressFill.style.width = '100%';
     setTimeout(() => {
         progressTrack.classList.remove('active');
@@ -3114,19 +2428,20 @@ async function createRecordFromCanvas(canvas, filename) {
         type: state.selectedDryType || 'AC', lot: '', bacteria: 'BC', no: '', dilute: '',
         colonies: [], autoColonies: [],
         historyPast: [], historyFuture: [],
-        sensitivity: DEFAULTS.sensitivity,
         labelHeightRatio: DEFAULTS.labelHeightRatio,
-        minArea: DEFAULTS.minArea,
         colorMode: DEFAULTS.colorMode,
+        aiReason: '',
         selected: false,
         needsReview: {},
         rawHandwriting: '', rawPrinted: ''
     };
 
-    const [ocrResult, colonies] = await Promise.all([
+    const [ocrResult, detected] = await Promise.all([
         parsePetrifilmOCR(canvas, record.labelHeightRatio).catch(err => { console.warn('OCR 실패:', err); return null; }),
-        Promise.resolve(detectColonies(canvas, { sensitivity: record.sensitivity, labelHeightRatio: record.labelHeightRatio, minArea: record.minArea, colorMode: record.colorMode }))
+        aiDetectColonies('dryMedia', canvas)
     ]);
+    const colonies = detected.colonies;
+    record.aiReason = detected.reason;
 
     if (ocrResult) {
         record.type = ocrResult.type || state.selectedDryType || 'AC';
@@ -3234,14 +2549,12 @@ function populateEditorSidebar(record) {
     document.getElementById('emNo').value = record.no;
     document.getElementById('emDilute').value = record.dilute;
 
-    document.getElementById('emSensitivity').value = record.sensitivity;
-    document.getElementById('emSensVal').textContent = record.sensitivity;
     document.getElementById('emLabelHeight').value = Math.round(record.labelHeightRatio * 100);
     document.getElementById('emLabelVal').textContent = Math.round(record.labelHeightRatio * 100) + '%';
-    document.getElementById('emMinArea').value = record.minArea;
-    document.getElementById('emMinAreaVal').textContent = record.minArea;
 
     setColorModeUI(record.colorMode);
+    document.getElementById('emAiNote').textContent =
+        record.aiReason || untrainedTypeReason(state.dataset, record.type);
 
     const rawParts = [];
     if (record.rawPrinted) rawParts.push(record.rawPrinted.replace(/\n/g, ' '));
@@ -3287,7 +2600,6 @@ function setEditorMode(mode) {
 function setColorModeUI(mode) {
     document.getElementById('btnColorRed').classList.toggle('active', mode === 'red');
     document.getElementById('btnColorBlue').classList.toggle('active', mode === 'blue');
-    document.getElementById('btnColorBoth').classList.toggle('active', mode === 'both');
 }
 
 function initEditorEventListeners() {
@@ -3305,37 +2617,13 @@ function initEditorEventListeners() {
 
     document.getElementById('btnColorRed').addEventListener('click', () => setRecordColorMode('red'));
     document.getElementById('btnColorBlue').addEventListener('click', () => setRecordColorMode('blue'));
-    document.getElementById('btnColorBoth').addEventListener('click', () => setRecordColorMode('both'));
 
-    document.getElementById('emSensitivity').addEventListener('input', (e) => {
-        document.getElementById('emSensVal').textContent = e.target.value;
-        const r = state.records[state.editIndex]; if (r) r.sensitivity = parseInt(e.target.value, 10);
-    });
     document.getElementById('emLabelHeight').addEventListener('input', (e) => {
         document.getElementById('emLabelVal').textContent = e.target.value + '%';
         const r = state.records[state.editIndex]; if (r) r.labelHeightRatio = parseInt(e.target.value, 10) / 100;
     });
-    document.getElementById('emMinArea').addEventListener('input', (e) => {
-        document.getElementById('emMinAreaVal').textContent = e.target.value;
-        const r = state.records[state.editIndex]; if (r) r.minArea = parseInt(e.target.value, 10);
-    });
 
-    document.getElementById('btnRedetect').addEventListener('click', () => runDetection(false));
-    document.getElementById('btnRestoreDefaults').addEventListener('click', () => {
-        const r = state.records[state.editIndex]; if (!r) return;
-        r.sensitivity = DEFAULTS.sensitivity;
-        r.labelHeightRatio = DEFAULTS.labelHeightRatio;
-        r.minArea = DEFAULTS.minArea;
-        r.colorMode = DEFAULTS.colorMode;
-        document.getElementById('emSensitivity').value = r.sensitivity;
-        document.getElementById('emSensVal').textContent = r.sensitivity;
-        document.getElementById('emLabelHeight').value = Math.round(r.labelHeightRatio * 100);
-        document.getElementById('emLabelVal').textContent = Math.round(r.labelHeightRatio * 100) + '%';
-        document.getElementById('emMinArea').value = r.minArea;
-        document.getElementById('emMinAreaVal').textContent = r.minArea;
-        setColorModeUI(r.colorMode);
-        runDetection(true);
-    });
+    document.getElementById('btnRedetect').addEventListener('click', () => runDetection());
 
     ['emType', 'emLot', 'emBacteria', 'emNo', 'emDilute'].forEach(id => {
         document.getElementById(id).addEventListener('change', (e) => {
@@ -3423,16 +2711,25 @@ function setRecordColorMode(mode) {
     setColorModeUI(mode);
 }
 
-function runDetection(isRestore) {
+async function runDetection() {
     const r = state.records[state.editIndex]; if (!r) return;
+    const btn = document.getElementById('btnRedetect');
+    if (btn) { btn.disabled = true; btn.textContent = 'AI 검출 중...'; }
+    let detected;
+    try {
+        detected = await aiDetectColonies(state.dataset, r.canvas);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'AI 재검출'; }
+    }
     state.editor.pushHistory();
-    let colonies = detectColonies(r.canvas, {
-        sensitivity: r.sensitivity, labelHeightRatio: r.labelHeightRatio,
-        minArea: r.minArea, colorMode: r.colorMode
-    });
+    let colonies = detected.colonies;
     if (state.dataset === 'agar') colonies = applyAgarTypeRules(r, colonies);
+    r.aiReason = detected.reason;
+    if (detected.reason) alert(`AI 검출을 하지 못했습니다.\n\n${detected.reason}`);
     r.colonies = colonies;
-    if (isRestore) r.autoColonies = JSON.parse(JSON.stringify(colonies));
+    r.autoColonies = JSON.parse(JSON.stringify(colonies));
+    document.getElementById('emAiNote').textContent =
+        r.aiReason || untrainedTypeReason(state.dataset, r.type);
     state.editor.redraw();
     updateEditorCfuDisplay();
     refreshTable();
@@ -3639,19 +2936,29 @@ function refreshTable(){
 async function handleAgarFiles(fileList){
     const files=Array.from(fileList), status=el('agarUploadStatus'), track=el('agarUploadProgressTrack'), fill=el('agarUploadProgressFill');
     el('agarDropZone').classList.add('compact'); track.classList.add('active'); fill.style.width='0%';
-    let done=0;
+    let done=0, lastReason='';
     for(const file of files){
         try{
             if(file.type==='application/pdf'){
                 const pages=await pdfFileToCanvases(file);
-                for(let p=0;p<pages.length;p++) await createAgarRecordFromCanvas(pages[p],`${file.name} (p${p+1})`);
+                for(let p=0;p<pages.length;p++){
+                    const split=await aiSplit('agar',pages[p]);
+                    if(split.reason) lastReason=split.reason;
+                    for(let i=0;i<split.panels.length;i++) await createAgarRecordFromCanvas(split.panels[i],`${file.name} (p${p+1}-${i+1})`);
+                }
             }else if(file.type.startsWith('image/')){
-                const canvas=await imageFileToCanvas(file); await createAgarRecordFromCanvas(canvas,file.name);
+                const canvas=await imageFileToCanvas(file);
+                const split=await aiSplit('agar',canvas);
+                if(split.reason) lastReason=split.reason;
+                for(let i=0;i<split.panels.length;i++){
+                    const suffix=split.panels.length>1?` (${i+1}/${split.panels.length})`:'';
+                    await createAgarRecordFromCanvas(split.panels[i],file.name+suffix);
+                }
             }
         }catch(e){console.error(e);alert(`${file.name} 처리 중 오류가 발생했습니다: ${e.message}`);}
         done++;status.textContent=`처리 중... (${done}/${files.length})`;fill.style.width=`${Math.round(done/files.length*100)}%`;refreshTable();
     }
-    status.textContent=`총 ${state.records.length}개 Agar 데이터`; setTimeout(()=>{track.classList.remove('active');fill.style.width='0%';},500); refreshTable();
+    status.textContent=lastReason?`총 ${state.records.length}개 Agar 데이터 · ${lastReason} · 원본 그대로 등록했습니다`:`총 ${state.records.length}개 Agar 데이터 · AI 모델로 분할했습니다`; setTimeout(()=>{track.classList.remove('active');fill.style.width='0%';},500); refreshTable();
 }
 const AGAR_PLATE_MM = 90;
 const VRBA_MIN_COLONY_MM = 0.5;
@@ -3660,13 +2967,19 @@ function agarPxPerMm(canvas){ return Math.min(canvas.width, canvas.height) / AGA
 function applyAgarTypeRules(record, colonies){
     if(record.type !== 'VRBA') return colonies;
     const pxPerMm = agarPxPerMm(record.canvas);
-    return colonies.filter(c => c.areaPx == null || (2*Math.sqrt(c.areaPx/Math.PI))/pxPerMm >= VRBA_MIN_COLONY_MM);
+    // AI 박스는 widthPx/heightPx를 가진다. 손으로 찍은 점은 크기를 모르므로 거르지 않는다.
+    return colonies.filter(c => {
+        if(c.widthPx == null || c.heightPx == null) return true;
+        const diameterPx = 2*Math.sqrt((c.widthPx*c.heightPx)/Math.PI);
+        return diameterPx/pxPerMm >= VRBA_MIN_COLONY_MM;
+    });
 }
 async function createAgarRecordFromCanvas(canvas,filename){
-    const r={id:makeId(),filename,canvas,rotation:0,type:state.selectedDryType||'PCA',lot:'',bacteria:'BC',no:'',dilute:'',colonies:[],autoColonies:[],historyPast:[],historyFuture:[],sensitivity:15,labelHeightRatio:0,minArea:2,colorMode:'both',selected:false,needsReview:{},rawHandwriting:'',rawPrinted:''};
-    // Agar는 단일 CFU이므로 내부 색상 분류 없이 전체 검출 결과를 합산
-    const colonies=detectColonies(canvas,{sensitivity:r.sensitivity,labelHeightRatio:0,minArea:r.minArea,colorMode:'both'});
-    r.colonies=applyAgarTypeRules(r,colonies).map(c=>({...c,color:'red'})); r.autoColonies=JSON.parse(JSON.stringify(r.colonies)); state.records.push(r);
+    const r={id:makeId(),filename,canvas,rotation:0,type:state.selectedDryType||'PCA',lot:'',bacteria:'BC',no:'',dilute:'',colonies:[],autoColonies:[],historyPast:[],historyFuture:[],labelHeightRatio:0,colorMode:'red',aiReason:'',selected:false,needsReview:{},rawHandwriting:'',rawPrinted:''};
+    // Agar는 단일 CFU이므로 색상 구분 없이 AI 검출 결과를 합산
+    const detected=await aiDetectColonies('agar',canvas);
+    r.aiReason=detected.reason;
+    r.colonies=applyAgarTypeRules(r,detected.colonies).map(c=>({...c,color:'red'})); r.autoColonies=JSON.parse(JSON.stringify(r.colonies)); state.records.push(r);
 }
 
 /* ----- Agar 내보내기 ----- */

@@ -6,7 +6,7 @@ Kaggle 노트북 셀에 통째로 붙여넣고 실행하세요. (Accelerator: GP
 사전 준비
 ---------
 1. Kaggle > Datasets > New Dataset 으로 아래 2개 zip 업로드
-   - petricore_agar_AI_training_dataset_merged.zip
+   - petricore_agar_AI_training_dataset.zip
    - petricore_dryMedia_AI_training_dataset.zip
    (하나의 데이터셋에 둘 다 넣어도 되고, 따로 만들어도 됩니다)
 2. 노트북 우측 "+ Add Input" 에서 그 데이터셋을 연결
@@ -87,8 +87,8 @@ for yml in DATA.rglob("dataset.yaml"):
 #   -> 이 모델을 쓰려면 앱의 해당 슬롯 입력 크기도 1280 으로 맞춰야 합니다.
 CONFIGS = [
     # (detector 폴더명,                  base model,    imgsz, epochs, batch)
-    ("dryMedia_film_detector",           "yolo11s.pt",   640,   120,   16),
-    ("dryMedia_colony_detector",         "yolo11s.pt",   640,   150,   16),
+    ("dry_media_plate_detector",         "yolo11s.pt",   640,   120,   16),
+    ("dry_media_colony_detector",        "yolo11s.pt",   640,   150,   16),
     ("agar_plate_plate_detector",        "yolo11s.pt",   640,   100,   16),
     ("agar_plate_colony_detector",       "yolo11s.pt",  1280,   200,    4),
 ]
@@ -154,8 +154,8 @@ print("""
 ---------
 1. 노트북 우측 Output 탭에서 onnx/ 폴더의 4개 파일 다운로드
 2. Petricore v4 앱 > AI 모델 설정 에서 각 슬롯에 연결
-   - dryMedia 필름 분할  <- dryMedia_film_detector.onnx
-   - dryMedia 콜로니     <- dryMedia_colony_detector.onnx
+   - dryMedia 필름 분할  <- dry_media_plate_detector.onnx
+   - dryMedia 콜로니     <- dry_media_colony_detector.onnx
    - agar plate 구역     <- agar_plate_plate_detector.onnx
    - agar 콜로니         <- agar_plate_colony_detector.onnx  (앱 입력 크기 1280 필요)
 """)
