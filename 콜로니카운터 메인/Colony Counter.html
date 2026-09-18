@@ -133,8 +133,6 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .dz-progress-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 3px; transition: width 0.2s ease; }
 .dz-btn { background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); padding: 9px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer; flex-shrink: 0; box-shadow: 0 6px 16px rgba(14,124,123,0.35); }
 .dz-btn:hover { background: var(--accent-dark); }
-
-/* ---------- 학습한 AI 모델 연결 ---------- */
 .ai-model-card { flex:0 0 auto; padding:11px 16px; }
 .ai-model-head { display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; }
 .ai-model-kicker { font:700 9px var(--mono); letter-spacing:.1em; color:var(--accent-dark); }
@@ -267,7 +265,7 @@ tbody tr.active-row { outline: 2px solid var(--accent); outline-offset: -2px; }
 .cfu-block b { font-size: 26px; font-family: var(--mono); }
 .cfu-block.red b { color: #F87171; }
 .cfu-block.blue b { color: #60A5FA; }
-.agar-single-count{display:none}.agar-editor-active .agar-single-count{display:block}.agar-editor-active .cfu-split{display:none}.agar-editor-active #btnColorRow{display:none}.agar-editor-active #colorModeRow{display:none}.agar-editor-active #btnColorRed,.agar-editor-active #btnColorBlue{display:none}
+.agar-single-count {display:none}.agar-editor-active .agar-single-count {display:block}.agar-editor-active .cfu-split {display:none}.agar-editor-active #btnColorRow {display:none}.agar-editor-active #colorModeRow {display:none}.agar-editor-active #btnColorRed, .agar-editor-active #btnColorBlue {display:none}
 .cfu-conc { text-align: right; }
 .cfu-conc span { display: block; font-size: 9.5px; color: #8FA6A3; }
 .cfu-conc b { font-size: 14px; color: #E7F3F2; font-family: var(--mono); }
@@ -338,51 +336,34 @@ tbody tr.active-row { outline: 2px solid var(--accent); outline-offset: -2px; }
 
 
 /* ---------- 앱 탭 / Type 선택 ---------- */
-.app-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
-.app-tab{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.28);color:#eaf7f6;border-radius:999px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s ease}
-.app-tab:hover{background:rgba(255,255,255,.22)}
-.app-tab.active{background:#fff;color:var(--accent-dark);box-shadow:0 6px 18px rgba(0,0,0,.12)}
-.tab-view{display:none!important}.tab-view.active{display:block!important}
-.type-selector-row{margin:16px 20px 0;padding:15px 18px;background:var(--glass-bg);backdrop-filter:blur(22px) saturate(160%);border:1px solid var(--glass-border);border-radius:var(--radius-lg);box-shadow:var(--glass-shadow);position:relative}
-.type-selector-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:11px}.type-selector-head>div{display:flex;flex-direction:column;gap:3px}.type-selector-head b{font-size:13px}.type-selector-eyebrow{font:10px var(--mono);letter-spacing:.1em;color:var(--muted)}.type-selector-help{font-size:10.5px;color:var(--muted)}
-.type-buttons{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.type-card{border:1px solid rgba(14,124,123,.18);background:rgba(255,255,255,.48);border-radius:13px;padding:10px 9px;text-align:left;cursor:pointer;color:var(--ink);transition:.15s ease;display:flex;flex-direction:column;gap:3px}.type-card strong{font:700 17px var(--mono);color:var(--accent-dark)}.type-card span{font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.type-card:hover{transform:translateY(-1px);background:rgba(255,255,255,.7)}.type-card.active{background:rgba(14,124,123,.16);border-color:rgba(14,124,123,.55);box-shadow:inset 0 0 0 1px rgba(14,124,123,.18)}.legacy-stats{display:none}
-.placeholder-panel{margin:18px 20px;padding:70px 30px;text-align:center;min-height:500px;display:flex;flex-direction:column;align-items:center;justify-content:center}.placeholder-icon{font-size:44px;color:var(--accent);margin-bottom:12px}.placeholder-panel h2{font-size:24px;margin:8px 0}.placeholder-panel p{max-width:620px;color:var(--muted);font-size:13px;line-height:1.6}.coming-badge{margin-top:18px;background:rgba(14,124,123,.12);color:var(--accent-dark);border-radius:999px;padding:7px 13px;font-size:11px;font-weight:700}
+.app-tabs {display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}
+.app-tab {background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.28);color:#eaf7f6;border-radius:999px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s ease}
+.app-tab:hover {background:rgba(255,255,255,.22)}
+.app-tab.active {background:#fff;color:var(--accent-dark);box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.tab-view {display:none!important}.tab-view.active {display:block!important}
+.type-selector-row {margin:16px 20px 0;padding:15px 18px;background:var(--glass-bg);backdrop-filter:blur(22px) saturate(160%);border:1px solid var(--glass-border);border-radius:var(--radius-lg);box-shadow:var(--glass-shadow);position:relative}
+.type-selector-head {display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:11px}.type-selector-head>div {display:flex;flex-direction:column;gap:3px}.type-selector-head b {font-size:13px}.type-selector-eyebrow {font:10px var(--mono);letter-spacing:.1em;color:var(--muted)}.type-selector-help {font-size:10.5px;color:var(--muted)}
+.type-buttons {display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.type-card {border:1px solid rgba(14,124,123,.18);background:rgba(255,255,255,.48);border-radius:13px;padding:10px 9px;text-align:left;cursor:pointer;color:var(--ink);transition:.15s ease;display:flex;flex-direction:column;gap:3px}.type-card strong {font:700 17px var(--mono);color:var(--accent-dark)}.type-card span {font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.type-card:hover {transform:translateY(-1px);background:rgba(255,255,255,.7)}.type-card.active {background:rgba(14,124,123,.16);border-color:rgba(14,124,123,.55);box-shadow:inset 0 0 0 1px rgba(14,124,123,.18)}.legacy-stats {display:none}
+.placeholder-panel {margin:18px 20px;padding:70px 30px;text-align:center;min-height:500px;display:flex;flex-direction:column;align-items:center;justify-content:center}.placeholder-icon {font-size:44px;color:var(--accent);margin-bottom:12px}.placeholder-panel h2 {font-size:24px;margin:8px 0}.placeholder-panel p {max-width:620px;color:var(--muted);font-size:13px;line-height:1.6}.coming-badge {margin-top:18px;background:rgba(14,124,123,.12);color:var(--accent-dark);border-radius:999px;padding:7px 13px;font-size:11px;font-weight:700}
 
 /* ---------- Agar 데이터 탭 ---------- */
-#agarTypeBar{margin:10px 0 0;padding:clamp(9px,1.2vh,15px) clamp(12px,1.4vw,18px)}
-#agarTypeBar .type-buttons{grid-template-columns:repeat(6,1fr)}
-.agar-type-card{border:1px solid rgba(14,124,123,.18);background:rgba(255,255,255,.48);border-radius:13px;padding:10px 9px;text-align:left;cursor:pointer;color:var(--ink);transition:.15s ease;display:flex;flex-direction:column;gap:3px}.agar-type-card strong{font:700 17px var(--mono);color:var(--accent-dark)}.agar-type-card span{font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.agar-type-card:hover{transform:translateY(-1px);background:rgba(255,255,255,.7)}.agar-type-card.active{background:rgba(14,124,123,.16);border-color:rgba(14,124,123,.55);box-shadow:inset 0 0 0 1px rgba(14,124,123,.18)}
-.agar-main-split{height:100%;min-height:0;padding:10px 0 0;gap:clamp(10px,1.1vw,18px);display:grid;grid-template-columns:minmax(0,.93fr) minmax(0,1fr)}
-.agar-left-col{min-width:0;min-height:0;display:flex;flex-direction:column;gap:10px}
-.agar-table-panel{flex:1 1 auto;min-height:0;padding:10px 12px 8px;display:flex;flex-direction:column}
-.agar-table-responsive{flex:1 1 auto;min-height:0;overflow:auto}
-.agar-viewer-panel{min-height:0;height:100%;display:flex;flex-direction:column}
-.agar-viewer-canvas{flex:1;background:#101B20;border-radius:0 0 var(--radius-lg) var(--radius-lg);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:0}
-.agar-viewer-canvas canvas{max-width:100%;max-height:100%;border-radius:4px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
-.agar-viewer-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#7C9198;font-size:12px;background:#101B20;text-align:center;padding:0 20px}
-.cfu-single-mini{font-size:11px;font-family:var(--mono);border-radius:999px;padding:4px 9px;background:rgba(14,124,123,.12);color:var(--accent-dark)}
-.cfu-single-mini b{font-weight:700}
-.learning-data-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:2px}
-.learning-data-tab{border:1px solid rgba(20,35,42,.1);background:rgba(255,255,255,.5);color:var(--ink);border-radius:9px;padding:9px 6px;font-size:11px;font-weight:700;cursor:pointer}
-.learning-data-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
-.learning-data-tab small{display:block;font-size:8.5px;font-weight:500;margin-top:2px;opacity:.8}
-.learning-circle-info{display:none;font-size:10px;color:var(--muted);background:rgba(14,124,123,.07);border-radius:8px;padding:7px 8px}
-.learning-circle-info.active{display:block}
-@media(max-width:1100px){.type-buttons,#agarTypeBar .type-buttons{grid-template-columns:repeat(3,1fr)}.agar-main-split{grid-template-columns:1fr}.agar-left-col{order:2}.agar-viewer-panel{order:1;min-height:0}}
+#agarTypeBar {margin:10px 0 0;padding:clamp(9px,1.2vh,15px) clamp(12px,1.4vw,18px)}
+#agarTypeBar .type-buttons {grid-template-columns:repeat(6,1fr)}
+.agar-type-card {border:1px solid rgba(14,124,123,.18);background:rgba(255,255,255,.48);border-radius:13px;padding:10px 9px;text-align:left;cursor:pointer;color:var(--ink);transition:.15s ease;display:flex;flex-direction:column;gap:3px}.agar-type-card strong {font:700 17px var(--mono);color:var(--accent-dark)}.agar-type-card span {font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.agar-type-card:hover {transform:translateY(-1px);background:rgba(255,255,255,.7)}.agar-type-card.active {background:rgba(14,124,123,.16);border-color:rgba(14,124,123,.55);box-shadow:inset 0 0 0 1px rgba(14,124,123,.18)}
+.agar-main-split {height:100%;min-height:0;padding:10px 0 0;gap:clamp(10px,1.1vw,18px);display:grid;grid-template-columns:minmax(0,.93fr) minmax(0,1fr)}
+.agar-left-col {min-width:0;min-height:0;display:flex;flex-direction:column;gap:10px}
+.agar-table-panel {flex:1 1 auto;min-height:0;padding:10px 12px 8px;display:flex;flex-direction:column}
+.agar-table-responsive {flex:1 1 auto;min-height:0;overflow:auto}
+.agar-viewer-panel {min-height:0;height:100%;display:flex;flex-direction:column}
+.agar-viewer-canvas {flex:1;background:#101B20;border-radius:0 0 var(--radius-lg) var(--radius-lg);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:0}
+.agar-viewer-canvas canvas {max-width:100%;max-height:100%;border-radius:4px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.agar-viewer-empty {position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#7C9198;font-size:12px;background:#101B20;text-align:center;padding:0 20px}
+.cfu-single-mini {font-size:11px;font-family:var(--mono);border-radius:999px;padding:4px 9px;background:rgba(14,124,123,.12);color:var(--accent-dark)}
+.cfu-single-mini b {font-weight:700}
+@media(max-width:1100px){.type-buttons, #agarTypeBar .type-buttons {grid-template-columns:repeat(3,1fr)}.agar-main-split {grid-template-columns:1fr}.agar-left-col {order:2}.agar-viewer-panel {order:1;min-height:0}}.memo-optional {font-weight:400}
 
-/* ---------- 학습 탭 ---------- */
-.learning-layout{display:grid;grid-template-columns:350px 1fr;gap:18px;padding:18px 20px 28px}.learning-sidebar{padding:18px;display:flex;flex-direction:column;gap:15px}.learning-title h2{font-size:19px;margin:5px 0 7px}.learning-title p{font-size:11.5px;color:var(--muted);line-height:1.55}.learning-section{display:flex;flex-direction:column;gap:7px}.learning-section>label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em}.learning-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.learning-type,.learning-mode,.learning-color{border:1px solid rgba(20,35,42,.1);background:rgba(255,255,255,.52);color:var(--ink);border-radius:9px;padding:8px 5px;font-size:11px;font-weight:700;cursor:pointer}.learning-type.active,.learning-mode.active,.learning-color.active{background:var(--accent);color:#fff;border-color:var(--accent)}.learning-mode-row{display:flex;gap:6px}.learning-mode{flex:1}.learning-upload,.learning-primary,.learning-export,.learning-secondary{border:none;border-radius:9px;padding:9px 10px;font-size:11.5px;font-weight:700;cursor:pointer}.learning-upload{background:rgba(14,124,123,.14);color:var(--accent-dark);border:1px dashed rgba(14,124,123,.4)}.learning-file-name{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.memo-optional{font-weight:400}.learning-note{width:100%;min-height:68px;resize:vertical;border:1px solid rgba(20,35,42,.1);background:rgba(255,255,255,.5);color:var(--ink);border-radius:9px;padding:8px;font:11px/1.45 var(--sans);outline:none}.learning-note:focus{border-color:var(--accent)}
-.learning-import-export{border-top:1px solid rgba(20,35,42,.08);padding-top:9px}
-.learning-export-options{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center}
-.learning-size-label{font-size:10px;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:5px;background:rgba(255,255,255,.42);padding:6px 8px;border-radius:8px}
-.learning-size-label input{width:58px;border:1px solid rgba(20,35,42,.12);border-radius:6px;padding:4px 5px;background:#fff;color:var(--ink);font:10px var(--mono)}
-.learning-export-help{font-size:9px;line-height:1.35;color:var(--muted);margin-top:2px}
-@media(max-width:820px){.learning-export-options{grid-template-columns:1fr 1fr}.learning-export-help{display:none}}
-.learning-actions{display:flex;flex-direction:column;gap:7px;border-top:1px solid rgba(20,35,42,.08);padding-top:14px}.learning-secondary{background:rgba(20,35,42,.07);color:var(--ink)}.learning-primary{background:#059669;color:#fff}.learning-export{background:#2563eb;color:#fff}.learning-export:disabled{opacity:.6;cursor:default}.learning-counts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.learning-counts div{background:rgba(255,255,255,.42);border-radius:9px;padding:8px;text-align:center}.learning-counts span{display:block;font-size:9px;color:var(--muted)}.learning-counts b{font:700 17px var(--mono);color:var(--accent-dark)}
-.learning-export-progress{display:none;flex-direction:column;gap:4px}.learning-export-progress.active{display:flex}.learning-export-progress-track{height:6px;border-radius:999px;background:rgba(20,35,42,.08);overflow:hidden}.learning-export-progress-bar{height:100%;width:0%;background:var(--accent);transition:width .15s ease}.learning-export-progress-text{font:10px var(--mono);color:var(--muted);text-align:right}
-.learning-workspace{min-height:650px;display:flex;flex-direction:column;overflow:hidden}.learning-work-header{padding:15px 18px;border-bottom:1px solid rgba(20,35,42,.08);display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.learning-work-header b{display:block;font-size:13px}.learning-work-header span:not(.learning-status){display:block;color:var(--muted);font-size:10.5px;margin-top:3px;line-height:1.45}.learning-status{font:10px var(--mono);background:rgba(14,124,123,.1);color:var(--accent-dark);border-radius:999px;padding:6px 9px;white-space:nowrap}.learning-canvas-wrap{position:relative;flex:1;min-height:500px;background:#101b20;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:12px}.learning-canvas-wrap canvas{display:block;max-width:100%;max-height:100%;box-shadow:0 10px 35px rgba(0,0,0,.35);cursor:crosshair}.learning-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#7c9198;font-size:12px}.learning-legend{padding:9px 14px;display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--muted);border-top:1px solid rgba(20,35,42,.08)}
-@media(max-width:1100px){.type-buttons{grid-template-columns:repeat(3,1fr)}.learning-layout{grid-template-columns:1fr}.learning-sidebar{order:2}.learning-workspace{order:1}.learning-workspace{min-height:550px}}
-@media(max-width:650px){.app-tabs{width:100%;margin-left:0}.app-tab{flex:1}.type-selector-head{align-items:flex-start;flex-direction:column}.type-buttons{grid-template-columns:repeat(2,1fr)}.type-selector-help{display:none}.learning-layout{padding:12px}.learning-canvas-wrap{min-height:420px}}
+@media(max-width:1100px){.type-buttons {grid-template-columns:repeat(3,1fr)}}
+@media(max-width:650px){.app-tabs {width:100%;margin-left:0}.app-tab {flex:1}.type-selector-head {align-items:flex-start;flex-direction:column}.type-buttons {grid-template-columns:repeat(2,1fr)}.type-selector-help {display:none}}
 
 
 /* =========================================================
@@ -436,14 +417,12 @@ body {
 .type-selector-head b { font-size:clamp(11px, .75vw, 13px); }
 .type-selector-help { font-size:clamp(9px, .62vw, 10.5px); }
 .type-buttons { gap:clamp(5px, .55vw, 9px); }
-.type-card,.agar-type-card { padding:clamp(7px, .85vh, 10px) clamp(7px, .65vw, 9px); }
-.type-card strong,.agar-type-card strong { font-size:clamp(14px, 1vw, 17px); }
-.type-card span,.agar-type-card span { font-size:clamp(8px, .58vw, 9.5px); }
+.type-card, .agar-type-card { padding:clamp(7px, .85vh, 10px) clamp(7px, .65vw, 9px); }
+.type-card strong, .agar-type-card strong { font-size:clamp(14px, 1vw, 17px); }
+.type-card span, .agar-type-card span { font-size:clamp(8px, .58vw, 9.5px); }
 
 /* 탭 콘텐츠가 남은 화면을 정확히 사용 */
-#dryMediaView.tab-view.active,
-#agarView.tab-view.active,
-#learningView.tab-view.active {
+#dryMediaView.tab-view.active, #agarView.tab-view.active {
     flex:1 1 auto;
     min-height:0;
     height:auto;
@@ -486,46 +465,15 @@ body {
     padding:30px;
 }
 
-/* 학습 탭 */
-#learningView .learning-layout {
-    height:100%;
-    min-height:0;
-    padding:10px 0 0;
-    grid-template-columns:minmax(260px, 350px) minmax(0, 1fr);
-    gap:clamp(10px, 1.1vw, 18px);
-}
-.learning-sidebar {
-    min-height:0;
-    overflow:hidden;
-    padding:clamp(10px, 1.1vw, 18px);
-    gap:clamp(8px, 1.1vh, 15px);
-}
-.learning-title h2 { font-size:clamp(15px, 1.1vw, 19px); }
-.learning-title p { font-size:clamp(9px, .65vw, 11.5px); line-height:1.4; }
-.learning-section { gap:5px; }
-.learning-section>label { font-size:clamp(8px, .58vw, 10px); }
-.learning-type,.learning-mode,.learning-color { padding:clamp(6px, .8vh, 8px) 5px; font-size:clamp(9px, .62vw, 11px); }
-.learning-note { min-height:clamp(48px, 7vh, 68px); }
-.learning-actions { padding-top:10px; gap:5px; }
-.learning-upload,.learning-primary,.learning-export,.learning-secondary { padding:clamp(7px, .8vh, 9px) 9px; font-size:clamp(9px, .65vw, 11.5px); }
-.learning-counts div { padding:6px; }
-.learning-counts b { font-size:clamp(14px, 1.1vw, 17px); }
-.learning-workspace { min-height:0; height:100%; }
-.learning-work-header { padding:10px 14px; }
-.learning-canvas-wrap { min-height:0; padding:8px; }
-.learning-legend { padding:7px 10px; }
-
 /* 가로가 좁은 PC에서도 페이지 스크롤 없이 한 화면에 유지 */
 @media (max-width: 1100px) {
     /* 좁아지면 한 줄로 쌓는다. 쌓인 내용은 잘리지 않도록 탭 안에서 스크롤. */
     #dryMediaView .main-split { grid-template-columns:minmax(0, 1fr); height:auto; overflow:visible; }
     #agarView .agar-main-split { height:auto; overflow:visible; }
-    #dryMediaView.tab-view.active,
-    #agarView.tab-view.active { overflow:auto; }
+    #dryMediaView.tab-view.active, #agarView.tab-view.active { overflow:auto; }
     #dryMediaView .left-col, #agarView .agar-left-col { overflow:visible; }
     .table-panel, .agar-table-panel { min-height:300px; }
     .viewer-panel, .agar-viewer-panel { min-height:340px; height:auto; }
-    #learningView .learning-layout { grid-template-columns:minmax(230px, 30%) minmax(0, 1fr); }
     .type-buttons { grid-template-columns:repeat(6, minmax(0, 1fr)); }
 }
 @media (max-width: 820px) {
@@ -538,9 +486,6 @@ body {
     .type-selector-head { margin-bottom:6px; }
     .type-selector-help { display:none; }
     #dryMediaView .main-split { padding-top:7px; gap:7px; }
-    #learningView .learning-layout { padding-top:7px; gap:7px; grid-template-columns:minmax(190px, 27%) minmax(0,1fr); }
-    .learning-sidebar { padding:9px; gap:7px; }
-    .learning-title p { display:none; }
 }
 
 /* 브라우저 높이가 짧을 때 더 촘촘하게 */
@@ -548,17 +493,17 @@ body {
     body { padding-top:6px; padding-bottom:7px; }
     .app-header { flex-basis:68px; padding-top:7px; padding-bottom:7px; }
     #dryMediaTypeBar { margin-top:7px; padding-top:7px; padding-bottom:7px; }
-    #dryMediaView .main-split, #learningView .learning-layout { padding-top:7px; }
-    .learning-sidebar { gap:7px; }
-    .learning-title h2 { margin:2px 0 4px; }
-    .learning-note { min-height:44px; }
-    .learning-actions { padding-top:7px; }
-    .learning-counts div { padding:4px; }
+    #dryMediaView .main-split { padding-top:7px; }
 }
 
 /* 브라우저 자체 스크롤바가 생기지 않도록 탭 내부도 높이를 제한 */
-body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learning-workspace { overflow:hidden; }
-.table-responsive, .viewer-canvas, .learning-canvas-wrap { overflow:auto; }
+body, .tab-view, .main-split, .left-col, .viewer-panel { overflow:hidden; }
+.table-responsive, .viewer-canvas { overflow:auto; }
+
+/* ---------- 연결 탭 ---------- */
+#connectView.tab-view.active { flex:1 1 auto; min-height:0; overflow:auto; }
+.connect-layout { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:clamp(10px, 1.1vw, 18px); padding:10px 0 0; align-items:start; }
+@media (max-width: 1100px) { .connect-layout { grid-template-columns:minmax(0, 1fr); } }
 </style>
 </head>
 <body>
@@ -571,7 +516,7 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
         <nav class="app-tabs" aria-label="Petricore 메뉴">
             <button class="app-tab active" data-tab="dryMedia">Dry media</button>
             <button class="app-tab" data-tab="agar">Agar</button>
-            <button class="app-tab" data-tab="learning">학습</button>
+            <button class="app-tab" data-tab="connect">연결</button>
         </nav>
     </header>
 
@@ -600,41 +545,12 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
     <main class="main-split">
         <!-- 좌측: 위(업로드) / 아래(테이블) -->
         <div class="left-col">
-            <div class="panel ai-model-card">
-                <div class="ai-model-head">
-                    <span class="ai-model-kicker">TRAINED AI MODEL</span>
-                    <b>Dry media 학습 모델 연결</b>
-                    <span class="ai-model-provider" id="aiProvider-dryMedia">미연결</span>
-                </div>
-                <div class="ai-model-slots">
-                    <div class="ai-model-slot">
-                        <span class="ai-model-slot-name">① 필름 구역 검출</span>
-                        <div class="ai-model-slot-row">
-                            <label for="aiModelInput-dryMedia-film">＋ ONNX 불러오기</label>
-                            <input type="file" id="aiModelInput-dryMedia-film" accept=".onnx,application/octet-stream">
-                            <button type="button" class="ai-model-forget" id="aiModelForget-dryMedia-film" disabled>삭제</button>
-                        </div>
-                        <div class="ai-model-status" id="aiModelStatus-dryMedia-film">연결된 모델 없음</div>
-                    </div>
-                    <div class="ai-model-slot">
-                        <span class="ai-model-slot-name">② 콜로니 검출 (AC·EC·CC)</span>
-                        <div class="ai-model-slot-row">
-                            <label for="aiModelInput-dryMedia-colony">＋ ONNX 불러오기</label>
-                            <input type="file" id="aiModelInput-dryMedia-colony" accept=".onnx,application/octet-stream">
-                            <button type="button" class="ai-model-forget" id="aiModelForget-dryMedia-colony" disabled>삭제</button>
-                        </div>
-                        <div class="ai-model-status" id="aiModelStatus-dryMedia-colony">연결된 모델 없음</div>
-                    </div>
-                </div>
-                <div class="ai-model-note">분할과 검출은 <b>오직 이 모델로만</b> 실행됩니다. 모델을 연결하지 않으면 사진이 분할·검출 없이 원본 그대로 등록됩니다. EB·YM은 학습 데이터가 없어 항상 0입니다.</div>
-            </div>
-
             <div class="panel dropzone" id="dropZone">
                 <div class="dz-left">
                     <div class="dz-icon">⇪</div>
                     <div class="dz-text">
                         <b>사진 · PDF를 드래그하거나 놓으세요</b>
-                        <span id="uploadStatus">위에서 AI 모델을 연결하면 필름 분할과 콜로니 검출이 실행됩니다</span>
+                        <span id="uploadStatus">연결 탭에서 AI 모델을 연결하면 필름 분할과 콜로니 검출이 실행됩니다</span>
                         <div class="dz-progress-track" id="uploadProgressTrack">
                             <div class="dz-progress-fill" id="uploadProgressFill"></div>
                         </div>
@@ -732,7 +648,50 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
     <section class="tab-view" id="agarView">
         <main class="agar-main-split">
             <div class="agar-left-col">
-                <div class="panel ai-model-card">
+                <div class="panel dropzone" id="agarDropZone"><div class="dz-left"><div class="dz-icon">⇪</div><div class="dz-text"><b>Agar plate 사진 · PDF를 드래그하거나 놓으세요</b><span id="agarUploadStatus">연결 탭에서 AI 모델을 연결하면 plate 분할과 콜로니 검출이 실행됩니다</span><div class="dz-progress-track" id="agarUploadProgressTrack"><div class="dz-progress-fill" id="agarUploadProgressFill"></div></div></div></div><button class="dz-btn" id="btnAgarSelectFile">+ 파일 추가</button><input type="file" id="agarFileInput" multiple accept="image/*,application/pdf" hidden></div>
+                <div class="panel agar-table-panel">
+                    <div class="table-toolbar"><input type="text" id="agarSearchInput" class="search-box" placeholder="검색 (예: Lot No, Bacteria)..."><select id="agarFilterType" class="type-filter"><option value="">모든 Type</option><option value="PCA">PCA</option><option value="TSA">TSA</option><option value="SDA">SDA</option><option value="TBXA">TBXA</option><option value="VRBA">VRBA</option><option value="other">OTHER</option></select><span class="sort-badge">Sort: Descending (DESC)</span></div>
+                    <div class="bulk-actions"><span id="agarSelectionHint" class="bulk-hint">선택된 항목 없음</span><button id="btnAgarExportExcel" class="btn-excel" disabled>Excel 저장</button><button id="btnAgarExportZip" class="btn-zip" disabled>이미지 일괄 저장(ZIP)</button><button id="btnAgarDeleteSelected" class="btn-delete" disabled>삭제</button></div>
+                    <div class="agar-table-responsive"><table class="data-table" id="agarDataTable"><thead><tr><th><input type="checkbox" id="agarSelectAllCheckbox"></th><th>Type</th><th>Lot No</th><th>Bacteria</th><th>No</th><th>Dilute</th><th>CFU</th><th></th></tr></thead><tbody id="agarTableBody"><tr><td colspan="8" class="empty-message">등록된 Agar 데이터가 없습니다. 위에서 파일을 업로드해주세요.</td></tr></tbody></table></div>
+                    <div class="pagination-bar"><span id="agarPaginationInfo" class="pagination-info">0건</span><div class="pagination-controls"><button id="agarBtnPrevPage" class="page-btn">← 이전</button><span id="agarPageIndicator" class="page-indicator">1 / 1</span><button id="agarBtnNextPage" class="page-btn">다음 →</button></div></div>
+                </div>
+            </div>
+            <div class="panel agar-viewer-panel"><div class="viewer-header"><div><div class="vh-title" id="agarViewerTitle"><span class="dot"></span>선택된 데이터 없음</div><div class="vh-sub">표에서 "보기"를 누르면 Agar plate와 계수 결과를 확인할 수 있습니다 · 편집은 "수정"</div></div><div class="viewer-controls"><div class="cfu-single-mini">CFU <b id="agarViewerCfu">0</b></div><div class="zoom-pill">🔍 100%</div></div></div><div class="agar-viewer-canvas" id="agarViewerCanvasWrapper"><canvas id="agarViewerCanvas"></canvas><div class="scroll-hint">↕ 마우스 휠로 확대 · 축소</div><div class="agar-viewer-empty" id="agarViewerEmpty">표에서 "보기"를 눌러 Agar plate를 확인하세요</div></div></div>
+        </main>
+    </section>
+
+    <!-- 연결 탭 -->
+    <section class="tab-view" id="connectView">
+        <div class="connect-layout">
+            <div class="panel ai-model-card">
+                <div class="ai-model-head">
+                    <span class="ai-model-kicker">TRAINED AI MODEL</span>
+                    <b>Dry media 학습 모델 연결</b>
+                    <span class="ai-model-provider" id="aiProvider-dryMedia">미연결</span>
+                </div>
+                <div class="ai-model-slots">
+                    <div class="ai-model-slot">
+                        <span class="ai-model-slot-name">① 필름 구역 검출</span>
+                        <div class="ai-model-slot-row">
+                            <label for="aiModelInput-dryMedia-film">＋ ONNX 불러오기</label>
+                            <input type="file" id="aiModelInput-dryMedia-film" accept=".onnx,application/octet-stream">
+                            <button type="button" class="ai-model-forget" id="aiModelForget-dryMedia-film" disabled>삭제</button>
+                        </div>
+                        <div class="ai-model-status" id="aiModelStatus-dryMedia-film">연결된 모델 없음</div>
+                    </div>
+                    <div class="ai-model-slot">
+                        <span class="ai-model-slot-name">② 콜로니 검출 (AC·EC·CC)</span>
+                        <div class="ai-model-slot-row">
+                            <label for="aiModelInput-dryMedia-colony">＋ ONNX 불러오기</label>
+                            <input type="file" id="aiModelInput-dryMedia-colony" accept=".onnx,application/octet-stream">
+                            <button type="button" class="ai-model-forget" id="aiModelForget-dryMedia-colony" disabled>삭제</button>
+                        </div>
+                        <div class="ai-model-status" id="aiModelStatus-dryMedia-colony">연결된 모델 없음</div>
+                    </div>
+                </div>
+                <div class="ai-model-note">분할과 검출은 <b>오직 이 모델로만</b> 실행됩니다. 모델을 연결하지 않으면 사진이 분할·검출 없이 원본 그대로 등록됩니다. EB·YM은 학습 데이터가 없어 항상 0입니다.</div>
+            </div>
+            <div class="panel ai-model-card">
                     <div class="ai-model-head">
                         <span class="ai-model-kicker">TRAINED AI MODEL</span>
                         <b>Agar plate 학습 모델 연결</b>
@@ -760,98 +719,6 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                     </div>
                     <div class="ai-model-note">분할과 검출은 <b>오직 이 모델로만</b> 실행됩니다. 모델을 연결하지 않으면 사진이 분할·검출 없이 원본 그대로 등록됩니다. SDA는 학습 데이터가 없어 항상 0입니다.</div>
                 </div>
-
-                <div class="panel dropzone" id="agarDropZone"><div class="dz-left"><div class="dz-icon">⇪</div><div class="dz-text"><b>Agar plate 사진 · PDF를 드래그하거나 놓으세요</b><span id="agarUploadStatus">위에서 AI 모델을 연결하면 plate 분할과 콜로니 검출이 실행됩니다</span><div class="dz-progress-track" id="agarUploadProgressTrack"><div class="dz-progress-fill" id="agarUploadProgressFill"></div></div></div></div><button class="dz-btn" id="btnAgarSelectFile">+ 파일 추가</button><input type="file" id="agarFileInput" multiple accept="image/*,application/pdf" hidden></div>
-                <div class="panel agar-table-panel">
-                    <div class="table-toolbar"><input type="text" id="agarSearchInput" class="search-box" placeholder="검색 (예: Lot No, Bacteria)..."><select id="agarFilterType" class="type-filter"><option value="">모든 Type</option><option value="PCA">PCA</option><option value="TSA">TSA</option><option value="SDA">SDA</option><option value="TBXA">TBXA</option><option value="VRBA">VRBA</option><option value="other">OTHER</option></select><span class="sort-badge">Sort: Descending (DESC)</span></div>
-                    <div class="bulk-actions"><span id="agarSelectionHint" class="bulk-hint">선택된 항목 없음</span><button id="btnAgarExportExcel" class="btn-excel" disabled>Excel 저장</button><button id="btnAgarExportZip" class="btn-zip" disabled>이미지 일괄 저장(ZIP)</button><button id="btnAgarDeleteSelected" class="btn-delete" disabled>삭제</button></div>
-                    <div class="agar-table-responsive"><table class="data-table" id="agarDataTable"><thead><tr><th><input type="checkbox" id="agarSelectAllCheckbox"></th><th>Type</th><th>Lot No</th><th>Bacteria</th><th>No</th><th>Dilute</th><th>CFU</th><th></th></tr></thead><tbody id="agarTableBody"><tr><td colspan="8" class="empty-message">등록된 Agar 데이터가 없습니다. 위에서 파일을 업로드해주세요.</td></tr></tbody></table></div>
-                    <div class="pagination-bar"><span id="agarPaginationInfo" class="pagination-info">0건</span><div class="pagination-controls"><button id="agarBtnPrevPage" class="page-btn">← 이전</button><span id="agarPageIndicator" class="page-indicator">1 / 1</span><button id="agarBtnNextPage" class="page-btn">다음 →</button></div></div>
-                </div>
-            </div>
-            <div class="panel agar-viewer-panel"><div class="viewer-header"><div><div class="vh-title" id="agarViewerTitle"><span class="dot"></span>선택된 데이터 없음</div><div class="vh-sub">표에서 "보기"를 누르면 Agar plate와 계수 결과를 확인할 수 있습니다 · 편집은 "수정"</div></div><div class="viewer-controls"><div class="cfu-single-mini">CFU <b id="agarViewerCfu">0</b></div><div class="zoom-pill">🔍 100%</div></div></div><div class="agar-viewer-canvas" id="agarViewerCanvasWrapper"><canvas id="agarViewerCanvas"></canvas><div class="scroll-hint">↕ 마우스 휠로 확대 · 축소</div><div class="agar-viewer-empty" id="agarViewerEmpty">표에서 "보기"를 눌러 Agar plate를 확인하세요</div></div></div>
-        </main>
-    </section>
-
-    <!-- 학습 탭 -->
-    <section class="tab-view" id="learningView">
-        <div class="learning-layout">
-            <div class="panel learning-sidebar">
-                <div class="learning-title">
-                    <span class="type-selector-eyebrow">TRAINING DATA</span>
-                    <h2 id="learningDataTitle">Dry media 학습 데이터 만들기</h2>
-                    <p id="learningDataDescription">① 필름 분할 범위와 ② 타입별 콜로니 위치를 직접 표시해 AI 학습용 정답 데이터를 수집합니다.</p>
-                </div>
-                <div class="learning-data-tabs"><button class="learning-data-tab active" data-learning-dataset="dryMedia">Dry media<small>필름 학습 데이터</small></button><button class="learning-data-tab" data-learning-dataset="agar">Agar plate<small>원형 Plate 학습 데이터</small></button></div>
-                <div class="learning-section">
-                    <label>학습 타입</label>
-                    <div class="learning-type-grid learning-types-dry"><button class="learning-type active" data-learning-type="AC">AC</button><button class="learning-type" data-learning-type="EC">EC</button><button class="learning-type" data-learning-type="CC">CC</button><button class="learning-type" data-learning-type="EB">EB</button><button class="learning-type" data-learning-type="YM">YM</button><button class="learning-type" data-learning-type="other">OTHER</button></div>
-                    <div class="learning-type-grid learning-types-agar" style="display:none;"><button class="learning-type active" data-learning-type="PCA">PCA</button><button class="learning-type" data-learning-type="TSA">TSA</button><button class="learning-type" data-learning-type="SDA">SDA</button><button class="learning-type" data-learning-type="TBXA">TBXA</button><button class="learning-type" data-learning-type="VRBA">VRBA</button><button class="learning-type" data-learning-type="other">OTHER</button></div>
-                </div>
-                <div class="learning-section">
-                    <label>학습 단계</label>
-                    <div class="learning-mode-row">
-                        <button class="learning-mode active" data-learning-mode="film">1. 구역 지정</button>
-                        <button class="learning-mode" data-learning-mode="colony">2. 콜로니 계수</button>
-                    </div>
-                </div>
-                <div class="learning-section">
-                    <label>파일</label>
-                    <button class="learning-upload" id="btnLearningUpload">+ 학습 이미지 추가</button>
-                    <input type="file" id="learningFileInput" accept="image/*" multiple hidden>
-                    <div class="learning-file-name" id="learningFileName">이미지를 추가하면 여기에서 선택할 수 있습니다.</div>
-                </div>
-                <div class="learning-circle-info" id="learningCircleInfo">Agar plate는 이미지 위에서 <b>드래그하여 원형 Plate 영역</b>을 지정합니다. 시작점은 원의 중심, 끝점은 반지름으로 사용됩니다.</div><div class="learning-section colony-color-section" id="learningColorSection" style="display:none">
-                    <label>콜로니 색상 라벨</label>
-                    <div class="learning-mode-row">
-                        <button class="learning-color active" data-learning-color="red">붉은색</button>
-                        <button class="learning-color" data-learning-color="blue">푸른색</button>
-                    </div>
-                </div>
-                <div class="learning-section">
-                    <label>타입별 계수 기준 메모 <span class="memo-optional">(선택)</span></label>
-                    <textarea id="learningMethodNote" class="learning-note" placeholder="예: 이 Type에서 포함/제외할 콜로니 기준, 크기·경계 조건 등을 직접 기록하세요."></textarea>
-                </div>
-                <div class="learning-section learning-import-export">
-                    <label>AI 학습 데이터 변환</label>
-                    <div class="learning-export-options">
-                        <label class="learning-size-label">콜로니 박스 <input id="learningColonyBoxSize" type="number" min="4" max="100" step="1" value="16"> px</label>
-                        <button class="learning-secondary" id="btnLearningImportZip">기존 ZIP 가져오기</button>
-                        <input type="file" id="learningImportZipInput" accept=".zip,application/zip" hidden>
-                    </div>
-                    <div class="learning-export-help">기존 JSON ZIP을 불러오면 현재 학습 데이터로 합치고, 내보내기 시 YOLO 학습용 train/val/test 구조로 변환합니다.</div>
-                </div>
-                <div class="learning-actions">
-                    <button class="learning-secondary" id="btnLearningClear">표시 지우기</button>
-                    <button class="learning-primary" id="btnLearningSave">학습 데이터 저장</button>
-                    <button class="learning-export" id="btnLearningExport">AI 학습용 ZIP 내보내기</button>
-                    <div class="learning-export-progress" id="learningExportProgress">
-                        <div class="learning-export-progress-track"><div class="learning-export-progress-bar" id="learningExportProgressBar"></div></div>
-                        <span class="learning-export-progress-text" id="learningExportProgressText">저장 중... 0%</span>
-                    </div>
-                </div>
-                <div class="learning-counts">
-                    <div><span>수집 샘플</span><b id="learningSampleCount">0</b></div>
-                    <div><span>필름 영역</span><b id="learningFilmCount">0</b></div>
-                    <div><span>콜로니 라벨</span><b id="learningColonyCount">0</b></div>
-                </div>
-            </div>
-            <div class="panel learning-workspace">
-                <div class="learning-work-header">
-                    <div>
-                        <b id="learningCanvasTitle">필름 구역 지정</b>
-                        <span id="learningCanvasHint">이미지 위에서 드래그하여 필름 하나의 영역을 표시하세요. 여러 필름이면 반복해서 표시할 수 있습니다.</span>
-                    </div>
-                    <span class="learning-status" id="learningStatus">이미지를 기다리는 중</span>
-                </div>
-                <div class="learning-canvas-wrap" id="learningCanvasWrap">
-                    <canvas id="learningCanvas"></canvas>
-                    <div class="learning-empty" id="learningEmpty">학습 이미지를 업로드해주세요.</div>
-                </div>
-                <div class="learning-legend" id="learningLegend">
-                    <span id="learningLegendArea">🟦 필름 영역</span><span>● 콜로니 위치</span><span id="learningLegendAction">드래그: 영역 / 클릭: 콜로니</span>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -883,7 +750,7 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                             <button id="btnToggleNumbers" class="ec-btn toggle">번호</button>
                             <button id="btnToggleDensity" class="ec-btn toggle">밀도</button>
                             <button id="btnToggleGrid" class="ec-btn toggle">격자</button>
-                            <button id="btnToggleSharpen" class="ec-btn toggle" title="보기 전용입니다. AI 검출·저장·학습 데이터에는 항상 원본이 쓰입니다.">선명화</button>
+                            <button id="btnToggleSharpen" class="ec-btn toggle" title="보기 전용입니다. AI 검출과 저장에는 항상 원본이 쓰입니다.">선명화</button>
                             <label class="ec-grid-mm" title="Agar plate 90mm 기준 격자 간격">
                                 <input type="number" id="emGridMm" min="0.1" max="90" step="0.1" value="1.0"> mm
                             </label>
@@ -1386,7 +1253,7 @@ class SimpleViewer {
 }
 
 // 보기 전용 선명화(언샤프 마스크). 원본 캔버스는 건드리지 않으므로
-// AI 검출·OCR·저장·학습 데이터에는 항상 원본이 쓰인다.
+// AI 검출·OCR·저장에는 항상 원본이 쓰인다.
 const sharpenedCache = new WeakMap();
 function sharpenedCanvas(src) {
     let out = sharpenedCache.get(src);
@@ -2054,14 +1921,8 @@ document.addEventListener('DOMContentLoaded', () => {
     state.editor.onZoomChange = (pct) => { document.getElementById('emZoomVal').textContent = pct + '%'; };
 
     initEventListeners();
-    initTabsAndLearning();
+    initTabs();
     refreshTable();
-
-    let resizeTimer = null;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => { resizeLearningCanvas(); redrawLearningCanvas(); }, 150);
-    });
 });
 
 function refreshTable() {
@@ -2101,196 +1962,19 @@ function updateStatsRow() {
 
 
 // ---------------------------------------------------------------
-// 상단 탭 / Dry media Type / 학습 데이터 수집
+// 상단 탭 / Dry media Type
 // ---------------------------------------------------------------
-const learningState = {
-    type: 'AC', mode: 'film', color: 'red',
-    image: null, imageData: '', filename: '', scale: 1, offsetX: 0, offsetY: 0,
-    filmBoxes: [], colonies: [], samples: []
-};
-
-function initTabsAndLearning() {
+function initTabs() {
     document.querySelectorAll('.app-tab').forEach(btn => {
         btn.addEventListener('click', () => switchAppTab(btn.dataset.tab));
     });
 
     document.querySelectorAll('.type-card').forEach(btn => {
         btn.addEventListener('click', () => {
-            const type = btn.dataset.dryType;
-            state.selectedDryType = type;
+            state.selectedDryType = btn.dataset.dryType;
             document.querySelectorAll('.type-card').forEach(b => b.classList.toggle('active', b === btn));
         });
     });
-
-    document.querySelectorAll('.learning-type').forEach(btn => {
-        btn.addEventListener('click', () => {
-            learningState.type = btn.dataset.learningType;
-            document.querySelectorAll('.learning-type').forEach(b => b.classList.toggle('active', b === btn));
-            updateLearningStatus();
-        });
-    });
-    document.querySelectorAll('.learning-mode').forEach(btn => {
-        btn.addEventListener('click', () => {
-            learningState.mode = btn.dataset.learningMode;
-            document.querySelectorAll('.learning-mode').forEach(b => b.classList.toggle('active', b === btn));
-            document.getElementById('learningColorSection').style.display = (learningState.mode === 'colony' && learningState.dataset === 'dryMedia') ? '' : 'none';
-            document.getElementById('learningCanvasTitle').textContent = learningState.mode === 'film' ? '필름 분할 범위 표시' : '콜로니 계수 위치 표시';
-            document.getElementById('learningCanvasHint').textContent = learningState.mode === 'film'
-                ? '이미지 위에서 드래그하여 필름 하나의 영역을 표시하세요. 여러 필름이면 반복해서 표시할 수 있습니다.'
-                : '타입별로 실제 콜로니의 중심을 클릭해 표시하세요. 선택한 색상 라벨로 저장됩니다.';
-            updateLearningStatus();
-            redrawLearningCanvas();
-        });
-    });
-    document.querySelectorAll('.learning-color').forEach(btn => {
-        btn.addEventListener('click', () => {
-            learningState.color = btn.dataset.learningColor;
-            document.querySelectorAll('.learning-color').forEach(b => b.classList.toggle('active', b === btn));
-        });
-    });
-
-    const input = document.getElementById('learningFileInput');
-    document.getElementById('btnLearningUpload').addEventListener('click', () => input.click());
-    input.addEventListener('change', async e => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        try { await loadLearningImage(file); } catch (err) { alert('학습 이미지 처리 중 오류가 발생했습니다: ' + err.message); }
-        input.value = '';
-    });
-    document.getElementById('btnLearningClear').addEventListener('click', () => {
-        learningState.filmBoxes = []; learningState.plateCircles = []; learningState.colonies = []; redrawLearningCanvas(); updateLearningCounts();
-    });
-    /* save/export handlers are replaced by the dual-dataset initializer below */
-
-    const c = document.getElementById('learningCanvas');
-    let drag = null;
-    c.addEventListener('mousedown', e => {
-        if (c.dataset.dualReady) return;
-        if (!learningState.image) return;
-        const pt = learningCanvasPoint(e);
-        if (learningState.mode === 'film') drag = { x: pt.x, y: pt.y, x2: pt.x, y2: pt.y };
-        else {
-            learningState.colonies.push({ x: pt.x, y: pt.y, color: learningState.color });
-            redrawLearningCanvas(); updateLearningCounts();
-        }
-    });
-    window.addEventListener('mousemove', e => {
-        if (!drag) return;
-        const pt = learningCanvasPoint(e); drag.x2 = pt.x; drag.y2 = pt.y; redrawLearningCanvas(drag);
-    });
-    window.addEventListener('mouseup', () => {
-        if (!drag) return;
-        const x = Math.min(drag.x, drag.x2), y = Math.min(drag.y, drag.y2);
-        const w = Math.abs(drag.x2 - drag.x), h = Math.abs(drag.y2 - drag.y);
-        if (w > 8 && h > 8) learningState.filmBoxes.push({ x, y, width: w, height: h });
-        drag = null; redrawLearningCanvas(); updateLearningCounts();
-    });
-
-    switchAppTab('dryMedia');
-}
-
-function switchAppTab(tab) {
-    document.querySelectorAll('.app-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-    document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
-    if (tab === 'dryMedia') {
-        document.getElementById('dryMediaTypeBar')?.classList.add('active');
-        document.getElementById('dryMediaView')?.classList.add('active');
-    } else if (tab === 'agar') {
-        document.getElementById('agarView')?.classList.add('active');
-    } else {
-        document.getElementById('learningView')?.classList.add('active');
-        setTimeout(() => { resizeLearningCanvas(); redrawLearningCanvas(); }, 20);
-    }
-}
-
-function loadLearningImage(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = e => {
-            const img = new Image();
-            img.onload = () => {
-                learningState.image = img; learningState.imageData = e.target.result; learningState.filename = file.name;
-                learningState.filmBoxes = []; learningState.colonies = [];
-                document.getElementById('learningFileName').textContent = file.name;
-                document.getElementById('learningEmpty').style.display = 'none';
-                resizeLearningCanvas(); redrawLearningCanvas(); updateLearningCounts(); updateLearningStatus();
-                resolve();
-            };
-            img.onerror = reject; img.src = e.target.result;
-        };
-        reader.onerror = reject; reader.readAsDataURL(file);
-    });
-}
-
-function resizeLearningCanvas() {
-    const wrap = document.getElementById('learningCanvasWrap'), c = document.getElementById('learningCanvas');
-    if (!wrap || !c || !learningState.image) return;
-    const maxW = Math.max(200, wrap.clientWidth - 24), maxH = Math.max(200, wrap.clientHeight - 24);
-    learningState.scale = Math.min(maxW / learningState.image.naturalWidth, maxH / learningState.image.naturalHeight, 1);
-    c.width = Math.round(learningState.image.naturalWidth * learningState.scale);
-    c.height = Math.round(learningState.image.naturalHeight * learningState.scale);
-}
-function learningCanvasPoint(e) {
-    const c = document.getElementById('learningCanvas'), r = c.getBoundingClientRect();
-    return { x: (e.clientX-r.left)/learningState.scale, y: (e.clientY-r.top)/learningState.scale };
-}
-function redrawLearningCanvas(dragRect=null) {
-    const c = document.getElementById('learningCanvas');
-    if (!c || !learningState.image) return;
-    const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
-    ctx.drawImage(learningState.image,0,0,c.width,c.height);
-    ctx.lineWidth = Math.max(2, 2/learningState.scale);
-    ctx.font = `${Math.max(12,14/learningState.scale)}px sans-serif`;
-    learningState.filmBoxes.forEach((b,i) => {
-        ctx.strokeStyle='#38bdf8'; ctx.strokeRect(b.x*learningState.scale,b.y*learningState.scale,b.width*learningState.scale,b.height*learningState.scale);
-        ctx.fillStyle='rgba(56,189,248,.16)'; ctx.fillRect(b.x*learningState.scale,b.y*learningState.scale,b.width*learningState.scale,b.height*learningState.scale);
-        ctx.fillStyle='#e0f2fe'; ctx.fillText(`Film ${i+1}`, b.x*learningState.scale+5,b.y*learningState.scale+18);
-    });
-    if (dragRect) { const x=Math.min(dragRect.x,dragRect.x2), y=Math.min(dragRect.y,dragRect.y2), w=Math.abs(dragRect.x2-dragRect.x), h=Math.abs(dragRect.y2-dragRect.y); ctx.strokeStyle='#38bdf8'; ctx.setLineDash([8,6]); ctx.strokeRect(x*learningState.scale,y*learningState.scale,w*learningState.scale,h*learningState.scale); ctx.setLineDash([]); }
-    learningState.colonies.forEach((p,i) => {
-        ctx.beginPath(); ctx.arc(p.x*learningState.scale,p.y*learningState.scale,Math.max(4,5/learningState.scale),0,Math.PI*2);
-        ctx.fillStyle=p.color==='blue'?'#60a5fa':'#f87171'; ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
-        ctx.fillStyle='#fff'; ctx.font='10px sans-serif'; ctx.fillText(String(i+1),p.x*learningState.scale+7,p.y*learningState.scale-7);
-    });
-}
-function updateLearningCounts() {
-    document.getElementById('learningFilmCount').textContent = learningState.filmBoxes.length;
-    document.getElementById('learningColonyCount').textContent = learningState.colonies.length;
-    document.getElementById('learningSampleCount').textContent = learningState.samples.length;
-}
-function updateLearningStatus() {
-    const s=document.getElementById('learningStatus');
-    s.textContent = learningState.image ? `${learningState.type} · ${learningState.mode==='film'?'필름 분할':'콜로니 계수'} 준비` : '이미지를 기다리는 중';
-}
-function saveLearningSample() {
-    if (!learningState.image) return alert('먼저 학습 이미지를 추가해주세요.');
-    if (learningState.mode==='film' && learningState.filmBoxes.length===0) return alert('필름 분할 영역을 하나 이상 표시해주세요.');
-    if (learningState.mode==='colony' && learningState.colonies.length===0) return alert('콜로니 위치를 하나 이상 표시해주세요.');
-    learningState.samples.push({
-        id: `sample-${Date.now()}-${learningState.samples.length+1}`,
-        filename: learningState.filename, imageData: learningState.imageData, type: learningState.type,
-        methodNote: document.getElementById('learningMethodNote').value.trim(),
-        filmBoxes: JSON.parse(JSON.stringify(learningState.filmBoxes)),
-        colonies: JSON.parse(JSON.stringify(learningState.colonies)),
-        savedAt: new Date().toISOString()
-    });
-    updateLearningCounts();
-    document.getElementById('learningStatus').textContent = '학습 데이터 저장 완료';
-}
-async function exportLearningZip() {
-    if (!learningState.samples.length) return alert('저장된 학습 데이터가 없습니다. 먼저 학습 데이터를 저장해주세요.');
-    const zip=new JSZip();
-    const manifest={version:'petricore-drymedia-learning-1', classes:['AC','EC','CC','EB','YM','other'], samples:learningState.samples};
-    zip.file('dataset.json', JSON.stringify(manifest,null,2));
-    const addedImages = new Set();
-    for (const sample of learningState.samples) {
-        if (!sample.imageData || addedImages.has(sample.filename)) continue;
-        const base64 = sample.imageData.split(',')[1];
-        if (base64) { zip.file(`images/${sample.filename}`, base64, {base64:true}); addedImages.add(sample.filename); }
-    }
-    const blob=await zip.generateAsync({type:'blob'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='petricore_drymedia_learning_dataset.zip'; a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 
 function initEventListeners() {
@@ -2795,7 +2479,7 @@ window.addEventListener('beforeunload', () => { terminateOCR(); });
 
 
 /* =========================================================
-   Agar + Dual Learning Dataset extension
+   Agar 탭 (Dry media와 데이터셋 분리)
    ========================================================= */
 const APP_DATASETS = {
     dryMedia: { records: state.records, activeIndex: null, editIndex: null, type: 'AC' },
@@ -2853,9 +2537,8 @@ function switchAppTab(tab){
         document.body.classList.add('agar-active');
         refreshTable();
     }else{
-        el('learningView')?.classList.add('active');
+        el('connectView')?.classList.add('active');
         document.body.classList.remove('agar-active');
-        setTimeout(()=>{ resizeLearningCanvas(); redrawLearningCanvas(); },20);
     }
 }
 
@@ -2991,325 +2674,9 @@ async function exportAgarZip(){
     const blob=await zip.generateAsync({type:'blob'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Petricore_Agar_Images_${Date.now()}.zip`;a.click();URL.revokeObjectURL(a.href);
 }
 
-/* ----- 학습 데이터: Dry media / Agar plate 분리 ----- */
-learningState.dataset='dryMedia';
-learningState.plateCircles=[];
-learningState.samplesByDataset={dryMedia:[],agar:[]};
-function setLearningDataset(dataset){
-    learningState.dataset=dataset; learningState.type=dataset==='agar'?'PCA':'AC'; learningState.mode='film';
-    learningState.filmBoxes=[]; learningState.plateCircles=[]; learningState.colonies=[];
-    document.querySelectorAll('.learning-data-tab').forEach(b=>b.classList.toggle('active',b.dataset.learningDataset===dataset));
-    document.querySelector('.learning-types-dry').style.display=dataset==='dryMedia'?'grid':'none';
-    document.querySelector('.learning-types-agar').style.display=dataset==='agar'?'grid':'none';
-    document.querySelectorAll('.learning-type').forEach(b=>b.classList.toggle('active',b.dataset.learningType===learningState.type));
-    el('learningDataTitle').textContent=dataset==='agar'?'Agar plate 학습 데이터 만들기':'Dry media 학습 데이터 만들기';
-    el('learningDataDescription').textContent=dataset==='agar'?'① 원형 Agar plate 구역을 지정하고 ② 타입별 콜로니 위치를 표시해 AI 학습용 정답 데이터를 수집합니다.':'① 필름 분할 범위와 ② 타입별 콜로니 위치를 표시해 AI 학습용 정답 데이터를 수집합니다.';
-    el('learningCircleInfo').classList.toggle('active',dataset==='agar'&&learningState.mode==='film');
-    updateLearningModeUI(); updateLearningStatus(); redrawLearningCanvas(); updateLearningCounts();
-}
-function updateLearningModeUI(){
-    const agar=learningState.dataset==='agar', film=learningState.mode==='film';
-    el('learningCircleInfo').classList.toggle('active',agar&&film);
-    el('learningCanvasTitle').textContent=film?(agar?'Agar plate 원형 구역 지정':'필름 구역 지정'):'콜로니 계수 위치 표시';
-    el('learningCanvasHint').textContent=film?(agar?'이미지 위에서 중심을 클릭한 뒤 바깥쪽으로 드래그해 원형 Plate 영역을 지정하세요.':'이미지 위에서 드래그하여 필름 하나의 영역을 지정하세요. 여러 필름이면 반복할 수 있습니다.'):'실제 콜로니의 중심을 클릭해 표시하세요.';
-    el('learningLegendArea').textContent=film?(agar?'⭕ Agar plate 영역':'🟦 필름 영역'):'● 콜로니 위치';
-    el('learningLegendAction').textContent=film?'드래그: 구역 지정 / 클릭: 콜로니':'클릭: 콜로니';
-    el('learningColorSection').style.display=(!agar&&!film)?'':'none';
-}
-function updateLearningCounts(){
-    el('learningFilmCount').textContent=learningState.dataset==='agar'?learningState.plateCircles.length:learningState.filmBoxes.length;
-    el('learningColonyCount').textContent=learningState.colonies.length; el('learningSampleCount').textContent=learningState.samplesByDataset[learningState.dataset].length;
-}
-function redrawLearningCanvas(dragShape=null){
-    const c=el('learningCanvas'); if(!c||!learningState.image)return;
-    const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(learningState.image,0,0,c.width,c.height);
-    const sc=learningState.scale; ctx.lineWidth=Math.max(2,2/sc);ctx.font=`${Math.max(12,14/sc)}px sans-serif`;
-    if(learningState.dataset==='agar'){
-        learningState.plateCircles.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x*sc,p.y*sc,p.radius*sc,0,Math.PI*2);ctx.strokeStyle='#38bdf8';ctx.stroke();ctx.fillStyle='rgba(56,189,248,.12)';ctx.fill();ctx.fillStyle='#e0f2fe';ctx.fillText(`Plate ${i+1}`,p.x*sc+5,p.y*sc+18);});
-        if(dragShape){ctx.beginPath();ctx.arc(dragShape.x*sc,dragShape.y*sc,dragShape.radius*sc,0,Math.PI*2);ctx.setLineDash([8,6]);ctx.strokeStyle='#38bdf8';ctx.stroke();ctx.setLineDash([]);}
-    }else{
-        learningState.filmBoxes.forEach((b,i)=>{ctx.strokeStyle='#38bdf8';ctx.strokeRect(b.x*sc,b.y*sc,b.width*sc,b.height*sc);ctx.fillStyle='rgba(56,189,248,.16)';ctx.fillRect(b.x*sc,b.y*sc,b.width*sc,b.height*sc);ctx.fillStyle='#e0f2fe';ctx.fillText(`Film ${i+1}`,b.x*sc+5,b.y*sc+18);});
-        if(dragShape){const x=Math.min(dragShape.x,dragShape.x2),y=Math.min(dragShape.y,dragShape.y2),w=Math.abs(dragShape.x2-dragShape.x),h=Math.abs(dragShape.y2-dragShape.y);ctx.strokeStyle='#38bdf8';ctx.setLineDash([8,6]);ctx.strokeRect(x*sc,y*sc,w*sc,h*sc);ctx.setLineDash([]);}
-    }
-    learningState.colonies.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x*sc,p.y*sc,Math.max(4,5/sc),0,Math.PI*2);ctx.fillStyle='#f87171';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='#fff';ctx.font='10px sans-serif';ctx.fillText(String(i+1),p.x*sc+7,p.y*sc-7);});
-}
-function saveLearningSample(){
-    if(!learningState.image)return alert('먼저 학습 이미지를 추가해주세요.');
-    if(learningState.mode==='film' && learningState.dataset==='dryMedia' && !learningState.filmBoxes.length)return alert('필름 구역을 하나 이상 표시해주세요.');
-    if(learningState.mode==='film' && learningState.dataset==='agar' && !learningState.plateCircles.length)return alert('Agar plate 원형 구역을 하나 이상 표시해주세요.');
-    if(learningState.mode==='colony' && !learningState.colonies.length)return alert('콜로니 위치를 하나 이상 표시해주세요.');
-    learningState.samplesByDataset[learningState.dataset].push({id:`sample-${Date.now()}-${learningState.samplesByDataset[learningState.dataset].length+1}`,filename:learningState.filename,imageData:learningState.imageData,type:learningState.type,mode:learningState.mode,methodNote:el('learningMethodNote').value.trim(),filmBoxes:JSON.parse(JSON.stringify(learningState.filmBoxes)),plateCircles:JSON.parse(JSON.stringify(learningState.plateCircles)),colonies:JSON.parse(JSON.stringify(learningState.colonies)),savedAt:new Date().toISOString()});
-    updateLearningCounts();el('learningStatus').textContent='학습 데이터 저장 완료';
-}
-function sanitizeFileName(name) {
-    return String(name || 'image').replace(/[\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').slice(0, 80);
-}
-function dataUrlToBlob(dataUrl) {
-    const parts = String(dataUrl || '').split(',');
-    if (parts.length < 2) return null;
-    const mime = (parts[0].match(/data:([^;]+);/) || [,'application/octet-stream'])[1];
-    const bytes = atob(parts[1]);
-    const arr = new Uint8Array(bytes.length);
-    for (let i=0;i<bytes.length;i++) arr[i]=bytes.charCodeAt(i);
-    return new Blob([arr], {type:mime});
-}
-function inferImageExt(filename, dataUrl) {
-    const ext = String(filename || '').match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase();
-    if (['jpg','jpeg','png','webp','bmp'].includes(ext)) return ext === 'jpeg' ? 'jpg' : ext;
-    const mime = String(dataUrl || '').slice(5).split(';')[0];
-    return mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
-}
-function normalizedBox(box, width, height) {
-    if (!box || width <= 0 || height <= 0) return null;
-    const x = Math.max(0, Math.min(width, Number(box.x) || 0));
-    const y = Math.max(0, Math.min(height, Number(box.y) || 0));
-    const w = Math.max(0, Math.min(width - x, Number(box.width) || 0));
-    const h = Math.max(0, Math.min(height - y, Number(box.height) || 0));
-    if (w < 1 || h < 1) return null;
-    return `${((x+w/2)/width).toFixed(6)} ${((y+h/2)/height).toFixed(6)} ${(w/width).toFixed(6)} ${(h/height).toFixed(6)}`;
-}
-function colonyToYolo(point, width, height, boxPx) {
-    const size = Math.max(4, Math.min(100, Number(boxPx) || 16));
-    const w = Math.min(size, width), h = Math.min(size, height);
-    const x = Math.max(0, Math.min(width - w, (Number(point.x)||0) - w/2));
-    const y = Math.max(0, Math.min(height - h, (Number(point.y)||0) - h/2));
-    return `${((x+w/2)/width).toFixed(6)} ${((y+h/2)/height).toFixed(6)} ${(w/width).toFixed(6)} ${(h/height).toFixed(6)}`;
-}
-function circleToYolo(circle, width, height) {
-    const r = Math.max(1, Number(circle.radius)||1);
-    return normalizedBox({x:(Number(circle.x)||0)-r,y:(Number(circle.y)||0)-r,width:r*2,height:r*2},width,height);
-}
-async function imageDimensionsFromDataUrl(dataUrl) {
-    return await new Promise((resolve,reject)=>{
-        const img=new Image(); img.onload=()=>resolve({width:img.naturalWidth,height:img.naturalHeight}); img.onerror=reject; img.src=dataUrl;
-    });
-}
-function splitSamples(samples) {
-    // YOLO 학습이 가능한 최소 구조를 우선 보장합니다.
-    // 2개 이상이면 train/val을 반드시 만들고, 10개 이상일 때만 test를 분리합니다.
-    const arr=samples.slice();
-    for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
-    const n=arr.length;
-    if(n===1) return {train:arr,val:[],test:[]};
-    const testCount=n>=10?Math.max(1,Math.floor(n*0.1)):0;
-    const valCount=Math.max(1,Math.floor((n-testCount)*0.2));
-    const trainCount=Math.max(1,n-valCount-testCount);
-    return {
-        train:arr.slice(0,trainCount),
-        val:arr.slice(trainCount,trainCount+valCount),
-        test:arr.slice(trainCount+valCount,trainCount+valCount+testCount)
-    };
-}
-async function addYoloDataset(root, datasetName, samples, classes, mode, boxPx) {
-    const targetSamples=samples.filter(s=> mode==='film'
-        ? (s.mode==='film' && ((datasetName==='agar' && (s.plateCircles||[]).length) || (datasetName==='dryMedia' && (s.filmBoxes||[]).length)))
-        : (s.mode==='colony' && (s.colonies||[]).length));
-    if(!targetSamples.length) return {count:0,labels:0};
-    const groups=splitSamples(targetSamples);
-    let imageCount=0,labelCount=0;
-    for(const [split,group] of Object.entries(groups)){
-        for(const sample of group){
-            if(!sample.imageData) continue;
-            const dims=await imageDimensionsFromDataUrl(sample.imageData);
-            const ext=inferImageExt(sample.filename,sample.imageData);
-            const base=`${sanitizeFileName(String(sample.filename).replace(/\.[^.]+$/,''))}_${sanitizeFileName(sample.id)}`;
-            const imageName=`${base}.${ext}`;
-            const b64=sample.imageData.split(',')[1];
-            if(!b64) continue;
-            root.file(`images/${split}/${imageName}`,b64,{base64:true});
-            const lines=[];
-            if(mode==='film'){
-                if(datasetName==='dryMedia'){
-                    (sample.filmBoxes||[]).forEach(b=>{const line=normalizedBox(b,dims.width,dims.height);if(line)lines.push(`0 ${line}`);});
-                }else{
-                    (sample.plateCircles||[]).forEach(c=>{const line=circleToYolo(c,dims.width,dims.height);if(line)lines.push(`0 ${line}`);});
-                }
-            }else{
-                const cls=Math.max(0,classes.indexOf(sample.type));
-                (sample.colonies||[]).forEach(p=>lines.push(`${cls} ${colonyToYolo(p,dims.width,dims.height,boxPx)}`));
-            }
-            root.file(`labels/${split}/${base}.txt`,lines.join('\n')+(lines.length?'\n':''));
-            imageCount++; labelCount+=lines.length;
-        }
-    }
-    return {count:imageCount,labels:labelCount};
-}
-function datasetYaml(pathPrefix, names, taskDescription) {
-    return `path: .\ntrain: images/train\nval: images/val\ntest: images/test\nnc: ${names.length}\nnames:\n${names.map((n,i)=>`  ${i}: ${n}`).join('\n')}\n\n# Petricore ${taskDescription}\n# YOLO object detection dataset\n`;
-}
-function setLearningExportProgress(percent,label){
-    const box=el('learningExportProgress'),bar=el('learningExportProgressBar'),text=el('learningExportProgressText');
-    if(!box) return;
-    if(percent==null){ box.classList.remove('active'); return; }
-    box.classList.add('active');
-    bar.style.width=`${Math.round(percent)}%`;
-    text.textContent=`${label||'저장 중...'} ${Math.round(percent)}%`;
-}
-async function exportLearningZip(){
-    if(typeof JSZip==='undefined') return alert('ZIP 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.');
-
-    const btn=el('btnLearningExport');
-    if(btn) btn.disabled=true;
-    setLearningExportProgress(0,'준비 중...');
-    try{
-        await exportLearningZipInner();
-    } finally {
-        if(btn) btn.disabled=false;
-        setLearningExportProgress(null);
-    }
-}
-async function exportLearningZipInner(){
-    const datasetName=learningState.dataset;
-    const samples=Array.isArray(learningState.samplesByDataset?.[datasetName]) ? learningState.samplesByDataset[datasetName] : [];
-    if(!samples.length){
-        return alert(`${datasetName==='agar'?'Agar plate':'Dry media'} 학습 데이터가 없습니다. 먼저 구역 지정 또는 콜로니 계수 데이터를 저장해주세요.`);
-    }
-
-    const classes=datasetName==='agar'
-        ? ['PCA','TSA','SDA','TBXA','VRBA','other']
-        : ['AC','EC','CC','EB','YM','other'];
-    const boxPx=Math.max(4,Math.min(100,Number(el('learningColonyBoxSize')?.value)||16));
-    const zip=new JSZip();
-    const rootPrefix=datasetName==='agar' ? 'agar_plate' : 'dry_media';
-    const plateRoot=zip.folder(`${rootPrefix}_plate_detector`);
-    const colonyRoot=zip.folder(`${rootPrefix}_colony_detector`);
-    ['images/train','images/val','images/test','labels/train','labels/val','labels/test'].forEach(path=>{
-        plateRoot.folder(path); colonyRoot.folder(path);
-    });
-
-    let plate={count:0,labels:0}, colony={count:0,labels:0};
-    try{
-        // Agar: plate 원형 → 외접 사각형 YOLO bbox
-        // Dry media: film 사각형 → YOLO bbox
-        setLearningExportProgress(10,'라벨 변환 중...');
-        plate=await addYoloDataset(plateRoot,datasetName,samples,['film'],'film',boxPx);
-        setLearningExportProgress(30,'라벨 변환 중...');
-        colony=await addYoloDataset(colonyRoot,datasetName,samples,classes,'colony',boxPx);
-        setLearningExportProgress(40,'라벨 변환 중...');
-    }catch(err){
-        console.error('AI dataset export error:',err);
-        return alert(`AI 학습용 ZIP 생성 중 오류가 발생했습니다.\n\n${err?.message||err}`);
-    }
-
-    if(!plate.count && !colony.count){
-        return alert('변환할 라벨이 없습니다.\n\nAgar는 ① 원형 Plate 구역 또는 ② 콜로니 위치를 하나 이상 저장한 뒤 다시 시도해주세요.');
-    }
-
-    const plateTask=datasetName==='agar' ? 'Agar plate 원형 구역 검출' : 'Dry media film 구역 검출';
-    const colonyTask=datasetName==='agar' ? 'Agar colony type 검출' : 'Dry media colony type 검출';
-    const plateYaml=datasetYaml('.', ['plate'], plateTask).replace('0: film','0: plate');
-    const colonyYaml=datasetYaml('.', classes, colonyTask);
-    plateRoot.file('dataset.yaml',plateYaml);
-    plateRoot.file('data.yaml',plateYaml);
-    colonyRoot.file('dataset.yaml',colonyYaml);
-    colonyRoot.file('data.yaml',colonyYaml);
-
-    const readme=[
-        'Petricore AI 학습 데이터셋',
-        '',
-        `Dataset: ${datasetName==='agar'?'Agar plate':'Dry media'}`,
-        '',
-        '구성:',
-        `- ${rootPrefix}_plate_detector: ${plateTask}`,
-        `- ${rootPrefix}_colony_detector: ${colonyTask}`,
-        '',
-        'YOLO 구조:',
-        'images/train + labels/train',
-        'images/val + labels/val',
-        'images/test + labels/test',
-        '',
-        `콜로니 라벨: 클릭 중심점 기준 ${boxPx}px x ${boxPx}px 고정 박스로 변환`,
-        'Agar plate 원형 영역: 원의 외접 사각형 bounding box로 변환',
-        '',
-        `Plate 이미지/라벨: ${plate.count}/${plate.labels}`,
-        `Colony 이미지/라벨: ${colony.count}/${colony.labels}`,
-        '',
-        'Ultralytics YOLO의 dataset.yaml 또는 data.yaml을 사용해 학습할 수 있습니다.'
-    ].join('\n');
-    zip.file('README.txt',readme);
-    zip.file('metadata.json',JSON.stringify({
-        version:'petricore-yolo-v2', dataset:datasetName, classes,
-        sourceSamples:samples.length, plate, colony, colonyBoxSizePx:boxPx,
-        createdAt:new Date().toISOString()
-    },null,2));
-
-    try{
-        const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'},
-            meta=>setLearningExportProgress(40+meta.percent*0.6,'ZIP 압축 중...'));
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement('a');
-        a.href=url;
-        a.download=`petricore_${datasetName}_AI_training_dataset.zip`;
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(()=>URL.revokeObjectURL(url),2000);
-        alert(`AI 학습용 ZIP 생성 완료\n\nPlate/Film: ${plate.count}개 이미지, ${plate.labels}개 라벨\nColony: ${colony.count}개 이미지, ${colony.labels}개 라벨`);
-    }catch(err){
-        console.error('ZIP generation error:',err);
-        alert(`ZIP 파일 생성/다운로드 중 오류가 발생했습니다.\n\n${err?.message||err}`);
-    }
-}
-async function importLearningZip(file){
-    if(typeof JSZip==='undefined') return alert('JSZip 라이브러리를 불러오지 못했습니다.');
-    try{
-        const zip=await JSZip.loadAsync(file);
-        const manifestFile=zip.file('dataset.json');
-        if(!manifestFile) return alert('dataset.json이 없는 ZIP입니다. Petricore의 기존 학습 데이터 ZIP을 선택해주세요.');
-        const manifest=JSON.parse(await manifestFile.async('string'));
-        const manifestClasses=Array.isArray(manifest.classes)?manifest.classes:[];
-        const dataset=manifest.dataset==='agar' || manifest.version?.includes('agar') || manifestClasses.includes('PCA') ? 'agar' : (manifest.dataset==='dryMedia' || manifestClasses.some(x=>['AC','EC','CC','EB','YM'].includes(x)) ? 'dryMedia' : null);
-        if(!dataset || !Array.isArray(manifest.samples)) return alert('Petricore 학습 데이터 형식을 확인할 수 없습니다.');
-        const target=learningState.samplesByDataset[dataset];
-        let imported=0;
-        for(const raw of manifest.samples){
-            if(!raw.imageData && raw.filename){
-                const imgFile=zip.file(`images/${raw.filename}`);
-                if(imgFile){
-                    const blob=await imgFile.async('blob');
-                    raw.imageData=await new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=reject;fr.readAsDataURL(blob);});
-                }
-            }
-            if(!raw.imageData) continue;
-            const filmBoxes=Array.isArray(raw.filmBoxes)?raw.filmBoxes:[];
-            const plateCircles=Array.isArray(raw.plateCircles)?raw.plateCircles:[];
-            const colonies=Array.isArray(raw.colonies)?raw.colonies:[];
-            // 구버전 ZIP(v1)은 mode가 없었으므로 저장된 주석 구조로 단계를 추론합니다.
-            const inferredMode=raw.mode || (dataset==='agar' ? (plateCircles.length?'film':(colonies.length?'colony':null)) : (filmBoxes.length?'film':(colonies.length?'colony':null)));
-            const item={...raw,id:`import-${Date.now()}-${imported}-${Math.random().toString(36).slice(2,7)}`,dataset,mode:inferredMode,filmBoxes,plateCircles,colonies,savedAt:raw.savedAt||new Date().toISOString()};
-            if(item.mode==='film' && dataset==='dryMedia' && !item.filmBoxes.length) continue;
-            if(item.mode==='film' && dataset==='agar' && !item.plateCircles.length) continue;
-            if(item.mode==='colony' && !item.colonies.length) continue;
-            if(!item.mode) continue;
-            target.push(item); imported++;
-        }
-        setLearningDataset(dataset); updateLearningCounts();
-        alert(`${imported}개 기존 학습 샘플을 ${dataset==='agar'?'Agar plate':'Dry media'} 데이터로 가져왔습니다. 이제 AI 학습용 ZIP으로 내보낼 수 있습니다.`);
-    }catch(e){console.error(e);alert('기존 ZIP을 읽는 중 오류가 발생했습니다: '+e.message);}
-}
-
-/* 기존 학습 캔버스 이벤트를 새 동작으로 교체 */
-function installLearningPointer(){
-    const c=el('learningCanvas'); if(!c||c.dataset.dualReady)return; c.dataset.dualReady='1';
-    let drag=null;
-    c.addEventListener('mousedown',e=>{
-        if(!learningState.image)return;const pt=learningCanvasPoint(e);
-        if(learningState.mode==='film'){
-            if(learningState.dataset==='agar') drag={x:pt.x,y:pt.y,x2:pt.x,y2:pt.y,radius:0};
-            else drag={x:pt.x,y:pt.y,x2:pt.x,y2:pt.y};
-        }else{
-            const inside = learningState.dataset==='agar'
-                ? learningState.plateCircles.some(q=>Math.hypot(pt.x-q.x,pt.y-q.y)<=q.radius)
-                : learningState.filmBoxes.some(q=>pt.x>=q.x&&pt.x<=q.x+q.width&&pt.y>=q.y&&pt.y<=q.y+q.height);
-            if(!inside){ alert(learningState.dataset==='agar'?'먼저 지정한 Agar plate 원 안쪽을 클릭해주세요.':'먼저 지정한 필름 영역 안쪽을 클릭해주세요.'); return; }
-            learningState.colonies.push({x:pt.x,y:pt.y});redrawLearningCanvas();updateLearningCounts();}
-    });
-    window.addEventListener('mousemove',e=>{if(!drag)return;const pt=learningCanvasPoint(e);drag.x2=pt.x;drag.y2=pt.y;if(learningState.dataset==='agar')drag.radius=Math.hypot(pt.x-drag.x,pt.y-drag.y);redrawLearningCanvas(drag);});
-    window.addEventListener('mouseup',()=>{if(!drag)return;if(learningState.dataset==='agar'){if(drag.radius>10)learningState.plateCircles.push({x:drag.x,y:drag.y,radius:drag.radius});}else{const x=Math.min(drag.x,drag.x2),y=Math.min(drag.y,drag.y2),w=Math.abs(drag.x2-drag.x),h=Math.abs(drag.y2-drag.y);if(w>8&&h>8)learningState.filmBoxes.push({x,y,width:w,height:h});}drag=null;redrawLearningCanvas();updateLearningCounts();});
-}
-
 /* 두 번째 DOMContentLoaded에서 확장 기능 연결 */
 document.addEventListener('DOMContentLoaded',()=>{
     state.agarViewer=new SimpleViewer('agarViewerCanvas','agarViewerCanvasWrapper');
-    installLearningPointer();
     document.querySelectorAll('.agar-type-card').forEach(b=>b.addEventListener('click',()=>{saveCurrentDatasetState();APP_DATASETS.agar.type=b.dataset.agarType;state.selectedDryType=b.dataset.agarType;document.querySelectorAll('.agar-type-card').forEach(x=>x.classList.toggle('active',x===b));}));
     el('btnAgarSelectFile').addEventListener('click',()=>el('agarFileInput').click());
     ['dragenter','dragover'].forEach(ev=>el('agarDropZone').addEventListener(ev,e=>{e.preventDefault();el('agarDropZone').classList.add('dragover');}));
@@ -3318,15 +2685,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     el('agarFileInput').addEventListener('change',e=>{if(e.target.files.length)handleAgarFiles(e.target.files);e.target.value='';});
     el('agarSearchInput').addEventListener('input',()=>{currentPage=1;refreshTable();});el('agarFilterType').addEventListener('change',()=>{currentPage=1;refreshTable();});
     el('btnAgarExportExcel').addEventListener('click',exportAgarExcel);el('btnAgarExportZip').addEventListener('click',exportAgarZip);el('btnAgarDeleteSelected').addEventListener('click',()=>{const a=state.activeIndex,e=state.editIndex;if(deleteSelected()){if(a!==null&&!state.records[a]){state.activeIndex=null;if(state.agarViewer)state.agarViewer.clear();}if(e!==null&&!state.records[e])closeEditor();refreshTable();}});
-    document.querySelectorAll('.learning-data-tab').forEach(b=>b.addEventListener('click',()=>setLearningDataset(b.dataset.learningDataset)));
-    document.querySelectorAll('.learning-type').forEach(b=>b.addEventListener('click',()=>{learningState.type=b.dataset.learningType;document.querySelectorAll('.learning-type').forEach(x=>x.classList.toggle('active',x.dataset.learningType===learningState.type));updateLearningStatus();}));
-    document.querySelectorAll('.learning-mode').forEach(b=>b.addEventListener('click',()=>{learningState.mode=b.dataset.learningMode;document.querySelectorAll('.learning-mode').forEach(x=>x.classList.toggle('active',x===b));updateLearningModeUI();redrawLearningCanvas();}));
-    el('btnLearningClear').addEventListener('click',()=>{learningState.filmBoxes=[];learningState.plateCircles=[];learningState.colonies=[];redrawLearningCanvas();updateLearningCounts();});
-    // 기존 버튼 핸들러가 있는 상태에서도 새 저장/내보내기 함수로 연결
-    el('btnLearningSave').onclick=saveLearningSample;el('btnLearningExport').onclick=exportLearningZip;
-    el('btnLearningImportZip').addEventListener('click',()=>el('learningImportZipInput').click());
-    el('learningImportZipInput').addEventListener('change',async e=>{const f=e.target.files?.[0];if(f)await importLearningZip(f);e.target.value='';});
-    setLearningDataset('dryMedia');
     switchAppTab('dryMedia');
 });
 

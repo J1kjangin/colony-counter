@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 
-const html = fs.readFileSync(path.join(__dirname, 'Petricore-Colony-Counter-v4.html'), 'utf8');
+const html = fs.readFileSync(process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, 'Petricore-Colony-Counter-v4.html'), 'utf8');
 const css = html.slice(html.indexOf('<style>') + 7, html.indexOf('</style>'))
     .replace(/\/\*[\s\S]*?\*\//g, '');   // 주석 제거: 주석 안의 중괄호를 룰로 오인하지 않도록
 

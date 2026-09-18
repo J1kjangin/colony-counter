@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 
-const html = fs.readFileSync(path.join(__dirname, 'Petricore-Colony-Counter-v4.html'), 'utf8');
+const html = fs.readFileSync(process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, 'Petricore-Colony-Counter-v4.html'), 'utf8');
 const start = html.indexOf('const AI_NO_MODEL');
 const end = html.indexOf('function rotateCanvas90');
 assert(start > 0 && end > start, 'AI 헬퍼 블록을 찾지 못했습니다');

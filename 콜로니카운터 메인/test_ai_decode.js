@@ -2,7 +2,7 @@
 const fs = require('fs');
 const assert = require('assert');
 
-const FILE = require('path').join(__dirname, 'Petricore-Colony-Counter-v4.html');
+const FILE = process.argv[2] ? require('path').resolve(process.argv[2]) : require('path').join(__dirname, 'Petricore-Colony-Counter-v4.html');
 const html = fs.readFileSync(FILE, 'utf8');
 
 const start = html.indexOf('    function iou(a,b){');
