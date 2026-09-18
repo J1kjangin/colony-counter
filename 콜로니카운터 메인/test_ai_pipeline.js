@@ -89,6 +89,11 @@ const canvas = { width: 1000, height: 800 };
     assert.strictEqual(ocr.lot, 'ABC123456', 'Lot 파싱은 그대로 동작해야 함');
     assert.strictEqual(ocr.bacteria, 'BC', 'Bacteria 파싱은 그대로 동작해야 함');
     assert(!/record\.type\s*=\s*ocrResult/.test(html), 'OCR 결과로 record.type을 덮어쓰는 코드가 있음');
+
+    // --- OCR이 못 읽은 Bacteria는 'BC'로 채우지 않고 빈칸으로 둔다 ---
+    assert.strictEqual(parseFields('', 'PETRICORE AC').bacteria, '', '못 읽은 Bacteria가 가짜 값으로 채워짐');
+    assert.strictEqual(parseFields('12', '').bacteria, '', '숫자만 읽혀도 Bacteria는 빈칸이어야 함');
+    assert(!/bacteria\s*:\s*'BC'|\|\|\s*'BC'/.test(html), "Bacteria 기본값 'BC'가 코드에 남아있음");
     assert(/type:\s*state\.selectedDryType/.test(html), '선택한 타입으로 레코드를 만들지 않음');
 
     console.log('AI 전용 분할/검출 파이프라인 검증 통과');

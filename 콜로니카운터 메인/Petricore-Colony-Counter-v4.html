@@ -181,9 +181,9 @@ thead th { position: sticky; top: 0; background: rgba(255,255,255,0.85); backdro
 tbody td { font-size: 12px; padding: 8px 6px; border-bottom: 1px solid rgba(20,35,42,0.06); font-family: var(--mono); }
 tbody tr.selected { background: rgba(14,124,123,0.12); }
 tbody tr.active-row { outline: 2px solid var(--accent); outline-offset: -2px; }
-.editable-cell { cursor: text; min-width: 2.6rem; font-family: var(--mono); border-radius: 6px; }
-.editable-cell:focus { outline: 2px solid var(--accent); background: rgba(14,124,123,0.1); }
-.editable-cell.needs-review { background: var(--warn-soft); box-shadow: inset 0 0 0 1px var(--warn); }
+/* 편집 영역은 글자 크기만큼. 음수 margin으로 글자 위치를 일반 칸과 맞춘다 */
+.editable-cell { display: inline-block; min-width: 4ch; min-height: 1.5em; padding: 1px 4px; margin: -1px -4px; line-height: 1.5; vertical-align: middle; cursor: text; font-family: var(--mono); border-radius: 4px; outline: none; }
+.editable-cell:focus { box-shadow: 0 0 0 1.5px var(--accent); background: rgba(14,124,123,0.1); }
 .cfu-red { color: #C1443B; font-weight: 700; }
 .cfu-blue { color: #2563EB; font-weight: 700; }
 .view-btn, .edit-btn, .delete-row-btn { border: none; border-radius: var(--radius-sm); padding: 5px 8px; font-size: 10px; font-family: var(--sans); font-weight: 600; cursor: pointer; margin-right: 3px; }
@@ -968,7 +968,7 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
 // 앱 전역 상태
 const state = {
     records: [],       // {id, filename, canvas, type, lot, bacteria, no, dilute, rotation, colonies, autoColonies,
-                        //  labelHeightRatio, sensitivity, minArea, colorMode, selected, needsReview,
+                        //  labelHeightRatio, sensitivity, minArea, colorMode, selected,
                         //  rawHandwriting, rawPrinted, historyPast, historyFuture}
     activeIndex: null,  // 메인 화면(읽기 전용) 사진뷰어에 표시 중인 레코드 인덱스
     editIndex: null,    // Colony Editor 모달에서 편집 중인 레코드 인덱스
@@ -1224,7 +1224,7 @@ function parseFields(handText, printedText) {
 
     return {
         lot: lot || '',
-        bacteria: bacteria || 'BC',
+        bacteria: bacteria || '',
         no,
         dilute
     };
@@ -1233,7 +1233,7 @@ function parseFields(handText, printedText) {
 function getDefaultMetadata() {
     return {
         lot: '',
-        bacteria: 'BC',
+        bacteria: '',
         no: '',
         dilute: '',
         rawHandwriting: '',
@@ -1757,10 +1757,8 @@ function renderTable(handlers) {
             if (record.selected) tr.classList.add('selected');
             if (realIndex === state.activeIndex) tr.classList.add('active-row');
 
-            const editableCell = (field) => {
-                const needsReview = record.needsReview && record.needsReview[field];
-                return `<td class="editable-cell${needsReview ? ' needs-review' : ''}" contenteditable="true" data-id="${record.id}" data-field="${field}">${escapeHtml(String(record[field] ?? ''))}</td>`;
-            };
+            const editableCell = (field) =>
+                `<td><span class="editable-cell" contenteditable="true" data-id="${record.id}" data-field="${field}">${escapeHtml(String(record[field] ?? ''))}</span></td>`;
 
             const redCount = record.colonies.filter(c => c.color !== 'blue').length;
             const blueCount = record.colonies.filter(c => c.color === 'blue').length;
@@ -1791,8 +1789,6 @@ function renderTable(handlers) {
             const record = state.records.find(r => String(r.id) === String(id));
             if (record) {
                 record[field] = e.target.innerText.trim();
-                if (record.needsReview) record.needsReview[field] = false;
-                e.target.classList.remove('needs-review');
             }
         });
     });
@@ -2353,14 +2349,13 @@ async function createRecordFromCanvas(canvas, filename) {
         filename,
         canvas,
         rotation: 0,
-        type: state.selectedDryType || 'AC', lot: '', bacteria: 'BC', no: '', dilute: '',
+        type: state.selectedDryType || 'AC', lot: '', bacteria: '', no: '', dilute: '',
         colonies: [], autoColonies: [],
         historyPast: [], historyFuture: [],
         labelHeightRatio: DEFAULTS.labelHeightRatio,
         colorMode: DEFAULTS.colorMode,
         aiReason: '',
         selected: false,
-        needsReview: {},
         rawHandwriting: '', rawPrinted: ''
     };
 
@@ -2374,17 +2369,11 @@ async function createRecordFromCanvas(canvas, filename) {
     // Type은 위에서 고른 타입 카드를 그대로 쓴다. OCR은 나머지 항목만 채운다.
     if (ocrResult) {
         record.lot = ocrResult.lot || '';
-        record.bacteria = ocrResult.bacteria || 'BC';
+        record.bacteria = ocrResult.bacteria || '';
         record.no = ocrResult.no || '';
         record.dilute = ocrResult.dilute || '';
         record.rawHandwriting = ocrResult.rawHandwriting || '';
         record.rawPrinted = ocrResult.rawPrinted || '';
-        record.needsReview = {
-            type: false, lot: !ocrResult.lot, bacteria: !ocrResult.bacteria,
-            no: !ocrResult.no, dilute: !ocrResult.dilute
-        };
-    } else {
-        record.needsReview = { type: false, lot: true, bacteria: true, no: true, dilute: true };
     }
 
     record.colonies = colonies;
@@ -2558,7 +2547,6 @@ function initEditorEventListeners() {
             const r = state.records[state.editIndex]; if (!r) return;
             const field = id.replace('em', '').toLowerCase();
             r[field] = e.target.value.trim();
-            if (r.needsReview) r.needsReview[field] = false;
             document.getElementById('emTitle').innerHTML = `${esc(r.type)} · ${esc(r.bacteria)}${esc(String(r.no))} · 10${sup('-' + r.dilute)}`;
             updateEditorCfuDisplay();
         });
@@ -2571,14 +2559,12 @@ function initEditorEventListeners() {
         try {
             const result = await parsePetrifilmOCR(r.canvas, r.labelHeightRatio);
             if (result) {
-                r.type = result.type || r.type;
                 r.lot = result.lot || r.lot;
                 r.bacteria = result.bacteria || r.bacteria;
                 r.no = result.no || r.no;
                 r.dilute = result.dilute || r.dilute;
                 r.rawHandwriting = result.rawHandwriting || '';
                 r.rawPrinted = result.rawPrinted || '';
-                r.needsReview = {};
                 populateEditorSidebar(r);
                 refreshTable();
             }
@@ -2810,7 +2796,7 @@ function renderAgarTable(){
     rows.forEach(record=>{
         const idx=state.records.indexOf(record), tr=document.createElement('tr');
         if(record.selected) tr.classList.add('selected'); if(idx===state.activeIndex) tr.classList.add('active-row');
-        const cell=f=>`<td class="editable-cell" contenteditable="true" data-id="${record.id}" data-field="${f}">${escapeHtml(String(record[f]??''))}</td>`;
+        const cell=f=>`<td><span class="editable-cell" contenteditable="true" data-id="${record.id}" data-field="${f}">${escapeHtml(String(record[f]??''))}</span></td>`;
         tr.innerHTML=`<td><input type="checkbox" class="agar-row-check" data-index="${idx}" ${record.selected?'checked':''}></td>${cell('type')}${cell('lot')}${cell('bacteria')}${cell('no')}${cell('dilute')}<td class="cfu-single">${record.colonies.length}</td><td><button class="view-btn${idx===state.activeIndex?' active':''}" data-index="${idx}">보기</button><button class="edit-btn" data-index="${idx}">수정</button><button class="delete-row-btn" data-index="${idx}">삭제</button></td>`;
         tbody.appendChild(tr);
     });
@@ -2903,7 +2889,7 @@ function applyAgarTypeRules(record, colonies){
     });
 }
 async function createAgarRecordFromCanvas(canvas,filename){
-    const r={id:makeId(),filename,canvas,rotation:0,type:state.selectedDryType||'PCA',lot:'',bacteria:'BC',no:'',dilute:'',colonies:[],autoColonies:[],historyPast:[],historyFuture:[],labelHeightRatio:0,colorMode:'red',aiReason:'',selected:false,needsReview:{},rawHandwriting:'',rawPrinted:''};
+    const r={id:makeId(),filename,canvas,rotation:0,type:state.selectedDryType||'PCA',lot:'',bacteria:'',no:'',dilute:'',colonies:[],autoColonies:[],historyPast:[],historyFuture:[],labelHeightRatio:0,colorMode:'red',aiReason:'',selected:false,rawHandwriting:'',rawPrinted:''};
     // Agar는 단일 CFU이므로 색상 구분 없이 AI 검출 결과를 합산
     const detected=await aiDetectColonies('agar',canvas);
     r.aiReason=detected.reason;
