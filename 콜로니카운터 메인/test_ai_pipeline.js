@@ -81,5 +81,15 @@ const canvas = { width: 1000, height: 800 };
     assert.strictEqual(untrainedTypeReason('agar', 'VRBA'), '', 'VRBA는 학습됨');
     assert.strictEqual(untrainedTypeReason('dryMedia', 'AC'), '');
 
+    // --- Type은 선택한 타입 카드를 따라야 한다 (OCR이 AC로 덮어쓰던 문제) ---
+    const ps = html.indexOf('function parseFields'), pe = html.indexOf('function getDefaultMetadata');
+    const parseFields = new Function(html.slice(ps, pe) + ';return parseFields;')();
+    const ocr = parseFields('BC 1 5', 'PETRICORE AC LOT ABC123456');
+    assert(!('type' in ocr), 'OCR이 type을 반환하면 선택한 타입을 덮어쓴다');
+    assert.strictEqual(ocr.lot, 'ABC123456', 'Lot 파싱은 그대로 동작해야 함');
+    assert.strictEqual(ocr.bacteria, 'BC', 'Bacteria 파싱은 그대로 동작해야 함');
+    assert(!/record\.type\s*=\s*ocrResult/.test(html), 'OCR 결과로 record.type을 덮어쓰는 코드가 있음');
+    assert(/type:\s*state\.selectedDryType/.test(html), '선택한 타입으로 레코드를 만들지 않음');
+
     console.log('AI 전용 분할/검출 파이프라인 검증 통과');
 })();

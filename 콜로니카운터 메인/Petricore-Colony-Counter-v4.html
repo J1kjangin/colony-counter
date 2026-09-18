@@ -1201,16 +1201,6 @@ async function parsePetrifilmOCR(panelCanvas, labelHeightRatio = 0.12) {
 function parseFields(handText, printedText) {
     const printedClean = printedText.toUpperCase();
 
-    // Type: "Petricore/Petrifilm" 다음 토큰
-    let type = '';
-    const typeMatch = printedClean.match(/PETRI\w*\s+([A-Z]{1,4})/);
-    if (typeMatch) {
-        type = typeMatch[1];
-    } else {
-        const knownType = printedClean.match(/\b(AC|EC|CC|EB|YM|OTHER)\b/);
-        if (knownType) type = knownType[1] === 'OTHER' ? 'other' : knownType[1];
-    }
-
     // Lot No: 영문+숫자 6자리 이상 조합 (Petricore 줄 아래 위치)
     let lot = '';
     const lotMatch = printedClean.match(/[A-Z0-9]{6,}/g);
@@ -1233,7 +1223,6 @@ function parseFields(handText, printedText) {
     }
 
     return {
-        type: type || 'AC',
         lot: lot || '',
         bacteria: bacteria || 'BC',
         no,
@@ -1243,7 +1232,6 @@ function parseFields(handText, printedText) {
 
 function getDefaultMetadata() {
     return {
-        type: 'AC',
         lot: '',
         bacteria: 'BC',
         no: '',
@@ -2383,8 +2371,8 @@ async function createRecordFromCanvas(canvas, filename) {
     const colonies = detected.colonies;
     record.aiReason = detected.reason;
 
+    // Type은 위에서 고른 타입 카드를 그대로 쓴다. OCR은 나머지 항목만 채운다.
     if (ocrResult) {
-        record.type = ocrResult.type || state.selectedDryType || 'AC';
         record.lot = ocrResult.lot || '';
         record.bacteria = ocrResult.bacteria || 'BC';
         record.no = ocrResult.no || '';
@@ -2392,11 +2380,11 @@ async function createRecordFromCanvas(canvas, filename) {
         record.rawHandwriting = ocrResult.rawHandwriting || '';
         record.rawPrinted = ocrResult.rawPrinted || '';
         record.needsReview = {
-            type: !ocrResult.type, lot: !ocrResult.lot, bacteria: !ocrResult.bacteria,
+            type: false, lot: !ocrResult.lot, bacteria: !ocrResult.bacteria,
             no: !ocrResult.no, dilute: !ocrResult.dilute
         };
     } else {
-        record.needsReview = { type: true, lot: true, bacteria: true, no: true, dilute: true };
+        record.needsReview = { type: false, lot: true, bacteria: true, no: true, dilute: true };
     }
 
     record.colonies = colonies;
