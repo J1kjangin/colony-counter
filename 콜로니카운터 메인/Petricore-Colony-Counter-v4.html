@@ -881,6 +881,7 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                             <button id="btnToggleNumbers" class="ec-btn toggle">번호</button>
                             <button id="btnToggleDensity" class="ec-btn toggle">밀도</button>
                             <button id="btnToggleGrid" class="ec-btn toggle">격자</button>
+                            <button id="btnToggleSharpen" class="ec-btn toggle" title="보기 전용입니다. AI 검출·저장·학습 데이터에는 항상 원본이 쓰입니다.">선명화</button>
                             <label class="ec-grid-mm" title="Agar plate 90mm 기준 격자 간격">
                                 <input type="number" id="emGridMm" min="0.1" max="90" step="0.1" value="1.0"> mm
                             </label>
@@ -1269,7 +1270,7 @@ function ensureWorker() {
  * @param {number} scale 렌더링 해상도 배율 (높을수록 선명하지만 느림)
  * @returns {Promise<HTMLCanvasElement[]>} 페이지별 캔버스 배열
  */
-async function pdfFileToCanvases(file, scale = 2.5) {
+async function pdfFileToCanvases(file, dpi = 300, maxPixels = 36e6) {
     if (typeof pdfjsLib === 'undefined') {
         throw new Error('PDF.js 라이브러리가 로드되지 않았습니다. 인터넷 연결을 확인해주세요.');
     }
@@ -1281,6 +1282,9 @@ async function pdfFileToCanvases(file, scale = 2.5) {
 
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
+        // 300dpi로 그리되, 페이지가 아주 크면 메모리 한도(maxPixels) 안으로 줄인다
+        const base = page.getViewport({ scale: 1 });
+        const scale = Math.min(dpi / 72, Math.sqrt(maxPixels / (base.width * base.height)));
         const viewport = page.getViewport({ scale });
         const canvas = document.createElement('canvas');
         canvas.width = viewport.width;
@@ -1323,6 +1327,7 @@ class SimpleViewer {
 
     clear() {
         this.record = null;
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
@@ -1330,19 +1335,25 @@ class SimpleViewer {
         const maxWidth = this.wrapper.clientWidth - 24;
         const maxHeight = this.wrapper.clientHeight - 24;
         const src = this.record.canvas;
-        let width = src.width, height = src.height;
-        const ratio = Math.min(maxWidth / width, maxHeight / height, 1);
-        width *= ratio; height *= ratio;
-        this.canvas.width = width;
-        this.canvas.height = height;
-        this.baseScale = width / src.width;
+        const ratio = Math.min(maxWidth / src.width, maxHeight / src.height, 1);
+        this.cssW = src.width * ratio;
+        this.cssH = src.height * ratio;
+        this.canvas.style.width = `${this.cssW}px`;
+        this.canvas.style.height = `${this.cssH}px`;
+        this.baseScale = ratio;
     }
 
     redraw() {
         if (!this.record) return;
         const src = this.record.canvas;
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.drawImage(src, 0, 0, this.canvas.width, this.canvas.height);
+        // 화면 배율 × 확대율만큼 촘촘하게 다시 그린다. 원본보다 촘촘할 필요는 없다.
+        const dpr = window.devicePixelRatio || 1;
+        const k = Math.min(dpr * this.zoom, Math.max(dpr, 1 / this.baseScale));
+        this.canvas.width = Math.round(this.cssW * k);
+        this.canvas.height = Math.round(this.cssH * k);
+        this.ctx.setTransform(k, 0, 0, k, 0, 0);
+        this.ctx.imageSmoothingQuality = 'high';
+        this.ctx.drawImage(src, 0, 0, this.cssW, this.cssH);
 
         this.record.colonies.forEach(c => {
             const cx = c.x * this.baseScale;
@@ -1367,7 +1378,41 @@ class SimpleViewer {
         this.canvas.style.transformOrigin = `${originX}% ${originY}%`;
         this.zoom = newZoom;
         this.canvas.style.transform = `scale(${this.zoom})`;
+        this.redraw();
     }
+}
+
+// 보기 전용 선명화(언샤프 마스크). 원본 캔버스는 건드리지 않으므로
+// AI 검출·OCR·저장·학습 데이터에는 항상 원본이 쓰인다.
+const sharpenedCache = new WeakMap();
+function sharpenedCanvas(src) {
+    let out = sharpenedCache.get(src);
+    if (!out) {
+        out = unsharpMask(src);
+        sharpenedCache.set(src, out);
+    }
+    return out;
+}
+function unsharpMask(src, amount = 0.8, radius = 1.2, threshold = 4) {
+    const w = src.width, h = src.height;
+    const blurred = document.createElement('canvas');
+    blurred.width = w; blurred.height = h;
+    const bctx = blurred.getContext('2d', { willReadFrequently: true });
+    bctx.filter = `blur(${radius}px)`;
+    bctx.drawImage(src, 0, 0);
+    const image = src.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h);
+    const o = image.data, b = bctx.getImageData(0, 0, w, h).data;
+    for (let i = 0; i < o.length; i += 4) {
+        for (let c = i; c < i + 3; c++) {
+            const d = o[c] - b[c];
+            // threshold 이하의 미세한 차이(노이즈)는 키우지 않는다
+            if (d > threshold || d < -threshold) o[c] += amount * d;
+        }
+    }
+    const out = document.createElement('canvas');
+    out.width = w; out.height = h;
+    out.getContext('2d').putImageData(image, 0, 0);
+    return out;
 }
 
 
@@ -1415,6 +1460,8 @@ class ColonyEditor {
         this.showDensity = false;
         this.showGrid = false;
         this.gridMm = 1;
+        this.sharpen = false;
+        this.dpr = 1; this.cssW = 0; this.cssH = 0;
 
         this._drag = null;
         this._movingColonyIdx = null;
@@ -1442,8 +1489,14 @@ class ColonyEditor {
     fitToView() {
         const w = this.wrapper.clientWidth;
         const h = this.wrapper.clientHeight;
-        this.canvas.width = w;
-        this.canvas.height = h;
+        // 좌표 계산은 CSS 픽셀(cssW/cssH)로 하고, 실제 캔버스는 화면 배율만큼 촘촘하게 만든다
+        this.dpr = window.devicePixelRatio || 1;
+        this.cssW = w;
+        this.cssH = h;
+        this.canvas.width = Math.round(w * this.dpr);
+        this.canvas.height = Math.round(h * this.dpr);
+        this.canvas.style.width = `${w}px`;
+        this.canvas.style.height = `${h}px`;
         const src = this.record.canvas;
         this.fitScale = Math.min(w / src.width, h / src.height);
         this.scale = this.fitScale;
@@ -1478,8 +1531,8 @@ class ColonyEditor {
         const rect = this.canvas.getBoundingClientRect();
         const sxCanvas = clientX - rect.left;
         const syCanvas = clientY - rect.top;
-        const sw = this.canvas.width / this.scale;
-        const sh = this.canvas.height / this.scale;
+        const sw = this.cssW / this.scale;
+        const sh = this.cssH / this.scale;
         const originX = this.center.x - sw / 2;
         const originY = this.center.y - sh / 2;
         return { x: originX + sxCanvas / this.scale, y: originY + syCanvas / this.scale };
@@ -1490,16 +1543,19 @@ class ColonyEditor {
         if (!this.record) return;
         const src = this.record.canvas;
         const ctx = this.ctx;
-        const cw = this.canvas.width, ch = this.canvas.height;
+        const cw = this.cssW, ch = this.cssH;
         const sw = cw / this.scale, sh = ch / this.scale;
         const sx = this.center.x - sw / 2, sy = this.center.y - sh / 2;
 
-        ctx.imageSmoothingEnabled = true;
+        ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+        // 원본 픽셀 1개가 화면 픽셀 2개 이상으로 커지면 보간(뭉갬) 없이 픽셀 그대로 확대한다
+        ctx.imageSmoothingEnabled = this.scale * this.dpr < 2;
         ctx.imageSmoothingQuality = 'high';
         ctx.clearRect(0, 0, cw, ch);
         ctx.fillStyle = '#0b1418';
         ctx.fillRect(0, 0, cw, ch);
-        ctx.drawImage(src, sx, sy, sw, sh, 0, 0, cw, ch);
+        const img = this.sharpen ? sharpenedCanvas(src) : src;
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, cw, ch);
 
         const toDst = (x, y) => ({ x: (x - sx) * this.scale, y: (y - sy) * this.scale });
 
@@ -1531,11 +1587,11 @@ class ColonyEditor {
         ctx.lineWidth = 1;
         for (let gx = 0; gx <= src.width; gx += step) {
             const dx = (gx - sx) * this.scale;
-            ctx.beginPath(); ctx.moveTo(dx, 0); ctx.lineTo(dx, this.canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(dx, 0); ctx.lineTo(dx, this.cssH); ctx.stroke();
         }
         for (let gy = 0; gy <= src.height; gy += step) {
             const dy = (gy - sy) * this.scale;
-            ctx.beginPath(); ctx.moveTo(0, dy); ctx.lineTo(this.canvas.width, dy); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, dy); ctx.lineTo(this.cssW, dy); ctx.stroke();
         }
     }
 
@@ -1554,11 +1610,11 @@ class ColonyEditor {
         ctx.lineWidth = 1;
         for (let gx = x0; gx <= sx + sw; gx += step) {
             const dx = (gx - sx) * this.scale;
-            ctx.beginPath(); ctx.moveTo(dx, 0); ctx.lineTo(dx, this.canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(dx, 0); ctx.lineTo(dx, this.cssH); ctx.stroke();
         }
         for (let gy = y0; gy <= sy + sh; gy += step) {
             const dy = (gy - sy) * this.scale;
-            ctx.beginPath(); ctx.moveTo(0, dy); ctx.lineTo(this.canvas.width, dy); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, dy); ctx.lineTo(this.cssW, dy); ctx.stroke();
         }
         // 90mm plate 가정 원: 실제 plate 테두리와 맞는지 눈으로 확인하는 용도
         ctx.beginPath();
@@ -2601,6 +2657,22 @@ function initEditorEventListeners() {
             document.getElementById('btnToggleGrid').classList.add('active');
         }
         state.editor.redraw();
+    });
+    document.getElementById('btnToggleSharpen').addEventListener('click', (e) => {
+        const btn = e.currentTarget;
+        if (!('filter' in CanvasRenderingContext2D.prototype)) {
+            alert('이 브라우저는 선명화를 지원하지 않습니다. Chrome 또는 Edge를 사용해주세요.');
+            return;
+        }
+        state.editor.sharpen = !state.editor.sharpen;
+        btn.classList.toggle('active', state.editor.sharpen);
+        btn.disabled = true;
+        btn.textContent = state.editor.sharpen ? '처리 중...' : '선명화';
+        // 큰 사진은 첫 계산에 잠시 걸리므로, 버튼 문구가 먼저 그려지게 한 뒤 계산한다
+        setTimeout(() => {
+            try { state.editor.redraw(); }
+            finally { btn.disabled = false; btn.textContent = '선명화'; }
+        }, 30);
     });
     document.getElementById('btnToggleGrid').addEventListener('click', (e) => {
         state.editor.showGrid = !state.editor.showGrid;

@@ -96,5 +96,14 @@ const canvas = { width: 1000, height: 800 };
     assert(!/bacteria\s*:\s*'BC'|\|\|\s*'BC'/.test(html), "Bacteria 기본값 'BC'가 코드에 남아있음");
     assert(/type:\s*state\.selectedDryType/.test(html), '선택한 타입으로 레코드를 만들지 않음');
 
+    // --- 선명화는 보기 전용: 수정 화면 그리기(redraw) 한 곳에서만 쓰여야 한다 ---
+    const sharpenUses = [...html.matchAll(/sharpenedCanvas\(/g)].length - 1;   // 정의 제외
+    assert.strictEqual(sharpenUses, 1, `선명화 이미지가 화면 표시 외에 쓰임 (${sharpenUses}곳)`);
+    assert(/const img = this\.sharpen \? sharpenedCanvas\(src\) : src;/.test(html), '선명화가 편집기 표시에만 연결되어 있지 않음');
+
+    // --- 화질: 화면 배율 반영, PDF 300dpi ---
+    assert(/this\.canvas\.width = Math\.round\(w \* this\.dpr\)/.test(html), '수정 화면이 화면 배율(devicePixelRatio)을 반영하지 않음');
+    assert(/async function pdfFileToCanvases\(file, dpi = 300/.test(html), 'PDF가 300dpi로 변환되지 않음');
+
     console.log('AI 전용 분할/검출 파이프라인 검증 통과');
 })();
