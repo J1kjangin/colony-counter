@@ -8,7 +8,7 @@
 
 **Tech Stack:** 순수 브라우저 JS(단일 HTML, IIFE 다발), 빌드 없음. 외부 라이브러리(이미 로드됨, 변경 없음): JSZip 3.10.1, ONNX Runtime Web 1.29.0(필름 검출 전용, 이번 작업과 무관).
 
-**Spec:** `docs/superpowers/specs/2026-09-15-학습탭-타입별콜로니-플레이트분할-design.md` (2026-09-15 수정본 — TBX 반영판)
+**Spec:** `docs/superpowers/specs/2026-09-15-training-tab-multiclass-colony-plate-segmentation-design.md` (2026-09-15 수정본 — TBX 반영판)
 
 ## Global Constraints
 

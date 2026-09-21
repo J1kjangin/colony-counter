@@ -8,7 +8,7 @@
 
 **Tech Stack:** 순수 브라우저 JS(ES2020), 인라인 CSS. 외부 라이브러리(핀 고정): SheetJS xlsx 0.18.5, PDF.js 3.11.174, Tesseract.js 5, JSZip 3.10.1. 테스트: Node `node:test` + `node:vm` (npm 설치 없음).
 
-**Spec:** `docs/superpowers/specs/2026-09-11-필름배지-콜로니카운터-design.md`
+**Spec:** `docs/superpowers/specs/2026-09-11-film-media-colony-counter-design.md`
 
 ## Global Constraints
 
