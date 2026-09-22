@@ -805,6 +805,16 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                     <input type="file" id="learningFileInput" accept="image/*" multiple hidden>
                     <div class="learning-file-name" id="learningFileName">이미지를 추가하면 여기에서 선택할 수 있습니다.</div>
                 </div>
+                <div class="learning-section" id="learningEditNav" style="display:none">
+                    <label>불러온 Dry media 샘플 편집</label>
+                    <div class="learning-mode-row">
+                        <button class="learning-secondary" id="btnLearningPrevSample">◀ 이전</button>
+                        <span id="learningEditPosition" style="align-self:center;font-size:11px;color:var(--muted);white-space:nowrap">- / -</span>
+                        <button class="learning-secondary" id="btnLearningNextSample">다음 ▶</button>
+                    </div>
+                    <div class="learning-file-name" id="learningEditColorCount"></div>
+                    <button class="learning-secondary" id="btnLearningExitEdit">편집 종료 (새 이미지로)</button>
+                </div>
                 <div class="learning-circle-info" id="learningCircleInfo">Agar plate는 이미지 위에서 <b>드래그하여 원형 Plate 영역</b>을 지정합니다. 시작점은 원의 중심, 끝점은 반지름으로 사용됩니다.</div><div class="learning-section colony-color-section" id="learningColorSection" style="display:none">
                     <label>콜로니 색상 라벨</label>
                     <div class="learning-mode-row">
@@ -2112,7 +2122,7 @@ function updateStatsRow() {
 // 상단 탭 / Dry media Type / 학습 데이터 수집
 // ---------------------------------------------------------------
 const learningState = {
-    type: 'AC', mode: 'film', color: 'red', colonyClickAction: 'add',
+    type: 'AC', mode: 'film', color: 'red', colonyClickAction: 'add', editingSampleId: null,
     image: null, imageData: '', filename: '', scale: 1, offsetX: 0, offsetY: 0,
     filmBoxes: [], colonies: [], samples: []
 };
@@ -2223,11 +2233,13 @@ function loadLearningImage(file) {
         reader.onload = e => {
             const img = new Image();
             img.onload = () => {
+                learningState.editingSampleId = null;
                 learningState.image = img; learningState.imageData = e.target.result; learningState.filename = file.name;
                 learningState.filmBoxes = []; learningState.colonies = [];
                 document.getElementById('learningFileName').textContent = file.name;
                 document.getElementById('learningEmpty').style.display = 'none';
                 resizeLearningCanvas(); redrawLearningCanvas(); updateLearningCounts(); updateLearningStatus();
+                updateEditNavUI();
                 resolve();
             };
             img.onerror = reject; img.src = e.target.result;
@@ -3011,6 +3023,7 @@ learningState.plateCircles=[];
 learningState.samplesByDataset={dryMedia:[],agar:[]};
 function setLearningDataset(dataset){
     learningState.dataset=dataset; learningState.type=dataset==='agar'?'PCA':'AC'; learningState.mode='film';
+    learningState.editingSampleId=null;
     learningState.filmBoxes=[]; learningState.plateCircles=[]; learningState.colonies=[];
     document.querySelectorAll('.learning-data-tab').forEach(b=>b.classList.toggle('active',b.dataset.learningDataset===dataset));
     document.querySelector('.learning-types-dry').style.display=dataset==='dryMedia'?'grid':'none';
@@ -3019,7 +3032,7 @@ function setLearningDataset(dataset){
     el('learningDataTitle').textContent=dataset==='agar'?'Agar plate 학습 데이터 만들기':'Dry media 학습 데이터 만들기';
     el('learningDataDescription').textContent=dataset==='agar'?'① 원형 Agar plate 구역을 지정하고 ② 타입별 콜로니 위치를 표시해 AI 학습용 정답 데이터를 수집합니다.':'① 필름 분할 범위와 ② 타입별 콜로니 위치를 표시해 AI 학습용 정답 데이터를 수집합니다.';
     el('learningCircleInfo').classList.toggle('active',dataset==='agar'&&learningState.mode==='film');
-    updateLearningModeUI(); updateLearningStatus(); redrawLearningCanvas(); updateLearningCounts();
+    updateLearningModeUI(); updateLearningStatus(); redrawLearningCanvas(); updateLearningCounts(); updateEditNavUI();
 }
 function updateLearningModeUI(){
     const agar=learningState.dataset==='agar', film=learningState.mode==='film';
@@ -3033,6 +3046,80 @@ function updateLearningModeUI(){
 function updateLearningCounts(){
     el('learningFilmCount').textContent=learningState.dataset==='agar'?learningState.plateCircles.length:learningState.filmBoxes.length;
     el('learningColonyCount').textContent=learningState.colonies.length; el('learningSampleCount').textContent=learningState.samplesByDataset[learningState.dataset].length;
+    const colorCountEl=el('learningEditColorCount');
+    if(colorCountEl){
+        if(learningState.dataset==='dryMedia' && learningState.mode==='colony'){
+            const blue=learningState.colonies.filter(c=>c.color==='blue').length;
+            const red=learningState.colonies.length-blue;
+            colorCountEl.textContent=`현재 이미지 — 붉은색 ${red} · 푸른색 ${blue}`;
+        }else{
+            colorCountEl.textContent='';
+        }
+    }
+}
+function getDryMediaColonySamples(){
+    return learningState.samplesByDataset.dryMedia.filter(s=>s.mode==='colony');
+}
+// 편집 중인 샘플이 있으면 현재 캔버스 상태를 그 샘플에 그대로 반영한다 (저장 버튼과 무관하게 유실 방지).
+function syncEditingSample(){
+    if(!learningState.editingSampleId) return;
+    const list=learningState.samplesByDataset[learningState.dataset];
+    const idx=list.findIndex(s=>s.id===learningState.editingSampleId);
+    if(idx<0) return;
+    list[idx]={
+        ...list[idx],
+        type:learningState.type,
+        methodNote:(el('learningMethodNote')?.value||'').trim(),
+        filmBoxes:JSON.parse(JSON.stringify(learningState.filmBoxes)),
+        plateCircles:JSON.parse(JSON.stringify(learningState.plateCircles)),
+        colonies:JSON.parse(JSON.stringify(learningState.colonies)),
+        savedAt:new Date().toISOString()
+    };
+}
+function updateEditNavUI(){
+    const nav=el('learningEditNav');
+    if(!nav) return;
+    if(learningState.dataset!=='dryMedia'){ nav.style.display='none'; return; }
+    const list=getDryMediaColonySamples();
+    nav.style.display=list.length?'':'none';
+    if(!list.length) return;
+    const idx=learningState.editingSampleId ? list.findIndex(s=>s.id===learningState.editingSampleId) : -1;
+    el('learningEditPosition').textContent = idx>=0 ? `${idx+1} / ${list.length}` : `- / ${list.length}`;
+}
+function loadSampleForEditing(index){
+    const list=getDryMediaColonySamples();
+    if(index<0 || index>=list.length) return;
+    syncEditingSample();
+    const s=list[index];
+    const img=new Image();
+    img.onload=()=>{
+        learningState.dataset='dryMedia'; learningState.mode='colony'; learningState.type=s.type;
+        learningState.image=img; learningState.imageData=s.imageData; learningState.filename=s.filename;
+        learningState.filmBoxes=JSON.parse(JSON.stringify(s.filmBoxes||[]));
+        learningState.plateCircles=[];
+        learningState.colonies=JSON.parse(JSON.stringify(s.colonies||[]));
+        learningState.editingSampleId=s.id;
+        el('learningFileName').textContent=s.filename;
+        el('learningEmpty').style.display='none';
+        if(el('learningMethodNote')) el('learningMethodNote').value=s.methodNote||'';
+        document.querySelectorAll('.learning-data-tab').forEach(b=>b.classList.toggle('active',b.dataset.learningDataset==='dryMedia'));
+        document.querySelector('.learning-types-dry').style.display='grid';
+        document.querySelector('.learning-types-agar').style.display='none';
+        document.querySelectorAll('.learning-type').forEach(b=>b.classList.toggle('active',b.dataset.learningType===s.type));
+        document.querySelectorAll('.learning-mode').forEach(b=>b.classList.toggle('active',b.dataset.learningMode==='colony'));
+        resizeLearningCanvas(); updateLearningModeUI(); redrawLearningCanvas(); updateLearningCounts(); updateLearningStatus(); updateEditNavUI();
+    };
+    img.src=s.imageData;
+}
+function exitSampleEditing(){
+    syncEditingSample();
+    learningState.editingSampleId=null;
+    learningState.image=null; learningState.imageData=''; learningState.filename='';
+    learningState.filmBoxes=[]; learningState.colonies=[];
+    el('learningFileName').textContent='이미지를 추가하면 여기에서 선택할 수 있습니다.';
+    if(el('learningEmpty')) el('learningEmpty').style.display='';
+    const c=el('learningCanvas'); if(c) c.getContext('2d').clearRect(0,0,c.width,c.height);
+    updateLearningCounts(); updateLearningStatus(); updateEditNavUI();
 }
 function redrawLearningCanvas(dragShape=null){
     const c=el('learningCanvas'); if(!c||!learningState.image)return;
@@ -3052,8 +3139,13 @@ function saveLearningSample(){
     if(learningState.mode==='film' && learningState.dataset==='dryMedia' && !learningState.filmBoxes.length)return alert('필름 구역을 하나 이상 표시해주세요.');
     if(learningState.mode==='film' && learningState.dataset==='agar' && !learningState.plateCircles.length)return alert('Agar plate 원형 구역을 하나 이상 표시해주세요.');
     if(learningState.mode==='colony' && !learningState.colonies.length)return alert('콜로니 위치를 하나 이상 표시해주세요.');
+    if(learningState.editingSampleId){
+        syncEditingSample();
+        updateLearningCounts();el('learningStatus').textContent='수정 사항 저장 완료';
+        return;
+    }
     learningState.samplesByDataset[learningState.dataset].push({id:`sample-${Date.now()}-${learningState.samplesByDataset[learningState.dataset].length+1}`,filename:learningState.filename,imageData:learningState.imageData,type:learningState.type,mode:learningState.mode,methodNote:el('learningMethodNote').value.trim(),filmBoxes:JSON.parse(JSON.stringify(learningState.filmBoxes)),plateCircles:JSON.parse(JSON.stringify(learningState.plateCircles)),colonies:JSON.parse(JSON.stringify(learningState.colonies)),savedAt:new Date().toISOString()});
-    updateLearningCounts();el('learningStatus').textContent='학습 데이터 저장 완료';
+    updateLearningCounts();updateEditNavUI();el('learningStatus').textContent='학습 데이터 저장 완료';
 }
 function sanitizeFileName(name) {
     return String(name || 'image').replace(/[\\/:*?"<>|\s]+/g, '_').replace(/_+/g, '_').slice(0, 80);
@@ -3383,7 +3475,7 @@ async function importLearningZip(file){
     }catch(e){console.error(e);alert('기존 ZIP을 읽는 중 오류가 발생했습니다: '+e.message);}
 }
 
-const RECOLOR_HIT_RADIUS=18;
+const RECOLOR_HIT_RADIUS_SCREEN_PX=16; // 화면 기준(항상 그려진 점(최소 5px)보다 크게), 이미지 좌표 비교 전 scale로 환산
 /* 기존 학습 캔버스 이벤트를 새 동작으로 교체 */
 function installLearningPointer(){
     const c=el('learningCanvas'); if(!c||c.dataset.dualReady)return; c.dataset.dualReady='1';
@@ -3401,7 +3493,8 @@ function installLearningPointer(){
             if(learningState.dataset==='dryMedia' && learningState.colonyClickAction==='recolor'){
                 let nearest=null, nearestDist=Infinity;
                 learningState.colonies.forEach(cItem=>{const d=Math.hypot(pt.x-cItem.x,pt.y-cItem.y); if(d<nearestDist){nearestDist=d;nearest=cItem;}});
-                if(nearest && nearestDist<=RECOLOR_HIT_RADIUS) nearest.color = nearest.color==='blue' ? 'red' : 'blue';
+                const hitRadius=RECOLOR_HIT_RADIUS_SCREEN_PX/learningState.scale;
+                if(nearest && nearestDist<=hitRadius) nearest.color = nearest.color==='blue' ? 'red' : 'blue';
                 redrawLearningCanvas();updateLearningCounts();return;
             }
             const newColony = learningState.dataset==='dryMedia' ? {x:pt.x,y:pt.y,color:learningState.color} : {x:pt.x,y:pt.y};
@@ -3431,6 +3524,17 @@ document.addEventListener('DOMContentLoaded',()=>{
     el('btnLearningSave').onclick=saveLearningSample;el('btnLearningExport').onclick=exportLearningZip;
     el('btnLearningImportZip').addEventListener('click',()=>el('learningImportZipInput').click());
     el('learningImportZipInput').addEventListener('change',async e=>{const f=e.target.files?.[0];if(f)await importLearningZip(f);e.target.value='';});
+    el('btnLearningPrevSample').addEventListener('click',()=>{
+        const list=getDryMediaColonySamples();
+        const cur=learningState.editingSampleId?list.findIndex(s=>s.id===learningState.editingSampleId):-1;
+        loadSampleForEditing(cur<=0?list.length-1:cur-1);
+    });
+    el('btnLearningNextSample').addEventListener('click',()=>{
+        const list=getDryMediaColonySamples();
+        const cur=learningState.editingSampleId?list.findIndex(s=>s.id===learningState.editingSampleId):-1;
+        loadSampleForEditing(cur>=list.length-1?0:cur+1);
+    });
+    el('btnLearningExitEdit').addEventListener('click',exitSampleEditing);
     setLearningDataset('dryMedia');
     switchAppTab('dryMedia');
 });
