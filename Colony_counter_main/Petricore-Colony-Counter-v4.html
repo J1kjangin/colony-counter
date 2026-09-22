@@ -371,7 +371,7 @@ tbody tr.active-row { outline: 2px solid var(--accent); outline-offset: -2px; }
 @media(max-width:1100px){.type-buttons,#agarTypeBar .type-buttons{grid-template-columns:repeat(3,1fr)}.agar-main-split{grid-template-columns:1fr}.agar-left-col{order:2}.agar-viewer-panel{order:1;min-height:0}}
 
 /* ---------- 학습 탭 ---------- */
-.learning-layout{display:grid;grid-template-columns:350px 1fr;gap:18px;padding:18px 20px 28px}.learning-sidebar{padding:18px;display:flex;flex-direction:column;gap:15px}.learning-title h2{font-size:19px;margin:5px 0 7px}.learning-title p{font-size:11.5px;color:var(--muted);line-height:1.55}.learning-section{display:flex;flex-direction:column;gap:7px}.learning-section>label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em}.learning-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.learning-type,.learning-mode,.learning-color{border:1px solid rgba(20,35,42,.1);background:rgba(255,255,255,.52);color:var(--ink);border-radius:9px;padding:8px 5px;font-size:11px;font-weight:700;cursor:pointer}.learning-type.active,.learning-mode.active,.learning-color.active{background:var(--accent);color:#fff;border-color:var(--accent)}.learning-mode-row{display:flex;gap:6px}.learning-mode{flex:1}.learning-upload,.learning-primary,.learning-export,.learning-secondary{border:none;border-radius:9px;padding:9px 10px;font-size:11.5px;font-weight:700;cursor:pointer}.learning-upload{background:rgba(14,124,123,.14);color:var(--accent-dark);border:1px dashed rgba(14,124,123,.4)}.learning-file-name{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.memo-optional{font-weight:400}.learning-note{width:100%;min-height:68px;resize:vertical;border:1px solid rgba(20,35,42,.1);background:rgba(255,255,255,.5);color:var(--ink);border-radius:9px;padding:8px;font:11px/1.45 var(--sans);outline:none}.learning-note:focus{border-color:var(--accent)}
+.learning-layout{display:grid;grid-template-columns:350px 1fr;gap:18px;padding:18px 20px 28px}.learning-sidebar{padding:18px;display:flex;flex-direction:column;gap:15px}.learning-title h2{font-size:19px;margin:5px 0 7px}.learning-title p{font-size:11.5px;color:var(--muted);line-height:1.55}.learning-section{display:flex;flex-direction:column;gap:7px}.learning-section>label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em}.learning-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.learning-type,.learning-mode,.learning-color,.learning-click-mode{border:1px solid rgba(20,35,42,.1);background:rgba(255,255,255,.52);color:var(--ink);border-radius:9px;padding:8px 5px;font-size:11px;font-weight:700;cursor:pointer}.learning-type.active,.learning-mode.active,.learning-color.active,.learning-click-mode.active{background:var(--accent);color:#fff;border-color:var(--accent)}.learning-mode-row{display:flex;gap:6px}.learning-mode,.learning-click-mode{flex:1}.learning-upload,.learning-primary,.learning-export,.learning-secondary{border:none;border-radius:9px;padding:9px 10px;font-size:11.5px;font-weight:700;cursor:pointer}.learning-upload{background:rgba(14,124,123,.14);color:var(--accent-dark);border:1px dashed rgba(14,124,123,.4)}.learning-file-name{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.memo-optional{font-weight:400}.learning-note{width:100%;min-height:68px;resize:vertical;border:1px solid rgba(20,35,42,.1);background:rgba(255,255,255,.5);color:var(--ink);border-radius:9px;padding:8px;font:11px/1.45 var(--sans);outline:none}.learning-note:focus{border-color:var(--accent)}
 .learning-import-export{border-top:1px solid rgba(20,35,42,.08);padding-top:9px}
 .learning-export-options{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center}
 .learning-size-label{font-size:10px;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:5px;background:rgba(255,255,255,.42);padding:6px 8px;border-radius:8px}
@@ -810,6 +810,10 @@ body, .tab-view, .main-split, .learning-layout, .left-col, .viewer-panel, .learn
                     <div class="learning-mode-row">
                         <button class="learning-color active" data-learning-color="red">붉은색</button>
                         <button class="learning-color" data-learning-color="blue">푸른색</button>
+                    </div>
+                    <div class="learning-mode-row" style="margin-top:6px">
+                        <button class="learning-click-mode active" data-learning-click-mode="add">클릭: 점 추가</button>
+                        <button class="learning-click-mode" data-learning-click-mode="recolor">클릭: 색상 바꾸기</button>
                     </div>
                 </div>
                 <div class="learning-section">
@@ -2108,7 +2112,7 @@ function updateStatsRow() {
 // 상단 탭 / Dry media Type / 학습 데이터 수집
 // ---------------------------------------------------------------
 const learningState = {
-    type: 'AC', mode: 'film', color: 'red',
+    type: 'AC', mode: 'film', color: 'red', colonyClickAction: 'add',
     image: null, imageData: '', filename: '', scale: 1, offsetX: 0, offsetY: 0,
     filmBoxes: [], colonies: [], samples: []
 };
@@ -2150,6 +2154,12 @@ function initTabsAndLearning() {
         btn.addEventListener('click', () => {
             learningState.color = btn.dataset.learningColor;
             document.querySelectorAll('.learning-color').forEach(b => b.classList.toggle('active', b === btn));
+        });
+    });
+    document.querySelectorAll('.learning-click-mode').forEach(btn => {
+        btn.addEventListener('click', () => {
+            learningState.colonyClickAction = btn.dataset.learningClickMode;
+            document.querySelectorAll('.learning-click-mode').forEach(b => b.classList.toggle('active', b === btn));
         });
     });
 
@@ -3257,12 +3267,90 @@ async function exportLearningZipInner(){
         alert(`ZIP 파일 생성/다운로드 중 오류가 발생했습니다.\n\n${err?.message||err}`);
     }
 }
+function blobToDataUrl(blob){
+    return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=reject;fr.readAsDataURL(blob);});
+}
+// labels/<split>/<base>.txt 와 짝이 되는 images/<split>/<base>.<ext> 파일을 찾는다 (확장자 무관).
+function findImageFileForLabel(zip, labelPath){
+    const imgDir=labelPath.replace('/labels/','/images/').replace(/\/[^/]+\.txt$/,'/');
+    const base=labelPath.split('/').pop().replace(/\.txt$/,'');
+    const prefix=imgDir+base+'.';
+    const match=Object.keys(zip.files).find(n=>n.startsWith(prefix) && !zip.files[n].dir);
+    return match?zip.file(match):null;
+}
+const DRYMEDIA_COLONY_BASE_TYPES=['AC','EC','CC','EB','YM','other'];
+// YOLO 형식으로 내보낸 Dry media 학습 zip(dataset.json 없음)을 직접 불러온다.
+// dataset.json 경로(기존 importLearningZip 본문)는 그대로 두고 별도 분기로 처리한다.
+async function importYoloDryMediaZip(zip){
+    const colonyLabelPaths=Object.keys(zip.files).filter(n=>n.startsWith('dry_media_colony_detector/labels/') && n.endsWith('.txt') && !zip.files[n].dir);
+    const filmLabelPaths=Object.keys(zip.files).filter(n=>n.startsWith('dry_media_plate_detector/labels/') && n.endsWith('.txt') && !zip.files[n].dir);
+    const target=learningState.samplesByDataset.dryMedia;
+    let colonyImported=0, filmImported=0, skipped=0, counter=0;
+
+    for(const labelPath of colonyLabelPaths){
+        const imgFile=findImageFileForLabel(zip,labelPath);
+        const lines=(await zip.file(labelPath).async('string')).split('\n').map(l=>l.trim()).filter(Boolean);
+        if(!imgFile || !lines.length){ skipped++; continue; }
+        const blob=await imgFile.async('blob');
+        const imageData=await blobToDataUrl(blob);
+        const {width,height}=await imageDimensionsFromDataUrl(imageData);
+        const colonies=[];
+        for(const line of lines){
+            const parts=line.split(/\s+/).map(Number);
+            const [cls,cx,cy]=parts;
+            if(!Number.isFinite(cls)||!Number.isFinite(cx)||!Number.isFinite(cy)) continue;
+            colonies.push({x:cx*width,y:cy*height,color:cls>=6?'blue':'red'});
+        }
+        if(!colonies.length){ skipped++; continue; }
+        const firstCls=Number(lines[0].split(/\s+/)[0]);
+        const type=DRYMEDIA_COLONY_BASE_TYPES[((firstCls%6)+6)%6];
+        target.push({
+            id:`import-${Date.now()}-${counter++}-${Math.random().toString(36).slice(2,7)}`,
+            filename:imgFile.name.split('/').pop(), imageData, type, mode:'colony', methodNote:'',
+            filmBoxes:[{x:0,y:0,width,height}], plateCircles:[], colonies,
+            savedAt:new Date().toISOString()
+        });
+        colonyImported++;
+    }
+
+    for(const labelPath of filmLabelPaths){
+        const imgFile=findImageFileForLabel(zip,labelPath);
+        const lines=(await zip.file(labelPath).async('string')).split('\n').map(l=>l.trim()).filter(Boolean);
+        if(!imgFile || !lines.length){ skipped++; continue; }
+        const blob=await imgFile.async('blob');
+        const imageData=await blobToDataUrl(blob);
+        const {width,height}=await imageDimensionsFromDataUrl(imageData);
+        const filmBoxes=[];
+        for(const line of lines){
+            const parts=line.split(/\s+/).map(Number);
+            const [,cx,cy,w,h]=parts;
+            if(![cx,cy,w,h].every(Number.isFinite)) continue;
+            const boxW=w*width, boxH=h*height;
+            filmBoxes.push({x:cx*width-boxW/2,y:cy*height-boxH/2,width:boxW,height:boxH});
+        }
+        if(!filmBoxes.length){ skipped++; continue; }
+        target.push({
+            id:`import-${Date.now()}-${counter++}-${Math.random().toString(36).slice(2,7)}`,
+            filename:imgFile.name.split('/').pop(), type:'AC', mode:'film', methodNote:'',
+            imageData, filmBoxes, plateCircles:[], colonies:[],
+            savedAt:new Date().toISOString()
+        });
+        filmImported++;
+    }
+
+    setLearningDataset('dryMedia'); updateLearningCounts();
+    alert(`YOLO 학습 데이터 ZIP에서 가져왔습니다.\n\nColony 샘플: ${colonyImported}개\nFilm 샘플: ${filmImported}개${skipped?`\n건너뜀: ${skipped}개(이미지/라벨 매칭 실패 또는 빈 라벨)`:''}\n\n이제 AI 학습용 ZIP으로 다시 내보낼 수 있습니다.`);
+}
 async function importLearningZip(file){
     if(typeof JSZip==='undefined') return alert('JSZip 라이브러리를 불러오지 못했습니다.');
     try{
         const zip=await JSZip.loadAsync(file);
         const manifestFile=zip.file('dataset.json');
-        if(!manifestFile) return alert('dataset.json이 없는 ZIP입니다. Petricore의 기존 학습 데이터 ZIP을 선택해주세요.');
+        if(!manifestFile){
+            const hasYoloDryMedia=Object.keys(zip.files).some(n=>n.startsWith('dry_media_colony_detector/labels/')||n.startsWith('dry_media_plate_detector/labels/'));
+            if(hasYoloDryMedia) return await importYoloDryMediaZip(zip);
+            return alert('dataset.json이 없는 ZIP입니다. Petricore의 기존 학습 데이터 ZIP을 선택해주세요.');
+        }
         const manifest=JSON.parse(await manifestFile.async('string'));
         const manifestClasses=Array.isArray(manifest.classes)?manifest.classes:[];
         const dataset=manifest.dataset==='agar' || manifest.version?.includes('agar') || manifestClasses.includes('PCA') ? 'agar' : (manifest.dataset==='dryMedia' || manifestClasses.some(x=>['AC','EC','CC','EB','YM'].includes(x)) ? 'dryMedia' : null);
@@ -3295,6 +3383,7 @@ async function importLearningZip(file){
     }catch(e){console.error(e);alert('기존 ZIP을 읽는 중 오류가 발생했습니다: '+e.message);}
 }
 
+const RECOLOR_HIT_RADIUS=18;
 /* 기존 학습 캔버스 이벤트를 새 동작으로 교체 */
 function installLearningPointer(){
     const c=el('learningCanvas'); if(!c||c.dataset.dualReady)return; c.dataset.dualReady='1';
@@ -3309,6 +3398,12 @@ function installLearningPointer(){
                 ? learningState.plateCircles.some(q=>Math.hypot(pt.x-q.x,pt.y-q.y)<=q.radius)
                 : learningState.filmBoxes.some(q=>pt.x>=q.x&&pt.x<=q.x+q.width&&pt.y>=q.y&&pt.y<=q.y+q.height);
             if(!inside){ alert(learningState.dataset==='agar'?'먼저 지정한 Agar plate 원 안쪽을 클릭해주세요.':'먼저 지정한 필름 영역 안쪽을 클릭해주세요.'); return; }
+            if(learningState.dataset==='dryMedia' && learningState.colonyClickAction==='recolor'){
+                let nearest=null, nearestDist=Infinity;
+                learningState.colonies.forEach(cItem=>{const d=Math.hypot(pt.x-cItem.x,pt.y-cItem.y); if(d<nearestDist){nearestDist=d;nearest=cItem;}});
+                if(nearest && nearestDist<=RECOLOR_HIT_RADIUS) nearest.color = nearest.color==='blue' ? 'red' : 'blue';
+                redrawLearningCanvas();updateLearningCounts();return;
+            }
             const newColony = learningState.dataset==='dryMedia' ? {x:pt.x,y:pt.y,color:learningState.color} : {x:pt.x,y:pt.y};
             learningState.colonies.push(newColony);redrawLearningCanvas();updateLearningCounts();}
     });
