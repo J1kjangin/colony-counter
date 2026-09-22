@@ -1040,7 +1040,7 @@ async function aiDetectColonies(dataset, canvas) {
             heightPx: b.h,
             label: b.label,
             score: b.score,
-            color: 'red'
+            color: (typeof b.label === 'string' && b.label.endsWith('_blue')) ? 'blue' : 'red'
         }));
         return { colonies, reason: colonies.length ? '' : '콜로니 미검출' };
     } catch (err) {
@@ -3035,7 +3035,7 @@ function redrawLearningCanvas(dragShape=null){
         learningState.filmBoxes.forEach((b,i)=>{ctx.strokeStyle='#38bdf8';ctx.strokeRect(b.x*sc,b.y*sc,b.width*sc,b.height*sc);ctx.fillStyle='rgba(56,189,248,.16)';ctx.fillRect(b.x*sc,b.y*sc,b.width*sc,b.height*sc);ctx.fillStyle='#e0f2fe';ctx.fillText(`Film ${i+1}`,b.x*sc+5,b.y*sc+18);});
         if(dragShape){const x=Math.min(dragShape.x,dragShape.x2),y=Math.min(dragShape.y,dragShape.y2),w=Math.abs(dragShape.x2-dragShape.x),h=Math.abs(dragShape.y2-dragShape.y);ctx.strokeStyle='#38bdf8';ctx.setLineDash([8,6]);ctx.strokeRect(x*sc,y*sc,w*sc,h*sc);ctx.setLineDash([]);}
     }
-    learningState.colonies.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x*sc,p.y*sc,Math.max(4,5/sc),0,Math.PI*2);ctx.fillStyle='#f87171';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='#fff';ctx.font='10px sans-serif';ctx.fillText(String(i+1),p.x*sc+7,p.y*sc-7);});
+    learningState.colonies.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x*sc,p.y*sc,Math.max(4,5/sc),0,Math.PI*2);ctx.fillStyle=p.color==='blue'?'#60a5fa':'#f87171';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='#fff';ctx.font='10px sans-serif';ctx.fillText(String(i+1),p.x*sc+7,p.y*sc-7);});
 }
 function saveLearningSample(){
     if(!learningState.image)return alert('먼저 학습 이미지를 추가해주세요.');
@@ -3129,8 +3129,13 @@ async function addYoloDataset(root, datasetName, samples, classes, mode, boxPx) 
                     (sample.plateCircles||[]).forEach(c=>{const line=circleToYolo(c,dims.width,dims.height);if(line)lines.push(`0 ${line}`);});
                 }
             }else{
-                const cls=Math.max(0,classes.indexOf(sample.type));
-                (sample.colonies||[]).forEach(p=>lines.push(`${cls} ${colonyToYolo(p,dims.width,dims.height,boxPx)}`));
+                const baseCls=Math.max(0,classes.indexOf(sample.type));
+                (sample.colonies||[]).forEach(p=>{
+                    const cls=datasetName==='dryMedia'
+                        ? Math.max(0,['AC','EC','CC','EB','YM','other'].indexOf(sample.type))+(p.color==='blue'?6:0)
+                        : baseCls;
+                    lines.push(`${cls} ${colonyToYolo(p,dims.width,dims.height,boxPx)}`);
+                });
             }
             root.file(`labels/${split}/${base}.txt`,lines.join('\n')+(lines.length?'\n':''));
             imageCount++; labelCount+=lines.length;
@@ -3171,7 +3176,7 @@ async function exportLearningZipInner(){
 
     const classes=datasetName==='agar'
         ? ['PCA','TSA','SDA','TBXA','VRBA','other']
-        : ['AC','EC','CC','EB','YM','other'];
+        : ['AC_red','EC_red','CC_red','EB_red','YM_red','other_red','AC_blue','EC_blue','CC_blue','EB_blue','YM_blue','other_blue'];
     const boxPx=Math.max(4,Math.min(100,Number(el('learningColonyBoxSize')?.value)||16));
     const zip=new JSZip();
     const rootPrefix=datasetName==='agar' ? 'agar_plate' : 'dry_media';
@@ -3304,7 +3309,8 @@ function installLearningPointer(){
                 ? learningState.plateCircles.some(q=>Math.hypot(pt.x-q.x,pt.y-q.y)<=q.radius)
                 : learningState.filmBoxes.some(q=>pt.x>=q.x&&pt.x<=q.x+q.width&&pt.y>=q.y&&pt.y<=q.y+q.height);
             if(!inside){ alert(learningState.dataset==='agar'?'먼저 지정한 Agar plate 원 안쪽을 클릭해주세요.':'먼저 지정한 필름 영역 안쪽을 클릭해주세요.'); return; }
-            learningState.colonies.push({x:pt.x,y:pt.y});redrawLearningCanvas();updateLearningCounts();}
+            const newColony = learningState.dataset==='dryMedia' ? {x:pt.x,y:pt.y,color:learningState.color} : {x:pt.x,y:pt.y};
+            learningState.colonies.push(newColony);redrawLearningCanvas();updateLearningCounts();}
     });
     window.addEventListener('mousemove',e=>{if(!drag)return;const pt=learningCanvasPoint(e);drag.x2=pt.x;drag.y2=pt.y;if(learningState.dataset==='agar')drag.radius=Math.hypot(pt.x-drag.x,pt.y-drag.y);redrawLearningCanvas(drag);});
     window.addEventListener('mouseup',()=>{if(!drag)return;if(learningState.dataset==='agar'){if(drag.radius>10)learningState.plateCircles.push({x:drag.x,y:drag.y,radius:drag.radius});}else{const x=Math.min(drag.x,drag.x2),y=Math.min(drag.y,drag.y2),w=Math.abs(drag.x2-drag.x),h=Math.abs(drag.y2-drag.y);if(w>8&&h>8)learningState.filmBoxes.push({x,y,width:w,height:h});}drag=null;redrawLearningCanvas();updateLearningCounts();});
@@ -3346,7 +3352,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     // YOLO P3 헤드(stride 8) 한 칸보다 작아진다. 그래서 이 슬롯만 1280 으로 학습/추론한다.
     const SLOTS=[
         {dataset:'dryMedia', kind:'film',   classes:['film'], size:640},
-        {dataset:'dryMedia', kind:'colony', classes:['AC','EC','CC','EB','YM','other'], size:640},
+        {dataset:'dryMedia', kind:'colony', classes:['AC_red','EC_red','CC_red','EB_red','YM_red','other_red','AC_blue','EC_blue','CC_blue','EB_blue','YM_blue','other_blue'], size:640},
         {dataset:'agar',     kind:'plate',  classes:['plate'], size:640},
         {dataset:'agar',     kind:'colony', classes:['PCA','TSA','SDA','TBXA','VRBA','other'], size:1280}
     ];

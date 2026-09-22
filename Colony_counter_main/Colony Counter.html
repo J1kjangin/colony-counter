@@ -894,7 +894,7 @@ async function aiDetectColonies(dataset, canvas) {
             heightPx: b.h,
             label: b.label,
             score: b.score,
-            color: 'red'
+            color: (typeof b.label === 'string' && b.label.endsWith('_blue')) ? 'blue' : 'red'
         }));
         return { colonies, reason: colonies.length ? '' : '콜로니 미검출' };
     } catch (err) {
@@ -2691,7 +2691,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     // YOLO P3 헤드(stride 8) 한 칸보다 작아진다. 그래서 이 슬롯만 1280 으로 학습/추론한다.
     const SLOTS=[
         {dataset:'dryMedia', kind:'film',   classes:['film'], size:640},
-        {dataset:'dryMedia', kind:'colony', classes:['AC','EC','CC','EB','YM','other'], size:640},
+        {dataset:'dryMedia', kind:'colony', classes:['AC_red','EC_red','CC_red','EB_red','YM_red','other_red','AC_blue','EC_blue','CC_blue','EB_blue','YM_blue','other_blue'], size:640},
         {dataset:'agar',     kind:'plate',  classes:['plate'], size:640},
         {dataset:'agar',     kind:'colony', classes:['PCA','TSA','SDA','TBXA','VRBA','other'], size:1280}
     ];
