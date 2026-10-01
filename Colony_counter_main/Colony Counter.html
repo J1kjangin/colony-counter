@@ -1462,7 +1462,13 @@ class ColonyEditor {
     drawMmGrid(sx, sy, sw, sh) {
         const ctx = this.ctx;
         const src = this.record.canvas;
-        const pxPerMm = agarPxPerMm(src);
+        // plate 박스가 없으면(미검출) 격자 자체를 안 그리면 "실제 plate 테두리와 맞는지
+        // 눈으로 확인"할 방법이 사라진다. VRBA 필터와 달리 격자는 계수에 영향을 주지
+        // 않는 시각 보조일 뿐이므로, 캔버스 기준 추정치로 폴백하되 90mm 원 색을 다르게
+        // 해서 "추정값"임을 표시한다(agarPxPerMm 자체에는 이 폴백을 넣지 않는다 — 넣으면
+        // VRBA 0.5mm 필터가 다시 캔버스 기준으로 조용히 폴백해버린다).
+        const plateBox = this.record.plateBox;
+        const pxPerMm = plateBox ? agarPxPerMm(plateBox) : Math.min(src.width, src.height) / AGAR_PLATE_MM;
         const mm = Math.max(0.1, Math.round((this.gridMm || 1) * 10) / 10);
         let step = mm * pxPerMm;
         // 화면에서 3px보다 촘촘하면 선이 면으로 뭉개지므로 배수로만 성기게 그린다
@@ -1483,7 +1489,7 @@ class ColonyEditor {
         // 90mm plate 가정 원: 실제 plate 테두리와 맞는지 눈으로 확인하는 용도
         ctx.beginPath();
         ctx.arc((cx - sx) * this.scale, (cy - sy) * this.scale, (AGAR_PLATE_MM / 2) * pxPerMm * this.scale, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(56,189,248,0.8)';
+        ctx.strokeStyle = plateBox ? 'rgba(56,189,248,0.8)' : 'rgba(251,191,36,0.8)'; // plate 미검출 시 추정치 표시(경고색)
         ctx.setLineDash([6, 4]); ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]);
     }
 
