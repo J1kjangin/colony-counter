@@ -1024,19 +1024,21 @@ function aiSlot(dataset, kind) {
 }
 
 // 구역(필름 / plate) 분할. 실패하면 원본 1장을 그대로 돌려준다.
+// plates: panels와 같은 길이의 배열로, 각 panel을 잘라낸 원본 검출 박스(캔버스 좌표계)를 담는다.
+// 분할 실패/미검출/모델 미연결이면 해당 자리에 null을 넣는다 (plate 크기 환산 근거가 없다는 뜻).
 async function aiSplit(dataset, canvas) {
     const slot = aiSlot(dataset, dataset === 'agar' ? 'plate' : 'film');
-    if (!slot || !slot.isReady()) return { panels: [canvas], reason: AI_NO_MODEL };
+    if (!slot || !slot.isReady()) return { panels: [canvas], reason: AI_NO_MODEL, plates: [null] };
     try {
         const boxes = (await slot.detect(canvas)).sort((a, b) => {
             const tol = Math.max(a.h, b.h) * 0.45;
             return Math.abs(a.y1 - b.y1) > tol ? a.y1 - b.y1 : a.x1 - b.x1;
         });
-        if (!boxes.length) return { panels: [canvas], reason: '구역 미검출' };
-        return { panels: boxes.map(b => slot.crop(canvas, b)), reason: '' };
+        if (!boxes.length) return { panels: [canvas], reason: '구역 미검출', plates: [null] };
+        return { panels: boxes.map(b => slot.crop(canvas, b)), reason: '', plates: boxes };
     } catch (err) {
         console.error('AI 분할 실패:', err);
-        return { panels: [canvas], reason: `분할 오류: ${err.message}` };
+        return { panels: [canvas], reason: `분할 오류: ${err.message}`, plates: [null] };
     }
 }
 
@@ -1383,7 +1385,7 @@ class SimpleViewer {
             this.ctx.beginPath();
             this.ctx.arc(cx, cy, cr, 0, Math.PI * 2);
             this.ctx.lineWidth = 2;
-            this.ctx.strokeStyle = c.color === 'blue' ? '#38BDF8' : '#F9A8D4';
+            this.ctx.strokeStyle = c.ruleWarning ? '#FBBF24' : (c.color === 'blue' ? '#38BDF8' : '#F9A8D4');
             this.ctx.stroke();
         });
     }
@@ -1589,11 +1591,12 @@ class ColonyEditor {
             ctx.beginPath();
             ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
             ctx.lineWidth = 2;
-            ctx.strokeStyle = c.color === 'blue' ? '#38BDF8' : '#F9A8D4';
+            const strokeColor = c.ruleWarning ? '#FBBF24' : (c.color === 'blue' ? '#38BDF8' : '#F9A8D4');
+            ctx.strokeStyle = strokeColor;
             ctx.stroke();
             if (this.showNumbers) {
                 ctx.font = '11px sans-serif';
-                ctx.fillStyle = c.color === 'blue' ? '#38BDF8' : '#F9A8D4';
+                ctx.fillStyle = strokeColor;
                 ctx.fillText(String(idx + 1), p.x + r + 2, p.y - r);
             }
         });
@@ -1697,6 +1700,16 @@ class ColonyEditor {
     }
 
     afterMutate() {
+        // Agar는 추가/이동/삭제/Undo/Redo로 콜로니가 바뀔 때마다 타입 규칙을 다시 평가해야
+        // 수동으로 찍은 기준 외 콜로니가 즉시 경고색으로 표시된다(재검출·타입변경을 눌러야만
+        // 반영되던 문제 수정). ruleExcludedCount는 여기서 건드리지 않는다 — 다시 계산하면
+        // 이미 통과한 AI 콜로니만 남아 있어 0이 되어버려서, 타입 변경 시 "이전 기준으로
+        // 제외된 N개" 안내에 쓰는 과거 제외 수가 사라진다.
+        if (state.dataset === 'agar' && this.record) {
+            const rules = applyAgarTypeRules(this.record, this.record.colonies);
+            this.record.colonies = rules.colonies;
+            this.record.ruleNote = rules.note;
+        }
         this.redraw();
         this.onCountChange && this.onCountChange();
     }
@@ -1780,7 +1793,11 @@ class ColonyEditor {
                 }
             }
         } else if (this.mode === 'move' && this._movingColonyIdx !== null && this._movingColonyIdx !== -1) {
-            this.onCountChange && this.onCountChange();
+            // 사용자가 위치를 직접 옮긴 순간부터는 순수 AI 출력이 아니라 사람이 손댄 데이터다.
+            // Agar 타입 규칙(TBXA 등)이 이 콜로니를 "AI 검출분"으로 보고 조용히 삭제하지
+            // 않도록 표시해둔다(widthPx/heightPx는 VRBA mm 판정에 계속 필요하므로 보존).
+            if (state.dataset === 'agar') this.record.colonies[this._movingColonyIdx].userEdited = true;
+            this.afterMutate();
         }
 
         this._movingColonyIdx = null;
@@ -2556,7 +2573,7 @@ function populateEditorSidebar(record) {
 
     setColorModeUI(record.colorMode);
     document.getElementById('emAiNote').textContent =
-        record.aiReason || untrainedTypeReason(state.dataset, record.type);
+        [record.aiReason || untrainedTypeReason(state.dataset, record.type), record.ruleNote].filter(Boolean).join(' · ');
 
     const rawParts = [];
     if (record.rawPrinted) rawParts.push(record.rawPrinted.replace(/\n/g, ' '));
@@ -2745,13 +2762,19 @@ async function runDetection() {
     }
     state.editor.pushHistory();
     let colonies = detected.colonies;
-    if (state.dataset === 'agar') colonies = applyAgarTypeRules(r, colonies);
+    r.ruleNote = '';
+    if (state.dataset === 'agar') {
+        const rules = applyAgarTypeRules(r, colonies);
+        colonies = rules.colonies;
+        r.ruleNote = rules.note;
+        r.ruleExcludedCount = rules.excludedCount;
+    }
     r.aiReason = detected.reason;
     if (detected.reason) alert(`AI 검출을 하지 못했습니다.\n\n${detected.reason}`);
     r.colonies = colonies;
     r.autoColonies = JSON.parse(JSON.stringify(colonies));
     document.getElementById('emAiNote').textContent =
-        r.aiReason || untrainedTypeReason(state.dataset, r.type);
+        [r.aiReason || untrainedTypeReason(state.dataset, r.type), r.ruleNote].filter(Boolean).join(' · ');
     state.editor.redraw();
     updateEditorCfuDisplay();
     refreshTable();
@@ -2812,6 +2835,7 @@ updateEditorCfuDisplay = function(){
         el('emConcentration').textContent=formatConcentration(total,r.dilute);
         const pct=Math.min(100,(total/300)*100); el('emRangeFill').style.width=pct+'%';
         const label=el('emRangeLabel'), ok=total>=25&&total<=250; label.textContent=ok?'적정 · 적정 25–250':`범위 벗어남 (현재 ${total}) · 적정 25–250`; label.classList.toggle('warn',!ok);
+        el('emAiNote').textContent=[r.aiReason||untrainedTypeReason(state.dataset,r.type), r.ruleNote].filter(Boolean).join(' · ');
         return;
     }
     _updateEditorCfuDisplayOriginal();
@@ -2910,7 +2934,25 @@ function renderAgarTable(){
     });
     tbody.querySelectorAll('.editable-cell').forEach(c=>c.addEventListener('blur',e=>{
         const r=state.records.find(x=>String(x.id)===String(e.target.dataset.id)); if(!r)return;
-        r[e.target.dataset.field]=e.target.innerText.trim(); refreshTable();
+        const field=e.target.dataset.field;
+        if(field==='type'){
+            const normalized=normalizeAgarTypeInput(e.target.innerText);
+            if(!normalized){
+                alert(`"${e.target.innerText.trim()}"은(는) 올바른 Agar Type이 아닙니다. ${AGAR_TYPE_OPTIONS.join('/')} 중 하나로 입력해주세요.`);
+                e.target.innerText=r.type;
+                return;
+            }
+            if(normalized!==r.type){
+                const prevExcluded=r.ruleExcludedCount||0;
+                r.type=normalized;
+                const rules=applyAgarTypeRules(r,r.colonies);
+                r.colonies=rules.colonies; r.autoColonies=JSON.parse(JSON.stringify(rules.colonies));
+                r.ruleExcludedCount=rules.excludedCount;
+                r.ruleNote=[rules.note, prevExcluded>0?`타입 변경 — 이전 기준으로 제외된 ${prevExcluded}개는 복구되지 않습니다. 필요하면 AI 재검출을 실행하세요.`:''].filter(Boolean).join(' · ');
+            }
+            refreshTable(); return;
+        }
+        r[field]=e.target.innerText.trim(); refreshTable();
     }));
     tbody.querySelectorAll('.view-btn').forEach(b=>b.addEventListener('click',e=>openAgarViewer(+e.target.dataset.index)));
     tbody.querySelectorAll('.edit-btn').forEach(b=>b.addEventListener('click',e=>openAgarEditor(+e.target.dataset.index)));
@@ -2966,7 +3008,7 @@ async function handleAgarFiles(fileList){
                 for(let p=0;p<pages.length;p++){
                     const split=await aiSplit('agar',pages[p]);
                     if(split.reason) lastReason=split.reason;
-                    for(let i=0;i<split.panels.length;i++) await createAgarRecordFromCanvas(split.panels[i],`${file.name} (p${p+1}-${i+1})`);
+                    for(let i=0;i<split.panels.length;i++) await createAgarRecordFromCanvas(split.panels[i],`${file.name} (p${p+1}-${i+1})`,split.plates[i]);
                 }
             }else if(file.type.startsWith('image/')){
                 const canvas=await imageFileToCanvas(file);
@@ -2974,7 +3016,7 @@ async function handleAgarFiles(fileList){
                 if(split.reason) lastReason=split.reason;
                 for(let i=0;i<split.panels.length;i++){
                     const suffix=split.panels.length>1?` (${i+1}/${split.panels.length})`:'';
-                    await createAgarRecordFromCanvas(split.panels[i],file.name+suffix);
+                    await createAgarRecordFromCanvas(split.panels[i],file.name+suffix,split.plates[i]);
                 }
             }
         }catch(e){console.error(e);alert(`${file.name} 처리 중 오류가 발생했습니다: ${e.message}`);}
@@ -2982,26 +3024,141 @@ async function handleAgarFiles(fileList){
     }
     status.textContent=lastReason?`총 ${state.records.length}개 Agar 데이터 · ${lastReason} · 원본 그대로 등록했습니다`:`총 ${state.records.length}개 Agar 데이터 · AI 모델로 분할했습니다`; setTimeout(()=>{track.classList.remove('active');fill.style.width='0%';},500); refreshTable();
 }
+const AGAR_TYPE_OPTIONS = ['PCA','TSA','SDA','TBXA','VRBA','other'];
+// Type 칸이 contenteditable 자유 입력이라 대소문자/공백이 섞여도 정규 표기로 맞춘다.
+// 매칭 실패 시 null(호출부가 되돌리기/경고 처리) — 그대로 저장하면 VRBA/TBXA 규칙이
+// 정확 일치 비교에서 조용히 꺼지기 때문에 반드시 여기서 걸러야 한다.
+function normalizeAgarTypeInput(raw){
+    const trimmed=String(raw||'').trim();
+    return AGAR_TYPE_OPTIONS.find(t=>t.toLowerCase()===trimmed.toLowerCase()) || null;
+}
 const AGAR_PLATE_MM = 90;
 const VRBA_MIN_COLONY_MM = 0.5;
-// ponytail: 사진이 plate에 맞게 잘려 있다고 가정(짧은 변 = 90mm). 여백이 크면 plate 검출/보정 필요.
-function agarPxPerMm(canvas){ return Math.min(canvas.width, canvas.height) / AGAR_PLATE_MM; }
-function applyAgarTypeRules(record, colonies){
-    if(record.type !== 'VRBA') return colonies;
-    const pxPerMm = agarPxPerMm(record.canvas);
-    // AI 박스는 widthPx/heightPx를 가진다. 손으로 찍은 점은 크기를 모르므로 거르지 않는다.
-    return colonies.filter(c => {
-        if(c.widthPx == null || c.heightPx == null) return true;
-        const diameterPx = 2*Math.sqrt((c.widthPx*c.heightPx)/Math.PI);
-        return diameterPx/pxPerMm >= VRBA_MIN_COLONY_MM;
-    });
+// TBXA 청색(E.coli 양성) 판정 상수 — 실제 사진으로 재조정 가능하도록 분리.
+// agar_colony 모델은 이미 청색 콜로니만 검출하도록 학습돼 있으므로, 이 게이트는
+// "명백히 청색이 아닐 때만 제외"하는 보수적 안전망이어야 한다. 너무 엄격하면 정상
+// 검출을 지워버리는 회귀가 생긴다.
+const TBXA_BLUE_HUE_MIN_DEG = 140;      // 청록 쪽 경계
+const TBXA_BLUE_HUE_MAX_DEG = 280;      // 보라 쪽 경계
+const TBXA_BLUE_MIN_SATURATION = 0.12;  // 채도가 너무 낮으면(흰/회색) 무채색으로 간주, 청색 아님
+const TBXA_BLUE_MIN_PIXEL_RATIO = 0.3;  // 샘플 영역 중 이 비율 이상이 청색 픽셀이면 콜로니를 청색으로 판정
+const TBXA_SAMPLE_REGION_RATIO = 0.4;   // 콜로니 bbox 중 중심부 몇 %를 샘플링할지
+// ponytail: plate가 원형이고 bbox는 짧은 변을 지름으로 쓴다(비대칭 박스에서 지름을
+// 과대평가하지 않는 보수적 선택). plate 박스가 없으면(미검출) null — 호출부가
+// "환산 근거 없음"으로 처리해야 한다. 캔버스 크기로의 폴백은 두지 않는다
+// (crop()의 padding 때문에 캔버스가 박스보다 커서 mm가 과소 계산되는 편향이 있었음).
+function agarPxPerMm(plateBox){
+    if(!plateBox) return null;
+    return Math.min(plateBox.w, plateBox.h) / AGAR_PLATE_MM;
 }
-async function createAgarRecordFromCanvas(canvas,filename){
-    const r={id:makeId(),filename,canvas,rotation:0,type:state.selectedDryType||'PCA',lot:'',bacteria:'',no:'',dilute:'',colonies:[],autoColonies:[],historyPast:[],historyFuture:[],labelHeightRatio:0,colorMode:'red',aiReason:'',selected:false,rawHandwriting:'',rawPrinted:''};
-    // Agar는 단일 CFU이므로 색상 구분 없이 AI 검출 결과를 합산
+function rgbToHsv(r,g,b){
+    r/=255; g/=255; b/=255;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+    let h=0;
+    if(d!==0){
+        if(max===r) h=((g-b)/d)%6;
+        else if(max===g) h=(b-r)/d+2;
+        else h=(r-g)/d+4;
+        h*=60; if(h<0) h+=360;
+    }
+    const s = max===0?0:d/max;
+    return {h, s, v:max};
+}
+// 콜로니 bbox(x1,y1,x2,y2) 중심부를 픽셀 단위로 샘플링해 청색 비율로 판정하는 순수 함수.
+// 반환: true(청색) / false(명백히 비청색) / null(판정 불가 — 캔버스·bbox 비정상).
+// cls=교차검증용으로 캔버스와 박스만 받아 독립 호출 가능하게 분리되어 있다.
+function classifyTbxaBlue(canvas, box){
+    if(!canvas || !canvas.width || !canvas.height || !box) return null;
+    const bw=box.x2-box.x1, bh=box.y2-box.y1;
+    if(!(bw>0) || !(bh>0)) return null;
+    const cx=box.x1+bw/2, cy=box.y1+bh/2;
+    const sampleSize=Math.max(2, Math.round(Math.min(bw,bh)*TBXA_SAMPLE_REGION_RATIO));
+    const sx=Math.max(0, Math.min(canvas.width-1, Math.round(cx-sampleSize/2)));
+    const sy=Math.max(0, Math.min(canvas.height-1, Math.round(cy-sampleSize/2)));
+    const sw=Math.max(1, Math.min(sampleSize, canvas.width-sx));
+    const sh=Math.max(1, Math.min(sampleSize, canvas.height-sy));
+    let data;
+    try { data=canvas.getContext('2d').getImageData(sx,sy,sw,sh).data; }
+    catch(e){ return null; }
+    let blue=0, total=0;
+    for(let i=0;i<data.length;i+=4){
+        total++;
+        const {h,s}=rgbToHsv(data[i],data[i+1],data[i+2]);
+        if(s>=TBXA_BLUE_MIN_SATURATION && h>=TBXA_BLUE_HUE_MIN_DEG && h<=TBXA_BLUE_HUE_MAX_DEG) blue++;
+    }
+    if(!total) return null;
+    return (blue/total) >= TBXA_BLUE_MIN_PIXEL_RATIO;
+}
+function colonyToBox(c){
+    if(c.widthPx!=null && c.heightPx!=null) return {x1:c.x-c.widthPx/2, y1:c.y-c.heightPx/2, x2:c.x+c.widthPx/2, y2:c.y+c.heightPx/2};
+    const r=c.radius||5;
+    return {x1:c.x-r, y1:c.y-r, x2:c.x+r, y2:c.y+r};
+}
+function stripRuleWarning(c){
+    if(!c.ruleWarning) return c;
+    const {ruleWarning, ...rest}=c;
+    return rest;
+}
+function buildAgarRuleNote(typeName, excludeLabel, excludedCount, warnedCount){
+    if(!excludedCount && !warnedCount) return '';
+    const parts=[];
+    if(excludedCount) parts.push(`AI 검출 중 ${excludeLabel} ${excludedCount}개 제외`);
+    if(warnedCount) parts.push(`기준 외 수동 콜로니 ${warnedCount}개(계수에는 포함)`);
+    return `${typeName}: ${parts.join(' · ')}`;
+}
+// Agar 타입별 "이미 검출된 콜로니가 계수 대상인지" 규칙. colony 자체 판정(OpenCV 등)과는
+// 무관하며, 종 동정이 아니라 사용자가 확정한 라벨링 기준(청색만/0.5mm 이상)을 그대로 반영한다.
+// AI 검출 콜로니는 기준 미달 시 제외하고, 수동 콜로니는 절대 자동 삭제하지 않고
+// ruleWarning 태그만 붙여 계수에는 그대로 포함한다(판정 불가도 경고 없이 통과).
+// AI가 검출했고(widthPx/heightPx 보유) 사용자가 손대지 않은 콜로니만 "AI 출력"으로 취급한다.
+// move로 위치를 옮긴 순간부터는 사람이 의도를 갖고 수정한 데이터이므로, 기준 미달이어도
+// 자동 삭제 대상이 아니라 경고 대상으로 넘어간다(widthPx/heightPx 자체는 보존 — VRBA가 필요).
+function isAiOriginColony(c){
+    return c.widthPx!=null && c.heightPx!=null && !c.userEdited;
+}
+function applyAgarTypeRules(record, colonies){
+    let excludedCount=0, warnedCount=0, note='';
+    let result;
+    if(record.type === 'VRBA'){
+        const pxPerMm = agarPxPerMm(record.plateBox);
+        if(pxPerMm == null){
+            result = colonies.map(stripRuleWarning);
+            note = 'VRBA: plate 구역을 검출하지 못해 0.5mm 기준을 적용하지 못했습니다.';
+        } else {
+            result = colonies.map(c=>{
+                // 사용자가 손댄(또는 애초에 수동으로 찍은) 콜로니는 실제 크기를 신뢰할 수 없어
+                // (수동 점은 고정 표시 반지름일 뿐) 판정하지 않는다.
+                if(!isAiOriginColony(c)) return stripRuleWarning(c);
+                const diameterPx = 2*Math.sqrt((c.widthPx*c.heightPx)/Math.PI);
+                if(diameterPx/pxPerMm >= VRBA_MIN_COLONY_MM) return c;
+                excludedCount++; return null;
+            }).filter(Boolean);
+            note = buildAgarRuleNote('VRBA', '0.5mm 미만', excludedCount, 0);
+        }
+    } else if(record.type === 'TBXA'){
+        result = colonies.map(c=>{
+            const isAi = isAiOriginColony(c);
+            const isBlue = classifyTbxaBlue(record.canvas, colonyToBox(c));
+            if(isBlue !== false) return stripRuleWarning(c); // true 또는 판정 불가(null)는 통과
+            if(isAi){ excludedCount++; return null; }
+            warnedCount++; return {...c, ruleWarning:'tbxa-color'};
+        }).filter(Boolean);
+        note = buildAgarRuleNote('TBXA', '비청색', excludedCount, warnedCount);
+    } else {
+        result = colonies.map(stripRuleWarning); // 타입 변경 시 이전 규칙의 경고 태그 잔존 방지
+    }
+    return {colonies:result, excludedCount, warnedCount, note};
+}
+async function createAgarRecordFromCanvas(canvas,filename,plateBox){
+    const r={id:makeId(),filename,canvas,plateBox:plateBox||null,rotation:0,type:state.selectedDryType||'PCA',lot:'',bacteria:'',no:'',dilute:'',colonies:[],autoColonies:[],historyPast:[],historyFuture:[],labelHeightRatio:0,colorMode:'red',aiReason:'',ruleNote:'',ruleExcludedCount:0,selected:false,rawHandwriting:'',rawPrinted:''};
+    // Agar는 단일 CFU이므로 색상 구분 없이 AI 검출 결과를 합산(TBXA 색상 판정은 픽셀 샘플링으로 별도 수행)
     const detected=await aiDetectColonies('agar',canvas);
     r.aiReason=detected.reason;
-    r.colonies=applyAgarTypeRules(r,detected.colonies).map(c=>({...c,color:'red'})); r.autoColonies=JSON.parse(JSON.stringify(r.colonies)); state.records.push(r);
+    const rules=applyAgarTypeRules(r,detected.colonies);
+    r.colonies=rules.colonies.map(c=>({...c,color:'red'}));
+    r.autoColonies=JSON.parse(JSON.stringify(r.colonies));
+    r.ruleNote=rules.note; r.ruleExcludedCount=rules.excludedCount;
+    state.records.push(r);
 }
 
 /* ----- Agar 내보내기 ----- */
