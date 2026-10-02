@@ -1778,6 +1778,13 @@ function updateSelectionUI() {
     document.querySelectorAll('.bulk-actions button').forEach(b => { b.disabled = count === 0; });
 }
 
+// 표와 엑셀 내보내기가 같은 순서(최신 먼저)를 쓰도록 정렬을 한 곳에 둔다.
+// 항상 사본을 정렬한다 — state.records를 제자리 정렬하면 indexOf로 구하는 realIndex와
+// activeIndex/editIndex가 어긋나 다른 레코드가 열린다.
+function sortRecordsNewestFirst(records) {
+    return records.slice().sort((a, b) => b.id - a.id);
+}
+
 function getFilteredRecords() {
     const keyword = (document.getElementById('searchInput').value || '').toLowerCase();
     const filterType = document.getElementById('filterType').value;
@@ -1788,7 +1795,7 @@ function getFilteredRecords() {
         return matchKeyword && matchType;
     });
     // 최신 데이터가 위로 오도록 내림차순(DESC) 정렬 (id는 업로드 순서대로 증가)
-    return filtered.slice().sort((a, b) => b.id - a.id);
+    return sortRecordsNewestFirst(filtered);
 }
 
 function escapeHtml(str) {
@@ -1811,7 +1818,7 @@ function getSelected() {
 }
 
 function exportToExcel() {
-    const selected = getSelected();
+    const selected = sortRecordsNewestFirst(getSelected());
     if (selected.length === 0) {
         alert('선택된 데이터가 없습니다. 표에서 체크박스를 먼저 선택해주세요.');
         return;
@@ -2567,10 +2574,10 @@ function switchAppTab(tab){
 function getFilteredAgarRecords(){
     const keyword=(el('agarSearchInput')?.value||'').toLowerCase();
     const filter=el('agarFilterType')?.value||'';
-    return state.records.filter(r=>{
+    return sortRecordsNewestFirst(state.records.filter(r=>{
         const hay=`${r.lot} ${r.filename} ${r.bacteria} ${r.no} ${r.dilute}`.toLowerCase();
         return (!keyword||hay.includes(keyword)) && (!filter||r.type===filter);
-    }).slice().sort((a,b)=>b.id-a.id);
+    }));
 }
 function renderAgarTable(){
     const tbody=el('agarTableBody'); if(!tbody) return;
@@ -2817,7 +2824,7 @@ async function createAgarRecordFromCanvas(canvas,filename,plateBox){
 
 /* ----- Agar 내보내기 ----- */
 function exportAgarExcel(){
-    const selected=state.records.filter(r=>r.selected); if(!selected.length)return alert('선택된 데이터가 없습니다.');
+    const selected=sortRecordsNewestFirst(state.records.filter(r=>r.selected)); if(!selected.length)return alert('선택된 데이터가 없습니다.');
     if(typeof XLSX==='undefined')return alert('엑셀 저장 라이브러리를 불러오지 못했습니다.');
     const data=selected.map(r=>({Type:r.type,'Lot No':r.lot,Bacteria:r.bacteria,'No.':r.no,Dilute:r.dilute,CFU:r.colonies.length}));
     const ws=XLSX.utils.json_to_sheet(data), wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Agar Results'); XLSX.writeFile(wb,`Petricore_Agar_Results_${Date.now()}.xlsx`);
